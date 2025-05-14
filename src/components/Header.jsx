@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Header() {
   return (
@@ -10,8 +11,9 @@ export default function Header() {
           placeholder="Search for products"
           className="border px-4 py-2 rounded-md w-64"
         />
-        <span>Account</span>
-        <span>cart</span>
+        <Link to="/login" className="text-accent font-medium">Login</Link>
+        <Link to="/signup" className="text-accent font-medium">Sign Up</Link>
+        <span>Cart</span>
       </div>
     </header>
   );
