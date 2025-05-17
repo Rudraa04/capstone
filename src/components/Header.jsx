@@ -28,7 +28,7 @@
         <div className="w-full flex justify-between items-center">
           {/* Logo */}
           <Link to="/" className="text-2xl md:text-3xl font-extrabold tracking-wider text-black pl-2">
-            PATEL CERAMICS
+            PATEL CERAMIC
           </Link>
 
           {/* Multi-Filter Search Bar */}
