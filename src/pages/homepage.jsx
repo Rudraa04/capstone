@@ -1,103 +1,93 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Header from '../components/Header';
 
 export default function Home() {
-  const [showCategory, setShowCategory] = useState(true);
-  const [showSize, setShowSize] = useState(true);
-  const [showColor, setShowColor] = useState(true);
-
   return (
-    <div className="bg-primary min-h-screen text-dark">
+    <div className="bg-white min-h-screen font-sans text-gray-900">
+      {/* Header */}
       <Header />
 
-      <div className="flex">
-        {/* Sidebar - Hover Expandable */}
-        <aside className="group relative transition-all duration-300 w-[20px] hover:w-64 overflow-hidden bg-primary p-4 space-y-6 border-r">
+      {/* Hero Section */}
+      <div className="relative w-full h-[400px] overflow-hidden mb-10">
+        <img
+          src="../src/images/hero.png" // ✅ updated to your uploaded image
+          alt="Ceramic Style"
+          className="w-full h-full object-cover brightness-75"
+        />
+        <div className="absolute top-1/2 left-12 transform -translate-y-1/2 text-white">
+          <h1 className="text-4xl font-bold mb-4 drop-shadow-lg">Elevate Your Space with Premium Tiles</h1>
+          <button className="bg-white text-gray-800 px-6 py-3 font-medium rounded shadow hover:bg-gray-100 transition">
+            Shop Now
+          </button>
+        </div>
+      </div>
 
-          {/* Vertical "Filters →" Label (Right-Aligned, Low to Top) */}
-          <div className="absolute bottom-10 -right-[36px] rotate-90 origin-bottom-left text-xs font-semibold group-hover:hidden">
-            Filters 
+      {/* Main Layout */}
+      <div className="flex w-full px-10 gap-8">
+        {/* Sidebar */}
+        <aside className="w-1/5 space-y-8 bg-white p-5 rounded-lg shadow border">
+          <div>
+            <h2 className="text-lg font-semibold mb-3 border-b pb-2">Categories</h2>
+            <ul className="space-y-2 text-gray-700">
+              {['Tiles', 'Marble', 'Sanitary Products', 'Granite'].map((item) => (
+                <li key={item} className="cursor-pointer hover:text-black transition">
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Sidebar Title */}
-          <h2 className="font-bold text-lg hidden group-hover:block mb-2">Filters</h2>
-
-          {/* Category */}
           <div>
-            <div
-              onClick={() => setShowCategory(!showCategory)}
-              className="hidden group-hover:flex font-semibold mb-2 cursor-pointer justify-between items-center"
-            >
-              <span>Shop by Category</span>
-              <span>{showCategory ? '−' : '+'}</span>
-            </div>
-            {showCategory && (
-              <ul className="space-y-2 pl-2 hidden group-hover:block">
-                <li>Tiles</li>
-                <li>Marble</li>
-                <li>Sanitary Products</li>
-                <li>Granite</li>
-              </ul>
-            )}
+            <h2 className="text-lg font-semibold mb-3 border-b pb-2">Sizes</h2>
+            <ul className="space-y-2 text-gray-700">
+              {['12" x 12"', '16" x 16"', '24" x 24"'].map((size) => (
+                <li key={size} className="cursor-pointer hover:text-black">
+                  {size}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          {/* Size */}
           <div>
-            <div
-              onClick={() => setShowSize(!showSize)}
-              className="hidden group-hover:flex font-semibold mb-2 cursor-pointer justify-between items-center"
-            >
-              <span>Size</span>
-              <span>{showSize ? '−' : '+'}</span>
+            <h2 className="text-lg font-semibold mb-3 border-b pb-2">Color</h2>
+            <div className="flex gap-3 mt-2">
+              {['#ffffff', '#cccccc', '#333333'].map((color, i) => (
+                <span
+                  key={i}
+                  className="w-6 h-6 rounded-full border border-gray-500 cursor-pointer hover:ring-2 hover:ring-gray-700 transition"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
             </div>
-            {showSize && (
-              <ul className="space-y-2 pl-2 hidden group-hover:block">
-                <li>12&quot; x 12&quot;</li>
-                <li>16&quot; x 16&quot;</li>
-                <li>24&quot; x 24&quot;</li>
-              </ul>
-            )}
-          </div>
-
-          {/* Color */}
-          <div>
-            <div
-              onClick={() => setShowColor(!showColor)}
-              className="hidden group-hover:flex font-semibold mb-2 cursor-pointer justify-between items-center"
-            >
-              <span>Color</span>
-              <span>{showColor ? '−' : '+'}</span>
-            </div>
-            {showColor && (
-              <div className="flex gap-2 pl-1 hidden group-hover:flex">
-                <span className="w-6 h-6 bg-white border rounded-full"></span>
-                <span className="w-6 h-6 bg-gray-200 border rounded-full"></span>
-                <span className="w-6 h-6 bg-[#c2703d] border rounded-full"></span>
-              </div>
-            )}
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4">
-          <div className="bg-[#e7d8c4] p-6 rounded-lg mb-6">
-            <h2 className="text-2xl font-bold mb-2">Upgrade Your Home with Stylish Tiles</h2>
-            <button className="bg-accent text-white px-4 py-2 rounded">Shop Now</button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-[#ede1d2] p-4 rounded">Kitchen Tiles</div>
-            <div className="bg-[#d3cdc5] p-4 rounded">Bathroom Tiles</div>
-          </div>
-
-          <h3 className="text-xl font-semibold mb-4">Trending Now</h3>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded shadow">
-              <div className="h-24 bg-[#e6dac4] mb-2"></div>
-              <p>Beige "Pent-Pattern"</p>
-              <p>$4.99</p>
+        <main className="flex-1 space-y-10">
+          {/* Product Section */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-6">Featured Product</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="bg-white rounded-lg shadow hover:shadow-lg transition p-4 border">
+                <div className="h-40 bg-gray-300 rounded mb-4" />
+                <h3 className="text-lg font-semibold">Beige "Pent-Pattern"</h3>
+                <p className="text-gray-500 mb-2">$4.99</p>
+                <button className="bg-black text-white w-full py-2 rounded hover:bg-gray-800 transition">
+                  View Details
+                </button>
+              </div>
             </div>
-          </div>
+          </section>
+
+          {/* Category Highlights */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-gray-100 p-8 rounded-lg shadow text-center hover:bg-gray-200 transition cursor-pointer">
+              <h3 className="text-xl font-semibold">Kitchen Tiles</h3>
+            </div>
+            <div className="bg-gray-200 p-8 rounded-lg shadow text-center hover:bg-gray-300 transition cursor-pointer">
+              <h3 className="text-xl font-semibold">Bathroom Tiles</h3>
+            </div>
+          </section>
         </main>
       </div>
     </div>
