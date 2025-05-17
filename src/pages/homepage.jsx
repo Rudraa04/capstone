@@ -1,16 +1,31 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Header from '../components/Header';
 
 export default function Home() {
+  const [showCeramics, setShowCeramics] = useState(false);
+  const [showSlabs, setShowSlabs] = useState(false);
+  const ceramicsRef = useRef(null);
+  const slabsRef = useRef(null);
+  const [ceramicHeight, setCeramicHeight] = useState(0);
+  const [slabHeight, setSlabHeight] = useState(0);
+
+  useEffect(() => {
+    if (ceramicsRef.current) {
+      setCeramicHeight(showCeramics ? ceramicsRef.current.scrollHeight : 0);
+    }
+    if (slabsRef.current) {
+      setSlabHeight(showSlabs ? slabsRef.current.scrollHeight : 0);
+    }
+  }, [showCeramics, showSlabs]);
+
   return (
     <div className="bg-white min-h-screen font-sans text-gray-900">
-      {/* Header */}
       <Header />
 
       {/* Hero Section */}
       <div className="relative w-full h-[400px] overflow-hidden mb-10">
         <img
-          src="../src/images/hero.png" // ✅ updated to your uploaded image
+          src="../src/images/hero.png"
           alt="Ceramic Style"
           className="w-full h-full object-cover brightness-75"
         />
@@ -24,70 +39,90 @@ export default function Home() {
 
       {/* Main Layout */}
       <div className="flex w-full px-10 gap-8">
-        {/* Sidebar */}
-        <aside className="w-1/5 space-y-8 bg-white p-5 rounded-lg shadow border">
+        {/* Left Panel */}
+        <aside className="w-1/4 space-y-6">
+          {/* SLABS Box */}
           <div>
-            <h2 className="text-lg font-semibold mb-3 border-b pb-2">Categories</h2>
-            <ul className="space-y-2 text-gray-700">
-              {['Tiles', 'Marble', 'Sanitary Products', 'Granite'].map((item) => (
-                <li key={item} className="cursor-pointer hover:text-black transition">
-                  {item}
-                </li>
-              ))}
-            </ul>
+            <div
+              onClick={() => setShowSlabs(!showSlabs)}
+              className="bg-gray-100 p-6 rounded-lg shadow-md cursor-pointer transition-all duration-300 transform hover:scale-105 flex items-center justify-between"
+            >
+              <h3 className="text-xl font-bold">SLABS</h3>
+              <span className="text-red-600 text-xl font-bold">{showSlabs ? '˄' : '>'}</span>
+            </div>
+
+            <div
+              ref={slabsRef}
+              style={{
+                maxHeight: `${slabHeight}px`,
+                transition: 'max-height 0.4s ease-in-out',
+                overflow: 'hidden',
+              }}
+              className="mt-2"
+            >
+              <div className="mt-4 space-y-4">
+                {['MARBLE', 'GRANITE'].map((item) => (
+                  <div
+                    key={item}
+                    className="bg-gray-200 p-5 rounded-lg shadow flex items-center justify-between hover:bg-gray-300 cursor-pointer transition"
+                  >
+                    <h4 className="text-lg font-semibold">{item}</h4>
+                    <span className="text-red-600 text-xl font-bold">{'>'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
+          {/* CERAMICS Box */}
           <div>
-            <h2 className="text-lg font-semibold mb-3 border-b pb-2">Sizes</h2>
-            <ul className="space-y-2 text-gray-700">
-              {['12" x 12"', '16" x 16"', '24" x 24"'].map((size) => (
-                <li key={size} className="cursor-pointer hover:text-black">
-                  {size}
-                </li>
-              ))}
-            </ul>
-          </div>
+            <div
+              onClick={() => setShowCeramics(!showCeramics)}
+              className="bg-gray-100 p-6 rounded-lg shadow-md cursor-pointer transition-all duration-300 transform hover:scale-105 flex items-center justify-between"
+            >
+              <h3 className="text-xl font-bold">CERAMICS</h3>
+              <span className="text-red-600 text-xl font-bold">{showCeramics ? '˄' : '>'}</span>
+            </div>
 
-          <div>
-            <h2 className="text-lg font-semibold mb-3 border-b pb-2">Color</h2>
-            <div className="flex gap-3 mt-2">
-              {['#ffffff', '#cccccc', '#333333'].map((color, i) => (
-                <span
-                  key={i}
-                  className="w-6 h-6 rounded-full border border-gray-500 cursor-pointer hover:ring-2 hover:ring-gray-700 transition"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
+            <div
+              ref={ceramicsRef}
+              style={{
+                maxHeight: `${ceramicHeight}px`,
+                transition: 'max-height 0.4s ease-in-out',
+                overflow: 'hidden',
+              }}
+              className="mt-2"
+            >
+              <div className="mt-4 space-y-4">
+                {['TILES', 'BATHTUBS', 'SINKS', 'TOILETS'].map((item) => (
+                  <div
+                    key={item}
+                    className="bg-gray-200 p-5 rounded-lg shadow flex items-center justify-between hover:bg-gray-300 cursor-pointer transition"
+                  >
+                    <h4 className="text-lg font-semibold">{item}</h4>
+                    <span className="text-red-600 text-xl font-bold">{'>'}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 space-y-10">
-          {/* Product Section */}
-          <section>
-            <h2 className="text-2xl font-semibold mb-6">Featured Product</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg shadow hover:shadow-lg transition p-4 border">
+        {/* Right Panel: Trending Now */}
+        <main className="flex-1">
+          <h2 className="text-2xl font-semibold mb-6">Trending Now</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow hover:shadow-lg transition p-4 border">
                 <div className="h-40 bg-gray-300 rounded mb-4" />
-                <h3 className="text-lg font-semibold">Beige "Pent-Pattern"</h3>
+                <h3 className="text-lg font-semibold">Tile Product {i + 1}</h3>
                 <p className="text-gray-500 mb-2">$4.99</p>
                 <button className="bg-black text-white w-full py-2 rounded hover:bg-gray-800 transition">
                   View Details
                 </button>
               </div>
-            </div>
-          </section>
-
-          {/* Category Highlights */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-100 p-8 rounded-lg shadow text-center hover:bg-gray-200 transition cursor-pointer">
-              <h3 className="text-xl font-semibold">Kitchen Tiles</h3>
-            </div>
-            <div className="bg-gray-200 p-8 rounded-lg shadow text-center hover:bg-gray-300 transition cursor-pointer">
-              <h3 className="text-xl font-semibold">Bathroom Tiles</h3>
-            </div>
-          </section>
+            ))}
+          </div>
         </main>
       </div>
     </div>
