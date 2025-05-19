@@ -80,7 +80,7 @@
               {/* Search Button */}
               <button
                 onClick={handleSearch}
-                className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-md transition"
+                className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-md transition"
               >
                 <FaSearch />
               </button>
