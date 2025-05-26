@@ -1,45 +1,66 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 
 export default function Login() {
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // You can add real authentication logic here
-    navigate('/');
+    localStorage.setItem('isLoggedIn', 'true');
+    window.location.href = '/';
   };
 
   return (
-    <div className="bg-primary min-h-screen flex items-center justify-center text-dark">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login to Your Account</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            required
-            className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="bg-accent text-white px-4 py-2 rounded-md w-full hover:bg-opacity-90 transition"
-          >
-            Login
-          </button>
-        </form>
-        <p className="mt-4 text-sm text-center">
-          Don’t have an account?{' '}
-          <Link to="/signup" className="text-accent underline">
-            Create one
-          </Link>
-        </p>
+    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 flex flex-col relative">
+      <button
+        onClick={() => navigate(-1)}
+        className="absolute top-5 left-5 text-gray-600 hover:text-black flex items-center gap-2 text-sm"
+      >
+        <FaArrowLeft /> Back
+      </button>
+
+      <div className="flex-1 flex items-center justify-center">
+        <div className="bg-white p-10 rounded-xl shadow-lg w-full max-w-md">
+          <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">Welcome Back</h2>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md w-full hover:bg-blue-700 transition font-semibold"
+            >
+              Login
+            </button>
+          </form>
+
+          {/* Admin Login Button */}
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => navigate('/adminLogin')}
+              className="text-sm text-blue-600 hover:underline font-medium"
+            >
+              Login as Admin
+            </button>
+          </div>
+
+          <p className="mt-4 text-sm text-center text-gray-600">
+            Don’t have an account?{' '}
+            <Link to="/signup" className="text-blue-600 font-medium hover:underline">
+              Create one
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

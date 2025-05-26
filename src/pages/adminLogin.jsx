@@ -1,14 +1,14 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 
-export default function Signup() {
+export default function AdminLogin() {
   const navigate = useNavigate();
 
-  const handleSignup = (e) => {
+  const handleAdminLogin = (e) => {
     e.preventDefault();
-    localStorage.setItem('isLoggedIn', 'true');
-    window.location.href = '/';
+    localStorage.setItem('isAdminLoggedIn', 'true');
+    navigate('/adminHome');
   };
 
   return (
@@ -22,17 +22,17 @@ export default function Signup() {
 
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-xl shadow-lg w-full max-w-md">
-          <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">Create Account</h2>
-          <form onSubmit={handleSignup} className="space-y-4">
+          <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">Admin Login</h2>
+          <form onSubmit={handleAdminLogin} className="space-y-4">
             <input
               type="text"
-              placeholder="Full Name"
+              placeholder="Store ID"
               required
               className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
             <input
-              type="email"
-              placeholder="Email"
+              type="text"
+              placeholder="Login ID"
               required
               className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
             />
@@ -46,15 +46,9 @@ export default function Signup() {
               type="submit"
               className="bg-blue-600 text-white px-4 py-2 rounded-md w-full hover:bg-blue-700 transition font-semibold"
             >
-              Sign Up
+              Login
             </button>
           </form>
-          <p className="mt-4 text-sm text-center text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 font-medium hover:underline">
-              Login
-            </Link>
-          </p>
         </div>
       </div>
     </div>
