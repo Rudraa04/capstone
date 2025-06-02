@@ -1,54 +1,166 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { FaSink, FaPlus } from "react-icons/fa6";
+import {
+  FiBox,
+  FiPackage,
+  FiSettings,
+  FiHeadphones,
+  FiTrendingUp,
+  FiUsers,
+  FiLogOut,
+  FiHome,
+} from "react-icons/fi";
 
 export default function SinkInventory() {
-    const navigate = useNavigate();
-  const items = [
-    { id: 1, name: 'Ceramic Sink', price: '$75', size: '18 inch' },
-  ];
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAdminLoggedIn");
+    navigate("/login");
+  };
 
   return (
-    <div className="p-6 bg-white min-h-screen">
+    <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <button
-        onClick={() => navigate(-1)}
-        className="mb-4 px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
-      >
-        ← Back
-      </button>
-      <h1 className="text-2xl font-bold text-blue-700 mb-4">Sink Inventory</h1>
-      <button className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-        + Add Sink Product
-      </button>
-      <InventoryTable items={items} color="blue" />
+          onClick={() => navigate("/adminHome")}
+          className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
+        >
+          <FiHome /> Admin Panel
+        </button>
+        <nav className="space-y-4 text-sm">
+          <button
+            onClick={() => navigate("/admin/slabs")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiBox /> Slabs Inventory
+          </button>
+          <button
+            onClick={() => navigate("/admin/ceramics")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiPackage /> Ceramics Inventory
+          </button>
+          <button
+            onClick={() => navigate("/admin/orders")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiSettings /> Orders
+          </button>
+          <button
+            onClick={() => navigate("/admin/support")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
+            <FiHeadphones /> Customer Support
+          </button>
+
+          <button
+            onClick={() => navigate("/admin/reports")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
+            <FiTrendingUp /> Sales & Reports
+          </button>
+
+          <button
+            onClick={() => navigate("/admin/useraccess")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiUsers /> User Access
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-100 rounded-md"
+          >
+            <FiLogOut /> Logout
+          </button>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 px-10 py-8">
+        <div className="flex justify-between items-center mb-10">
+          <h1 className="text-3xl font-bold text-blue-800">Sink Inventory</h1>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400 transition"
+            >
+              ← Back
+            </button>
+            <button
+              onClick={() => alert("Add New Sink Coming Soon!")}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+              <FaPlus /> Add New
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-2">
+              <FaSink size={24} className="text-blue-600" />
+              <h2 className="text-xl font-semibold">Sink</h2>
+            </div>
+            <p className="text-gray-600">
+              View and manage all sink products here.
+            </p>
+          </div>
+        </div>
+
+        {/* Product Table */}
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">
+            Product List
+          </h2>
+          <div className="overflow-x-auto bg-white rounded-xl shadow">
+            <table className="min-w-full text-sm text-left text-gray-600">
+              <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
+                <tr>
+                  <th className="px-6 py-3">Product Name</th>
+                  <th className="px-6 py-3">Category</th>
+                  <th className="px-6 py-3">Price</th>
+                  <th className="px-6 py-3">Quantity</th>
+                  <th className="px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b">
+                  <td className="px-6 py-4">Modern Steel Sink</td>
+                  <td className="px-6 py-4">Sink</td>
+                  <td className="px-6 py-4">$220</td>
+                  <td className="px-6 py-4">30</td>
+                  <td className="px-6 py-4">
+                    <button className="text-blue-600 hover:underline mr-2">
+                      Edit
+                    </button>
+                    <button className="text-red-600 hover:underline">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="px-6 py-4">Ceramic Bowl Sink</td>
+                  <td className="px-6 py-4">Sink</td>
+                  <td className="px-6 py-4">$180</td>
+                  <td className="px-6 py-4">25</td>
+                  <td className="px-6 py-4">
+                    <button className="text-blue-600 hover:underline mr-2">
+                      Edit
+                    </button>
+                    <button className="text-red-600 hover:underline">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
     </div>
-  );
-}
-function InventoryTable({ items, color }) {
-  return (
-    <table className="w-full border shadow-sm">
-      <thead className={`bg-${color}-100 text-${color}-800`}>
-        <tr>
-          <th className="py-2 px-4 border">ID</th>
-          <th className="py-2 px-4 border">Name</th>
-          <th className="py-2 px-4 border">Price</th>
-          <th className="py-2 px-4 border">Size</th>
-          <th className="py-2 px-4 border">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((item) => (
-          <tr key={item.id}>
-            <td className="py-2 px-4 border">{item.id}</td>
-            <td className="py-2 px-4 border">{item.name}</td>
-            <td className="py-2 px-4 border">{item.price}</td>
-            <td className="py-2 px-4 border">{item.size}</td>
-            <td className="py-2 px-4 border space-x-2">
-              <button className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500">Edit</button>
-              <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   );
 }

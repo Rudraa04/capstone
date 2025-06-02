@@ -1,67 +1,104 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import React from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
+import { MdEmail, MdLock, MdAdminPanelSettings } from "react-icons/md";
 
 export default function Login() {
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    localStorage.setItem('isLoggedIn', 'true');
-    window.location.href = '/';
+    localStorage.setItem("isLoggedIn", "true");
+    window.location.href = "/";
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 flex flex-col relative">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-50 flex flex-col relative">
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-5 left-5 text-gray-600 hover:text-black flex items-center gap-2 text-sm"
+        className="absolute top-5 left-5 text-gray-700 hover:text-black flex items-center gap-2 text-sm"
       >
         <FaArrowLeft /> Back
       </button>
 
       <div className="flex-1 flex items-center justify-center">
-        <div className="bg-white p-10 rounded-xl shadow-lg w-full max-w-md">
-          <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">Welcome Back</h2>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="email"
-              placeholder="Email"
-              required
-              className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              required
-              className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
-            />
+        <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
+          <h2 className="text-4xl font-extrabold text-center text-blue-700 mb-8">
+            Welcome{" "}
+            <span className="text-transparent bg-clip-text bg-blue-600">
+              Back
+            </span>
+          </h2>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            {/* Email */}
+            <div>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Email Address
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  required
+                  className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
+                />
+                <MdEmail className="absolute left-2 top-2.5 text-gray-600 text-lg" />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  required
+                  className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
+                />
+                <MdLock className="absolute left-2 top-2.5 text-gray-600 text-lg" />
+              </div>
+              <div className="text-right mt-1">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+            </div>
+
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md w-full hover:bg-blue-700 transition font-semibold"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow"
             >
               Login
             </button>
           </form>
 
-          {/* Admin Login Button */}
           <div className="mt-6 text-center">
             <button
-              onClick={() => navigate('/adminLogin')}
-              className="text-sm text-blue-600 hover:underline font-medium"
+              onClick={() => navigate("/adminLogin")}
+              className="inline-flex items-center gap-2 text-sm text-blue-700 hover:underline font-medium"
             >
-              Login as Admin
+              <MdAdminPanelSettings /> Login as Admin
             </button>
           </div>
 
           <p className="mt-4 text-sm text-center text-gray-600">
-            Don’t have an account?{' '}
-            <Link to="/signup" className="text-blue-600 font-medium hover:underline">
+            Don’t have an account?{" "}
+            <Link
+              to="/signup"
+              className="text-blue-700 font-semibold hover:underline"
+            >
               Create one
             </Link>
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>
+  );
 }

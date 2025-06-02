@@ -1,45 +1,156 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { FaTh, FaBath, FaSink, FaToilet, FaPlus } from "react-icons/fa";
+import {
+  FiBox,
+  FiPackage,
+  FiSettings,
+  FiHeadphones,
+  FiTrendingUp,
+  FiUsers,
+  FiLogOut,
+  FiHome,
+} from "react-icons/fi";
 
 export default function CeramicsInventory() {
   const navigate = useNavigate();
 
-  return (
-    <div className="min-h-screen bg-white px-6 py-8">
-        <button
-        onClick={() => navigate(-1)}
-        className="mb-4 px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
-      >
-        ← Back
-      </button>
-      <h1 className="text-2xl font-bold text-blue-800 mb-6">Ceramics Inventory</h1>
+  const handleLogout = () => {
+    localStorage.removeItem("isAdminLoggedIn");
+    navigate("/login");
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <button
-          onClick={() => navigate('/admin/inventory/tiles')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg font-medium shadow"
-        >
-          Tiles
-        </button>
-        <button
-          onClick={() => navigate('/admin/inventory/bathtubs')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg font-medium shadow"
-        >
-          Bathtubs
-        </button>
-        <button
-          onClick={() => navigate('/admin/inventory/sinks')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg font-medium shadow"
-        >
-            Sinks
-        </button>
-        <button
-          onClick={() => navigate('/admin/inventory/toilets')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-lg font-medium shadow"
-        >
-          Toilets
-        </button>
-      </div>
+  const items = [
+    {
+      label: "Tiles",
+      description: "Browse and manage tile inventory",
+      path: "/admin/inventory/tiles",
+      icon: <FaTh size={24} className="text-blue-600" />,
+      count: 40,
+    },
+    {
+      label: "Bathtubs",
+      description: "Manage bathtub products",
+      path: "/admin/inventory/bathtubs",
+      icon: <FaBath size={24} className="text-blue-600" />,
+      count: 18,
+    },
+    {
+      label: "Sinks",
+      description: "Manage sink styles and inventory",
+      path: "/admin/inventory/sinks",
+      icon: <FaSink size={24} className="text-blue-600" />,
+      count: 25,
+    },
+    {
+      label: "Toilets",
+      description: "Edit and view toilet stock",
+      path: "/admin/inventory/toilets",
+      icon: <FaToilet size={24} className="text-blue-600" />,
+      count: 30,
+    },
+  ];
+
+  return (
+    <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
+        <div>
+          <button
+            onClick={() => navigate("/adminHome")}
+            className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
+          >
+            <FiHome /> Admin Panel
+          </button>
+        </div>
+        <nav className="space-y-4 text-sm">
+          <button
+            onClick={() => navigate("/admin/slabs")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
+            <FiBox /> Slabs Inventory
+          </button>
+          <button
+            onClick={() => navigate("/admin/ceramics")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
+            <FiPackage /> Ceramics Inventory
+          </button>
+          <button
+            onClick={() => navigate("/admin/orders")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
+            <FiSettings /> Orders
+          </button>
+          <button
+            onClick={() => navigate("/admin/support")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
+            <FiHeadphones /> Customer Support
+          </button>
+
+          <button
+            onClick={() => navigate("/admin/reports")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
+            <FiTrendingUp /> Sales & Reports
+          </button>
+
+          <button
+            onClick={() => navigate("/admin/useraccess")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiUsers /> User Access
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left text-red-600 hover:bg-red-100 rounded-md"
+          >
+            <FiLogOut /> Logout
+          </button>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 px-10 py-8">
+        <div className="flex justify-between items-center mb-10">
+          <h1 className="text-3xl font-bold text-blue-800">
+            Ceramics Inventory
+          </h1>
+          <div className="flex gap-3">
+            <button
+              onClick={() => alert("Add New feature coming soon!")}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+              <FaPlus /> Add New
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {items.map((item, index) => (
+            <div
+              key={index}
+              onClick={() => navigate(item.path)}
+              className="bg-white border border-gray-200 hover:border-blue-500 rounded-xl p-6 shadow-sm hover:shadow-lg transition duration-200 cursor-pointer"
+            >
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-3">
+                  {item.icon}
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {item.label}
+                  </h2>
+                </div>
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                  {item.count}
+                </span>
+              </div>
+              <p className="text-gray-600">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </main>
     </div>
   );
 }

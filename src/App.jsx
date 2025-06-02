@@ -6,6 +6,8 @@ import Signup from './pages/signup.jsx';
 import Profile from './pages/profile.jsx';
 import Slabs from './pages/slabs.jsx';
 import Ceramics from './pages/ceramics.jsx';
+import Cart from './pages/cart.jsx'; 
+
 
 import AdminLogin from './pages/adminLogin.jsx';
 import AdminHome from './pages/adminHome.jsx';
@@ -21,6 +23,12 @@ import SinkInventory from './admin/SinkInventory.jsx';
 import ToiletInventory from './admin/ToiletInventory.jsx';
 
 import OrderManagement from './admin/OrderManagement';
+
+import CustomerSupport from './admin/CustomerSupport.jsx';
+
+import SalesReports from './admin/SalesReports.jsx';
+
+import UserAccess from './admin/UserAccess.jsx';
 
 export default function App() {
   return (
@@ -51,6 +59,14 @@ export default function App() {
         <Route path="/admin/inventory/toilets" element={<ToiletInventory />} />
 
         <Route path="/admin/orders" element={<OrderManagement />} />
+
+        <Route path="/admin/support" element={<CustomerSupport />} />
+
+        <Route path="/admin/reports" element={<SalesReports />} />
+
+        <Route path="/admin/useraccess" element={<UserAccess />} />
+
+        <Route path="/cart" element={<Cart />} />
       </Routes>
     </BrowserRouter>
   );

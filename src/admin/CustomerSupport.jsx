@@ -11,38 +11,41 @@ import {
   FiHome,
 } from "react-icons/fi";
 
-export default function OrderManagement() {
+export default function CustomerSupport() {
   const navigate = useNavigate();
 
-  const [orders, setOrders] = useState([
+  const [tickets, setTickets] = useState([
     {
-      id: "ORD001",
-      customer: "Krish Patel",
-      product: "Italian Marble – 6x4",
-      quantity: 5,
-      total: "$1000",
-      status: "Pending",
+      id: "TKT001",
+      customer: "Priya Sharma",
+      issue: "Delayed delivery for tiles order",
+      date: "May 27, 2025",
+      status: "Open",
+    },
+    {
+      id: "TKT002",
+      customer: "Amit Mehta",
+      issue: "Wrong product received - Granite slab",
       date: "May 26, 2025",
+      status: "In Progress",
+    },
+    {
+      id: "TKT003",
+      customer: "Nina Verma",
+      issue: "Need invoice for past order",
+      date: "May 25, 2025",
+      status: "Resolved",
     },
   ]);
 
-  const handleStatusUpdate = (orderId, newStatus) => {
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId ? { ...order, status: newStatus } : order
-    );
-    setOrders(updatedOrders);
-  };
-
   const getStatusStyle = (status) => {
     switch (status) {
-      case "Pending":
-        return "bg-yellow-100 text-yellow-700";
-      case "Shipped":
-        return "bg-blue-100 text-blue-700";
-      case "Delivered":
-        return "bg-green-100 text-green-700";
-      case "Cancelled":
+      case "Open":
         return "bg-red-100 text-red-700";
+      case "In Progress":
+        return "bg-yellow-100 text-yellow-700";
+      case "Resolved":
+        return "bg-green-100 text-green-700";
       default:
         return "";
     }
@@ -73,7 +76,7 @@ export default function OrderManagement() {
           </button>
           <button
             onClick={() => navigate("/admin/orders")}
-            className="w-full flex items-center gap-3 px-4 py-2 bg-gray-200 rounded-md font-semibold"
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
           >
             <FiSettings /> Orders
           </button>
@@ -113,66 +116,44 @@ export default function OrderManagement() {
       {/* Main Content */}
       <main className="flex-1 px-10 py-8">
         <div className="flex justify-between items-center mb-10">
-          <h1 className="text-3xl font-bold text-blue-800">Order Management</h1>
+          <h1 className="text-3xl font-bold text-blue-800">Customer Support</h1>
         </div>
 
         <div className="overflow-x-auto bg-white rounded-xl shadow">
           <table className="min-w-full text-sm text-left text-gray-600">
             <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
               <tr>
-                <th className="py-3 px-4">Order ID</th>
+                <th className="py-3 px-4">Ticket ID</th>
                 <th className="py-3 px-4">Customer</th>
-                <th className="py-3 px-4">Product</th>
-                <th className="py-3 px-4">Qty</th>
-                <th className="py-3 px-4">Total</th>
+                <th className="py-3 px-4">Issue</th>
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-b">
-                  <td className="py-2 px-4">{order.id}</td>
-                  <td className="py-2 px-4">{order.customer}</td>
-                  <td className="py-2 px-4">{order.product}</td>
-                  <td className="py-2 px-4 text-center">{order.quantity}</td>
-                  <td className="py-2 px-4">{order.total}</td>
-                  <td className="py-2 px-4">{order.date}</td>
+              {tickets.map((ticket) => (
+                <tr key={ticket.id} className="border-b">
+                  <td className="py-2 px-4">{ticket.id}</td>
+                  <td className="py-2 px-4">{ticket.customer}</td>
+                  <td className="py-2 px-4">{ticket.issue}</td>
+                  <td className="py-2 px-4">{ticket.date}</td>
                   <td className="py-2 px-4">
                     <span
                       className={`px-2 py-1 rounded text-sm font-medium ${getStatusStyle(
-                        order.status
+                        ticket.status
                       )}`}
                     >
-                      {order.status}
+                      {ticket.status}
                     </span>
                   </td>
                   <td className="py-2 px-4 space-x-2">
                     <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
                       View
                     </button>
-                    {order.status !== "Delivered" &&
-                      order.status !== "Cancelled" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleStatusUpdate(order.id, "Delivered")
-                            }
-                            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                          >
-                            Mark Delivered
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleStatusUpdate(order.id, "Cancelled")
-                            }
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      )}
+                    <button className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">
+                      Reply
+                    </button>
                   </td>
                 </tr>
               ))}
