@@ -1,6 +1,8 @@
 import { FaSearch, FaShoppingCart } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import React, { useEffect, useState, useRef } from "react";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "../firebase/firebase";
 import "../carousel.css";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
@@ -17,16 +19,17 @@ import ceramicImage from "../images/ceramic.png";
 
 export default function Home() {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
-
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const dropdownRef = useRef();
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem("isLoggedIn") === "true";
-    setIsLoggedIn(loggedIn);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -44,9 +47,10 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+    alert("Logged out!");
     navigate("/login");
   };
 
@@ -58,6 +62,7 @@ export default function Home() {
             PATEL CERAMICS
           </Link>
 
+          {/* Search Bar */}
           <div className="flex-1 flex justify-center">
             <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm space-x-2 w-[500px] max-w-full">
               <input
@@ -76,6 +81,7 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Nav */}
           <nav
             ref={dropdownRef}
             className="flex items-center space-x-10 text-lg font-semibold tracking-wide text-black"
@@ -84,7 +90,7 @@ export default function Home() {
               Home
             </Link>
 
-            {/* Products Click Dropdown */}
+            {/* Products Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowProductDropdown((prev) => !prev)}
@@ -133,31 +139,23 @@ export default function Home() {
               )}
             </div>
 
-            <Link
-              to="/cart"
-              className="hover:text-blue-600 uppercase flex items-center gap-1"
-            >
-              <FaShoppingCart /> Cart
-            </Link>
-
-            {!isLoggedIn ? (
+            {/* Conditionally Rendered Auth Links */}
+            {!user ? (
               <>
                 <Link to="/login" className="hover:text-blue-600 uppercase">
-                  Login
+                  Login/SignUp
                 </Link>
-                <Link to="/signup" className="hover:text-blue-600 uppercase">
-                  Sign Up
-                </Link>
+
               </>
             ) : (
               <>
+                <Link to="/cart" className="hover:text-blue-600 uppercase flex items-center gap-1">
+                  <FaShoppingCart /> Cart
+                </Link>
                 <Link to="/profile" className="hover:text-blue-600 uppercase">
                   Profile
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="hover:text-blue-600 uppercase"
-                >
+                <button onClick={handleLogout} className="hover:text-blue-600 uppercase">
                   Logout
                 </button>
               </>

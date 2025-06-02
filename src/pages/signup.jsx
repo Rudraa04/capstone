@@ -1,15 +1,34 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
-import { MdEmail, MdLock, MdPerson } from 'react-icons/md';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "../firebase/firebase";
+import { FaArrowLeft } from "react-icons/fa";
+import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    localStorage.setItem('isLoggedIn', 'true');
-    window.location.href = '/';
+    if (password !== confirm) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, {
+        displayName: fullName,
+      });
+      alert("Signup successful! Please log in.");
+      navigate("/login");
+    } catch (error) {
+      alert(error.message);
+    }
   };
 
   return (
@@ -28,13 +47,14 @@ export default function Signup() {
           </h2>
 
           <form onSubmit={handleSignup} className="space-y-6">
-            {/* Full Name */}
             <div>
               <label className="block text-lg font-semibold text-gray-800 mb-1">Full Name</label>
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                   className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
@@ -42,13 +62,14 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* Email */}
             <div>
               <label className="block text-lg font-semibold text-gray-800 mb-1">Email Address</label>
               <div className="relative">
                 <input
                   type="email"
                   placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
@@ -56,13 +77,14 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-lg font-semibold text-gray-800 mb-1">Password</label>
               <div className="relative">
                 <input
                   type="password"
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
@@ -70,13 +92,14 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="block text-lg font-semibold text-gray-800 mb-1">Confirm Password</label>
               <div className="relative">
                 <input
                   type="password"
                   placeholder="Re-enter your password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
                   required
                   className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
@@ -93,7 +116,7 @@ export default function Signup() {
           </form>
 
           <p className="mt-4 text-sm text-center text-gray-600">
-            Already have an account?{' '}
+            Already have an account?{" "}
             <Link to="/login" className="text-blue-700 font-semibold hover:underline">
               Login
             </Link>
