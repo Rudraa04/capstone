@@ -19,15 +19,15 @@ export default function UserAccess() {
   const [users, setUsers] = useState([
     {
       id: 1,
-      name: "Deep Patel",
-      email: "deep@example.com",
+      name: "Rudra Patel",
+      email: "rudra@example.com",
       role: "Admin",
       status: "Active",
     },
     {
       id: 2,
-      name: "Het Patel",
-      email: "het@example.com",
+      name: "Smit Patel",
+      email: "smit@example.com",
       role: "User",
       status: "Inactive",
     },

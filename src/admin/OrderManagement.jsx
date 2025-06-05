@@ -18,7 +18,7 @@ export default function OrderManagement() {
     {
       id: "ORD001",
       customer: "Krish Patel",
-      product: "Italian Marble – 6x4",
+      product: "Italian Marble - 6x4",
       quantity: 5,
       total: "$1000",
       status: "Pending",

@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import slabBanner from "../images/slabs-banner.png";
 
 export default function Slabs() {
-  const [activeTab, setActiveTab] = useState("marble");
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialType = queryParams.get("type") || "marble";
+  const [activeTab, setActiveTab] = useState(initialType.toLowerCase());
   const [filters, setFilters] = useState({
     category: [],
     size: [],
@@ -41,7 +44,9 @@ export default function Slabs() {
         <div className="absolute inset-0 bg-black bg-opacity-40" />
         <div className="relative z-10 text-center text-white">
           <h1 className="text-5xl font-bold mb-4">Premium Slabs Collection</h1>
-          <p className="text-lg">Elegant Marbles & Durable Granites for Every Space</p>
+          <p className="text-lg">
+            Elegant Marbles & Durable Granites for Every Space
+          </p>
         </div>
       </section>
 
@@ -49,19 +54,28 @@ export default function Slabs() {
       <section className="max-w-[92rem] mx-auto px-4 md:px-6 py-12">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold mb-2">Explore by Type</h2>
-          <p className="text-gray-600">Select a slab type and filter by attributes</p>
+          <p className="text-gray-600">
+            Select a slab type and filter by attributes
+          </p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-10">
           {/* Filter Sidebar */}
           <aside className="w-full lg:w-[220px] space-y-8">
             <div className="border border-gray-200 rounded-lg p-5 shadow-sm bg-gray-50">
-              <h3 className="text-xl font-semibold mb-6 text-gray-800">Filter Products</h3>
+              <h3 className="text-xl font-semibold mb-6 text-gray-800">
+                Filter Products
+              </h3>
 
               <div className="mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">Search by Category</h4>
+                <h4 className="font-medium text-gray-700 mb-2">
+                  Search by Category
+                </h4>
                 {["Marble", "Granite"].map((option) => (
-                  <label key={option} className="block text-sm text-gray-800 mb-1">
+                  <label
+                    key={option}
+                    className="block text-sm text-gray-800 mb-1"
+                  >
                     <input
                       type="checkbox"
                       className="mr-2"
@@ -74,9 +88,14 @@ export default function Slabs() {
               </div>
 
               <div className="mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">Search by Size</h4>
+                <h4 className="font-medium text-gray-700 mb-2">
+                  Search by Size
+                </h4>
                 {["8x4 ft", "10x5 ft", "12x6 ft"].map((option) => (
-                  <label key={option} className="block text-sm text-gray-800 mb-1">
+                  <label
+                    key={option}
+                    className="block text-sm text-gray-800 mb-1"
+                  >
                     <input
                       type="checkbox"
                       className="mr-2"
@@ -89,9 +108,14 @@ export default function Slabs() {
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-700 mb-2">Search by Color</h4>
+                <h4 className="font-medium text-gray-700 mb-2">
+                  Search by Color
+                </h4>
                 {["White", "Black", "Gray", "Beige"].map((option) => (
-                  <label key={option} className="block text-sm text-gray-800 mb-1">
+                  <label
+                    key={option}
+                    className="block text-sm text-gray-800 mb-1"
+                  >
                     <input
                       type="checkbox"
                       className="mr-2"
@@ -136,7 +160,8 @@ export default function Slabs() {
                   />
                   <div className="p-4">
                     <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                      {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Slab #{i + 1}
+                      {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}{" "}
+                      Slab #{i + 1}
                     </h3>
                     <p className="text-sm text-gray-500 mb-3">
                       Highly durable, matte finish. Size: 8x4 ft

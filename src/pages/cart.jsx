@@ -198,7 +198,7 @@ export default function Cart() {
                           className="px-3 py-1 border rounded hover:bg-gray-100"
                           disabled={item.quantity <= 1}
                         >
-                          −
+                          -
                         </button>
                         <span className="px-4">{item.quantity}</span>
                         <button
@@ -274,7 +274,7 @@ export default function Cart() {
                 <p className="text-gray-700 mb-2">
                   Discount (WELCOME10):{" "}
                   <span className="font-semibold text-green-600">
-                    − ₹{discount.toFixed(2)}
+                    - ₹{discount.toFixed(2)}
                   </span>
                 </p>
               )}

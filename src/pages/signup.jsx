@@ -20,7 +20,11 @@ export default function Signup() {
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       await updateProfile(userCredential.user, {
         displayName: fullName,
       });
@@ -42,13 +46,18 @@ export default function Signup() {
 
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
-          <h2 className="text-4xl font-extrabold text-center text-blue-700 mb-8">
-            Create <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Account</span>
+          <h2 className="text-4xl font-extrabold text-center text-blue-600 mb-8">
+            Create{" "}
+            <span className="text-transparent bg-clip-text bg-blue-600 to-purple-600">
+              Account
+            </span>
           </h2>
 
           <form onSubmit={handleSignup} className="space-y-6">
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">Full Name</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Full Name
+              </label>
               <div className="relative">
                 <input
                   type="text"
@@ -63,7 +72,9 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">Email Address</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Email Address
+              </label>
               <div className="relative">
                 <input
                   type="email"
@@ -78,7 +89,9 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">Password</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type="password"
@@ -93,7 +106,9 @@ export default function Signup() {
             </div>
 
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">Confirm Password</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Confirm Password
+              </label>
               <div className="relative">
                 <input
                   type="password"
@@ -109,7 +124,7 @@ export default function Signup() {
 
             <button
               type="submit"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow"
+              className="bg-blue-600 to-purple-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow"
             >
               Sign Up
             </button>
@@ -117,7 +132,10 @@ export default function Signup() {
 
           <p className="mt-4 text-sm text-center text-gray-600">
             Already have an account?{" "}
-            <Link to="/login" className="text-blue-700 font-semibold hover:underline">
+            <Link
+              to="/login"
+              className="text-blue-700 font-semibold hover:underline"
+            >
               Login
             </Link>
           </p>

@@ -1,34 +1,33 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Home from './pages/homepage.jsx';
-import Login from './pages/login.jsx';
-import Signup from './pages/signup.jsx';
-import Profile from './pages/profile.jsx';
-import Slabs from './pages/slabs.jsx';
-import Ceramics from './pages/ceramics.jsx';
-import Cart from './pages/cart.jsx'; 
+import Home from "./pages/homepage.jsx";
+import Login from "./pages/login.jsx";
+import Signup from "./pages/signup.jsx";
+import Profile from "./pages/profile.jsx";
+import Slabs from "./pages/slabs.jsx";
+import Ceramics from "./pages/ceramics.jsx";
+import Cart from "./pages/cart.jsx";
 
+import AdminLogin from "./pages/adminLogin.jsx";
+import AdminHome from "./pages/adminHome.jsx";
 
-import AdminLogin from './pages/adminLogin.jsx';
-import AdminHome from './pages/adminHome.jsx';
+import SlabsInventory from "./admin/SlabsInventory.jsx";
+import CeramicsInventory from "./admin/CeramicsInventory.jsx";
 
-import SlabsInventory from './admin/SlabsInventory.jsx';
-import CeramicsInventory from './admin/CeramicsInventory.jsx';
+import MarbleInventory from "./admin/MarbleInventory.jsx";
+import GraniteInventory from "./admin/GraniteInventory.jsx";
+import TilesInventory from "./admin/TilesInventory.jsx";
+import BathtubInventory from "./admin/BathtubInventory.jsx";
+import SinkInventory from "./admin/SinkInventory.jsx";
+import ToiletInventory from "./admin/ToiletInventory.jsx";
 
-import MarbleInventory from './admin/MarbleInventory.jsx';
-import GraniteInventory from './admin/GraniteInventory.jsx';
-import TilesInventory from './admin/TilesInventory.jsx';
-import BathtubInventory from './admin/BathtubInventory.jsx';
-import SinkInventory from './admin/SinkInventory.jsx';
-import ToiletInventory from './admin/ToiletInventory.jsx';
+import OrderManagement from "./admin/OrderManagement";
 
-import OrderManagement from './admin/OrderManagement';
+import CustomerSupport from "./admin/CustomerSupport.jsx";
 
-import CustomerSupport from './admin/CustomerSupport.jsx';
+import SalesReports from "./admin/SalesReports.jsx";
 
-import SalesReports from './admin/SalesReports.jsx';
-
-import UserAccess from './admin/UserAccess.jsx';
+import UserAccess from "./admin/UserAccess.jsx";
 
 export default function App() {
   return (
@@ -54,7 +53,10 @@ export default function App() {
 
         {/* Ceramics sub-inventories */}
         <Route path="/admin/inventory/tiles" element={<TilesInventory />} />
-        <Route path="/admin/inventory/bathtubs" element={<BathtubInventory />} />
+        <Route
+          path="/admin/inventory/bathtubs"
+          element={<BathtubInventory />}
+        />
         <Route path="/admin/inventory/sinks" element={<SinkInventory />} />
         <Route path="/admin/inventory/toilets" element={<ToiletInventory />} />
 

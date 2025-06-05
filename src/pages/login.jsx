@@ -32,13 +32,18 @@ export default function Login() {
 
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
-          <h2 className="text-4xl font-extrabold text-center text-blue-700 mb-8">
-            Welcome <span className="text-transparent bg-clip-text bg-blue-600">Back</span>
+          <h2 className="text-4xl font-extrabold text-center text-blue-6r00 mb-8">
+            Welcome{" "}
+            <span className="text-transparent bg-clip-text bg-blue-600">
+              Back
+            </span>
           </h2>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">Email Address</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Email Address
+              </label>
               <div className="relative">
                 <input
                   type="email"
@@ -53,7 +58,9 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">Password</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type="password"
@@ -66,7 +73,10 @@ export default function Login() {
                 <MdLock className="absolute left-2 top-2.5 text-gray-600 text-lg" />
               </div>
               <div className="text-right mt-1">
-                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-600 hover:underline"
+                >
                   Forgot Password?
                 </Link>
               </div>
@@ -91,7 +101,10 @@ export default function Login() {
 
           <p className="mt-4 text-sm text-center text-gray-600">
             Don’t have an account?{" "}
-            <Link to="/signup" className="text-blue-700 font-semibold hover:underline">
+            <Link
+              to="/signup"
+              className="text-blue-700 font-semibold hover:underline"
+            >
               Create one
             </Link>
           </p>

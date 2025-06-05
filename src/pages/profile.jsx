@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { auth } from "../firebase/firebase";
 import { useNavigate } from "react-router-dom";
-// If you have Header component, uncomment the line below:
-// import Header from "../components/Header";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -27,7 +25,6 @@ export default function Profile() {
   return (
     <div className="bg-[#fdf4ec] min-h-screen text-[#3a2d25] font-sans">
       {/* <Header /> */}
-
       <div className="max-w-4xl mx-auto mt-10 bg-white rounded-xl shadow p-8">
         <h2 className="text-3xl font-bold mb-6">My Profile</h2>
         {user ? (

@@ -1,4 +1,4 @@
-import { FaSearch, FaShoppingCart } from "react-icons/fa";
+import { FaSearch, FaShoppingCart, FaBars, FaTimes } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import React, { useEffect, useState, useRef } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -8,6 +8,7 @@ import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
+
 import slide3Image from "../images/slide3.png";
 import slideImage from "../images/slide.png";
 import slide2Image from "../images/slide2.png";
@@ -22,7 +23,7 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
 
   useEffect(() => {
@@ -40,7 +41,6 @@ export default function Home() {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowProductDropdown(false);
-        setActiveSubmenu(null);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -54,130 +54,242 @@ export default function Home() {
     navigate("/login");
   };
 
+  const underlineHover =
+    "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
+
   return (
-    <div className="bg-white text-gray-900 font-sans" data-aos="fade-up">
-      <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-2">
-        <div className="w-full flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-black">
+    <div className="bg-white text-gray-900 font-sans">
+      {/* Header */}
+      <header className="bg-white shadow-md sticky top-0 z-50">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <Link
+            to="/"
+            className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
+          >
             PATEL CERAMICS
           </Link>
 
-          {/* Search Bar */}
-          <div className="flex-1 flex justify-center">
-            <div className="flex items-center bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm space-x-2 w-[500px] max-w-full">
+          {/* Search Bar - hidden on small, full width on md+ */}
+          <div className="hidden md:flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full max-w-md hover:border-gray-600 transition-colors duration-200">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="flex-1 bg-transparent outline-none text-base px-2 text-gray-700 font-medium"
+            />
+            <button
+              onClick={() => console.log("Search query:", query)}
+              className="text-blue-600 hover:text-blue-800 p-1"
+            >
+              <FaSearch size={18} />
+            </button>
+          </div>
+
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
+            <Link to="/" className={`uppercase ${underlineHover}`}>
+              Home
+            </Link>
+
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setShowProductDropdown(!showProductDropdown)}
+                className={`uppercase ${underlineHover}`}
+              >
+                Products
+              </button>
+              {showProductDropdown && (
+                <div
+                  className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-4 gap-10
+                  w-[1200px] max-w-screen-xl z-50 text-base font-sans transform translate-x-[100px]"
+                >
+                  {/* CATEGORY */}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      CATEGORY
+                    </h3>
+                    {[
+                      { name: "Marble", to: "/slabs?type=marble" },
+                      { name: "Granite", to: "/slabs?type=granite" },
+                      { name: "Tiles", to: "/ceramics?type=tiles" },
+                      { name: "Sinks", to: "/ceramics?type=sinks" },
+                      { name: "Bathtubs", to: "/ceramics?type=bathtub" },
+                      { name: "Toilets", to: "/ceramics?type=toilets" },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* WALL TILES */}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      WALL TILES
+                    </h3>
+                    {[
+                      "Bathroom Wall Tiles",
+                      "Kitchen Wall Tiles",
+                      "Outdoor Wall Tiles",
+                      "Living Room Wall Tiles",
+                      "Bedroom Wall Tiles",
+                      "Wall Tiles for Commercial Spaces",
+                    ].map((item) => (
+                      <span key={item} className="block text-gray-700 mb-3">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* FLOOR TILES */}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      FLOOR TILES
+                    </h3>
+                    {[
+                      "Living Room Floor Tiles",
+                      "Outdoor Floor Tiles",
+                      "Bedroom Floor Tiles",
+                      "Kitchen Floor Tiles",
+                      "Bathroom Floor tiles",
+                      "Floor Tiles for Commercial Spaces",
+                    ].map((item) => (
+                      <span key={item} className="block text-gray-700 mb-3">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* TILE FINDER */}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      TILE FINDER
+                    </h3>
+                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
+                      <option>Select Size</option>
+                      <option>12x12</option>
+                      <option>16x16</option>
+                      <option>24x24</option>
+                    </select>
+                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
+                      <option>Select Finish</option>
+                      <option>Glossy</option>
+                      <option>Matte</option>
+                      <option>Textured</option>
+                    </select>
+                    <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+                      Search
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {user ? (
+              <>
+                <Link
+                  to="/cart"
+                  className={`uppercase ${underlineHover} flex items-center gap-1`}
+                >
+                  <FaShoppingCart /> Cart
+                </Link>
+                <Link to="/profile" className={`uppercase ${underlineHover}`}>
+                  Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className={`uppercase text-red-500 hover:text-red-600 ${underlineHover}`}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className={`uppercase ${underlineHover}`}>
+                Login/Signup
+              </Link>
+            )}
+          </nav>
+
+          {/* Mobile Hamburger Menu Button */}
+          <button
+            className="md:hidden text-xl"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? <FaTimes /> : <FaBars />}
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden px-6 pb-4">
+            <div className="flex items-center border rounded-full px-4 py-2 bg-gray-100 shadow-sm my-4">
               <input
                 type="text"
                 placeholder="Search products..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-lg px-2"
+                className="flex-1 bg-transparent outline-none text-base px-2"
               />
               <button
                 onClick={() => console.log("Search query:", query)}
-                className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-md transition"
+                className="text-blue-600 hover:text-blue-800 p-1"
               >
-                <FaSearch />
+                <FaSearch size={18} />
               </button>
             </div>
-          </div>
-
-          {/* Nav */}
-          <nav
-            ref={dropdownRef}
-            className="flex items-center space-x-10 text-lg font-semibold tracking-wide text-black"
-          >
-            <Link to="/" className="hover:text-blue-600 uppercase">
-              Home
-            </Link>
-
-            {/* Products Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowProductDropdown((prev) => !prev)}
-                className="hover:text-blue-600 uppercase"
-              >
-                Products ▾
-              </button>
-              {showProductDropdown && (
-                <div className="absolute top-full right-0 mt-2 w-44 bg-white border border-gray-200 rounded shadow-lg z-50">
-                  <div
-                    onClick={() =>
-                      setActiveSubmenu((prev) =>
-                        prev === "slabs" ? null : "slabs"
-                      )
-                    }
-                    className="px-4 py-2 text-base hover:bg-gray-100 cursor-pointer"
+            <div className="flex flex-col gap-4 text-[16px] font-medium text-gray-700">
+              <Link to="/" className="uppercase">
+                Home
+              </Link>
+              <Link to="/slabs" className="uppercase">
+                Slabs
+              </Link>
+              <Link to="/ceramics" className="uppercase">
+                Ceramics
+              </Link>
+              {user ? (
+                <>
+                  <Link to="/cart" className="uppercase">
+                    Cart
+                  </Link>
+                  <Link to="/profile" className="uppercase">
+                    Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="uppercase text-left text-red-500"
                   >
-                    Slabs ◂
-                  </div>
-                  {activeSubmenu === "slabs" && (
-                    <div className="absolute top-0 right-full mt-0 mr-1 w-40 bg-white border border-gray-200 rounded shadow-lg z-50 text-base">
-                      <Link to="/slabs?type=marble" className="block px-4 py-2 hover:bg-gray-100">Marble</Link>
-                      <Link to="/slabs?type=granite" className="block px-4 py-2 hover:bg-gray-100">Granite</Link>
-                    </div>
-                  )}
-
-                  <div
-                    onClick={() =>
-                      setActiveSubmenu((prev) =>
-                        prev === "ceramics" ? null : "ceramics"
-                      )
-                    }
-                    className="px-4 py-2 text-base hover:bg-gray-100 cursor-pointer"
-                  >
-                    Ceramics ◂
-                  </div>
-                  {activeSubmenu === "ceramics" && (
-                    <div className="absolute top-12 right-full mt-0 mr-1 w-40 bg-white border border-gray-200 rounded shadow-lg z-50 text-base">
-                      <Link to="/ceramics?type=tiles" className="block px-4 py-2 hover:bg-gray-100">Tiles</Link>
-                      <Link to="/ceramics?type=sinks" className="block px-4 py-2 hover:bg-gray-100">Sinks</Link>
-                      <Link to="/ceramics?type=bathtubs" className="block px-4 py-2 hover:bg-gray-100">Bathtubs</Link>
-                      <Link to="/ceramics?type=toilets" className="block px-4 py-2 hover:bg-gray-100">Toilets</Link>
-                    </div>
-                  )}
-                </div>
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link to="/login" className="uppercase">
+                  Login/Signup
+                </Link>
               )}
             </div>
-
-            {/* Conditionally Rendered Auth Links */}
-            {!user ? (
-              <>
-                <Link to="/login" className="hover:text-blue-600 uppercase">
-                  Login/SignUp
-                </Link>
-
-              </>
-            ) : (
-              <>
-                <Link to="/cart" className="hover:text-blue-600 uppercase flex items-center gap-1">
-                  <FaShoppingCart /> Cart
-                </Link>
-                <Link to="/profile" className="hover:text-blue-600 uppercase">
-                  Profile
-                </Link>
-                <button onClick={handleLogout} className="hover:text-blue-600 uppercase">
-                  Logout
-                </button>
-              </>
-            )}
-          </nav>
-        </div>
+          </div>
+        )}
       </header>
 
-
-      {/* Hero Slider */}
+      {/* Carousel */}
       <Carousel
         autoPlay
         infiniteLoop
         showThumbs={false}
         showStatus={false}
         interval={5000}
-        className="rounded-b- xl"
+        className="rounded-b-xl"
       >
         {[slide3Image, slideImage, slide2Image].map((image, i) => (
           <div
             key={i}
-            className="relative w-full h-[600px] bg-no-repeat bg-cover bg-center"
+            className="relative w-full h-[300px] sm:h-[400px] md:h-[600px] bg-no-repeat bg-cover bg-center"
             style={{ backgroundImage: `url(${image})` }}
           >
             {/* Dark overlay */}
@@ -186,21 +298,21 @@ export default function Home() {
             {/* Text container aligned like header */}
             <div className="absolute inset-0 flex items-center justify-center px-4 md:px-10">
               <div className="w-full max-w-7xl mx-auto text-white text-center">
-                <h2 className="text-5xl md:text-6xl font-extrabold drop-shadow-xl mb-4">
+                <h2 className="text-3xl sm:text-4xl md:text-6xl font-extrabold drop-shadow-xl mb-4">
                   {i === 0
                     ? "Transform Your Interiors"
                     : i === 1
                     ? "Crafting Spaces with Elegance"
                     : "Elegance in Every Tile"}
                 </h2>
-                <p className="text-lg md:text-xl mb-6 drop-shadow max-w-2xl mx-auto">
+                <p className="text-sm sm:text-lg mb-6 drop-shadow max-w-2xl mx-auto">
                   {i === 0
                     ? "High-gloss designer tiles for modern spaces."
                     : i === 1
                     ? "Experience premium ceramic solutions by Patel Ceramics."
                     : "Choose from a premium range of marble, floor & wall tiles."}
                 </p>
-                <button className="bg-white text-black px-8 py-4 rounded shadow hover:bg-gray-100 text-base md:text-lg font-semibold">
+                <button className="bg-white text-black px-6 sm:px-8 py-2 sm:py-4 rounded shadow hover:bg-gray-100 text-sm sm:text-lg font-semibold">
                   {i === 0
                     ? "Shop Now"
                     : i === 1
@@ -214,8 +326,8 @@ export default function Home() {
       </Carousel>
 
       {/* Category Highlights */}
-      <section className="px-10 py-10" data-aos="fade-up">
-        <h2 className="text-3xl font-bold mb-8 text-center">
+      <section className="px-4 sm:px-10 py-10" data-aos="fade-up">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center">
           Shop by Category
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -226,12 +338,12 @@ export default function Home() {
           ].map((cat, i) => (
             <div
               key={i}
-              className="relative w-full h-[300px] rounded-lg overflow-hidden group cursor-pointer shadow hover:shadow-lg transition"
+              className="relative w-full h-56 sm:h-72 rounded-lg overflow-hidden group cursor-pointer shadow hover:shadow-lg transition"
             >
               <img
                 src={cat.bg}
                 alt={cat.name}
-                className="w-full h-full object-cover brightness-140 transition duration-300"
+                className="w-full h-full object-cover brightness-110 transition duration-300 group-hover:brightness-125"
               />
               <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end justify-center p-4">
                 <h3 className="text-white text-xl font-semibold">{cat.name}</h3>
@@ -242,21 +354,21 @@ export default function Home() {
       </section>
 
       {/* Exclusive Collection */}
-      <section className="bg-gray-50 py-20 px-4 md:px-10" data-aos="fade-up">
+      <section className="bg-gray-50 py-16 px-4 sm:px-10" data-aos="fade-up">
         <div className="flex flex-col lg:flex-row items-start justify-between gap-12 max-w-7xl mx-auto">
           <div className="lg:w-1/3 flex-shrink-0">
             <p className="text-blue-600 text-sm uppercase tracking-wide font-semibold mb-2">
               Patel Brings You
             </p>
-            <h2 className="text-4xl font-extrabold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
               Our Exclusive Collection
             </h2>
-            <p className="text-gray-600 text-base md:text-lg mb-6">
+            <p className="text-gray-600 text-sm sm:text-base mb-6">
               Premium ceramics and slabs that transform any space with style and
               durability.
             </p>
             <Link to="/products">
-              <button className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition">
+              <button className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition text-sm sm:text-base">
                 Explore All
               </button>
             </Link>
@@ -264,7 +376,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-6 lg:w-2/3">
             {/* Slabs Card */}
-            <Link to="/slabs" className="flex-1 min-w-[240px]">
+            <Link to="/slabs" className="flex-1 min-w-[180px] sm:min-w-[240px]">
               <div className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition h-full overflow-hidden flex flex-col rounded-lg">
                 <div className="h-40 overflow-hidden">
                   <img
@@ -283,7 +395,7 @@ export default function Home() {
                       interiors.
                     </p>
                   </div>
-                  <span className="text-blue-600 font-medium hover:underline">
+                  <span className="text-blue-600 font-medium hover:underline cursor-pointer">
                     Discover Slabs →
                   </span>
                 </div>
@@ -291,7 +403,10 @@ export default function Home() {
             </Link>
 
             {/* Ceramics Card */}
-            <Link to="/ceramics" className="flex-1 min-w-[240px]">
+            <Link
+              to="/ceramics"
+              className="flex-1 min-w-[180px] sm:min-w-[240px]"
+            >
               <div className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition h-full overflow-hidden flex flex-col rounded-lg">
                 <div className="h-40 overflow-hidden">
                   <img
@@ -310,7 +425,7 @@ export default function Home() {
                       living spaces.
                     </p>
                   </div>
-                  <span className="text-blue-600 font-medium hover:underline">
+                  <span className="text-blue-600 font-medium hover:underline cursor-pointer">
                     Browse Ceramics →
                   </span>
                 </div>
@@ -354,8 +469,8 @@ export default function Home() {
       </section>
 
       {/* Featured Products */}
-      <section className="px-10 py-16 bg-gray-50" data-aos="fade-up">
-        <h2 className="text-3xl font-bold mb-8 text-center">
+      <section className="px-4 sm:px-10 py-16 bg-gray-50" data-aos="fade-up">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center">
           Featured Products
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -377,7 +492,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white px-10 py-12 mt-16 text-sm">
+      <footer className="bg-gray-900 text-white px-4 sm:px-10 py-12 mt-16 text-sm">
         {/* Top Section - 6 Columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-8">
           {/* Column 1: Company Info */}
@@ -423,7 +538,7 @@ export default function Home() {
             </ul>
           </div>
 
-          {/* ✅ Column 5: What We Do */}
+          {/* Column 5: What We Do */}
           <div>
             <h4 className="font-semibold mb-4">What We Do</h4>
             <ul className="space-y-2 text-gray-300">

@@ -20,7 +20,7 @@ export default function AdminLogin() {
       >
         <FaArrowLeft /> Back
       </button>
-    
+
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
           <h2 className="text-4xl font-extrabold text-center text-blue-700 mb-8">
@@ -81,7 +81,7 @@ export default function AdminLogin() {
 
             <button
               type="submit"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow"
+              className=" bg-blue-600  text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow"
             >
               Login
             </button>
