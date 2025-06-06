@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+import { setDoc, doc } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 import { FaArrowLeft } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 
@@ -25,11 +27,22 @@ export default function Signup() {
         email,
         password
       );
-      await updateProfile(userCredential.user, {
+      const user = userCredential.user;
+
+      // Set display name in Firebase Auth profile
+      await updateProfile(user, {
         displayName: fullName,
       });
-      alert("Signup successful! Please log in.");
-      navigate("/login");
+
+      // Automatically assign 'customer' role in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
+        fullName: fullName,
+        role: "customer",
+      });
+
+      alert("Signup successful! You are logged in as a customer.");
+      navigate("/");
     } catch (error) {
       alert(error.message);
     }
@@ -47,10 +60,7 @@ export default function Signup() {
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
           <h2 className="text-4xl font-extrabold text-center text-blue-600 mb-8">
-            Create{" "}
-            <span className="text-transparent bg-clip-text bg-blue-600 to-purple-600">
-              Account
-            </span>
+            Create <span className="text-transparent bg-clip-text bg-blue-600 to-purple-600">Account</span>
           </h2>
 
           <form onSubmit={handleSignup} className="space-y-6">
@@ -132,10 +142,7 @@ export default function Signup() {
 
           <p className="mt-4 text-sm text-center text-gray-600">
             Already have an account?{" "}
-            <Link
-              to="/login"
-              className="text-blue-700 font-semibold hover:underline"
-            >
+            <Link to="/login" className="text-blue-700 font-semibold hover:underline">
               Login
             </Link>
           </p>

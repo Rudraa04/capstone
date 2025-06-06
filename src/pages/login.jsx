@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+import { getDoc, doc } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 import { FaArrowLeft } from "react-icons/fa";
-import { MdEmail, MdLock, MdAdminPanelSettings } from "react-icons/md";
+import { MdEmail, MdLock } from "react-icons/md";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,9 +15,22 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert("Login successful!");
-      navigate("/");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Fetch user role from Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const role = userDocSnap.data().role;
+
+        // Redirect based on role
+        if (role === "admin") navigate("/admin");
+        else navigate("/"); // customer or superadmin (superadmin uses Firebase Console)
+      } else {
+        alert("No role found. Contact support.");
+      }
     } catch (error) {
       alert(error.message);
     }
@@ -33,10 +48,7 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
           <h2 className="text-4xl font-extrabold text-center text-blue-600 mb-8">
-            Welcome{" "}
-            <span className="text-transparent bg-clip-text bg-blue-600">
-              Back
-            </span>
+            Welcome <span className="text-transparent bg-clip-text bg-blue-600">Back</span>
           </h2>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -73,10 +85,7 @@ export default function Login() {
                 <MdLock className="absolute left-2 top-2.5 text-gray-600 text-lg" />
               </div>
               <div className="text-right mt-1">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-blue-600 hover:underline"
-                >
+                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
                   Forgot Password?
                 </Link>
               </div>
@@ -90,21 +99,9 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => navigate("/adminLogin")}
-              className="inline-flex items-center gap-2 text-sm text-blue-700 hover:underline font-medium"
-            >
-              <MdAdminPanelSettings /> Login as Admin
-            </button>
-          </div>
-
           <p className="mt-4 text-sm text-center text-gray-600">
-            Don’t have an account?{" "}
-            <Link
-              to="/signup"
-              className="text-blue-700 font-semibold hover:underline"
-            >
+            Don’t have an account?{' '}
+            <Link to="/signup" className="text-blue-700 font-semibold hover:underline">
               Create one
             </Link>
           </p>

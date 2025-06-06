@@ -7,7 +7,7 @@ import Profile from "./pages/profile.jsx";
 import Slabs from "./pages/slabs.jsx";
 import Ceramics from "./pages/ceramics.jsx";
 import Cart from "./pages/cart.jsx";
-
+import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLogin from "./pages/adminLogin.jsx";
 import AdminHome from "./pages/adminHome.jsx";
 
@@ -43,7 +43,7 @@ export default function App() {
 
         {/* Admin routes */}
         <Route path="/adminLogin" element={<AdminLogin />} />
-        <Route path="/adminHome" element={<AdminHome />} />
+        <Route path="/admin" element={<AdminHome />} />
         <Route path="/admin/slabs" element={<SlabsInventory />} />
         <Route path="/admin/ceramics" element={<CeramicsInventory />} />
 
