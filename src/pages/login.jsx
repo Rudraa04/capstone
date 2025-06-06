@@ -32,7 +32,7 @@ export default function Login() {
 
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
-          <h2 className="text-4xl font-extrabold text-center text-blue-6r00 mb-8">
+          <h2 className="text-4xl font-extrabold text-center text-blue-600 mb-8">
             Welcome{" "}
             <span className="text-transparent bg-clip-text bg-blue-600">
               Back
