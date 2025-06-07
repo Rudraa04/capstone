@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
@@ -13,38 +13,47 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isValidEmail) {
+      setMessage("Please enter a valid email address.");
+      setMessageType("error");
+      return;
+    }
+
     if (password !== confirm) {
-      alert("Passwords do not match");
+      setMessage("Passwords do not match");
+      setMessageType("error");
       return;
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Set display name in Firebase Auth profile
+      await sendEmailVerification(user);
+      await auth.signOut();
+
       await updateProfile(user, {
         displayName: fullName,
       });
 
-      // Automatically assign 'customer' role in Firestore
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         fullName: fullName,
         role: "customer",
       });
 
-      alert("Signup successful! You are logged in as a customer.");
-      navigate("/");
+      setMessage("Signup successful! A verification email has been sent. Please verify before logging in.");
+      setMessageType("success");
+      setTimeout(() => navigate("/login"), 2500);
     } catch (error) {
-      alert(error.message);
+      setMessage(error.message);
+      setMessageType("error");
     }
   };
 
@@ -138,6 +147,16 @@ export default function Signup() {
             >
               Sign Up
             </button>
+
+            {message && (
+              <p
+                className={`text-sm text-center font-medium mt-2 ${
+                  messageType === "success" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {message}
+              </p>
+            )}
           </form>
 
           <p className="mt-4 text-sm text-center text-gray-600">

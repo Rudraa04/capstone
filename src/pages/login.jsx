@@ -11,6 +11,8 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,21 +20,31 @@ export default function Login() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Fetch user role from Firestore
+      if (!user.emailVerified) {
+        setMessage("Please verify your email before logging in.");
+        setMessageType("error");
+        return;
+      }
+
       const userDocRef = doc(db, "users", user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
         const role = userDocSnap.data().role;
+        setMessage("Login successful!");
+        setMessageType("success");
 
-        // Redirect based on role
-        if (role === "admin") navigate("/admin");
-        else navigate("/"); // customer or superadmin (superadmin uses Firebase Console)
+        setTimeout(() => {
+          if (role === "admin") navigate("/admin");
+          else navigate("/");
+        }, 1000);
       } else {
-        alert("No role found. Contact support.");
+        setMessage("No role found. Contact support.");
+        setMessageType("error");
       }
     } catch (error) {
-      alert(error.message);
+      setMessage(error.message);
+      setMessageType("error");
     }
   };
 
@@ -97,6 +109,16 @@ export default function Login() {
             >
               Login
             </button>
+
+            {message && (
+              <p
+                className={`text-sm text-center font-medium mt-2 ${
+                  messageType === "success" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {message}
+              </p>
+            )}
           </form>
 
           <p className="mt-4 text-sm text-center text-gray-600">

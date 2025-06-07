@@ -25,6 +25,8 @@ export default function Home() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
+  const [logoutMessage, setLogoutMessage] = useState("");
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -50,8 +52,11 @@ export default function Home() {
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
-    alert("Logged out!");
+    setLogoutMessage("You have been logged out.");
+    setTimeout(() => {
+    setLogoutMessage("");
     navigate("/login");
+    }, 1000);
   };
 
   const underlineHover =
@@ -276,6 +281,12 @@ export default function Home() {
           </div>
         )}
       </header>
+      {logoutMessage && (
+       <div className="bg-green-100 text-green-700 text-center py-2 font-medium">
+        {logoutMessage}
+       </div>
+        )}
+
 
       {/* Carousel */}
       <Carousel
