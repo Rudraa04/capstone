@@ -1,13 +1,17 @@
 import mongoose from 'mongoose';
 
 const GraniteSchema = new mongoose.Schema({
-  name: String,
-  description: String,
-  price: Number,
-  image: String,
-  category: String,
-  stock: Number,
-  size: String
+  ID: String,
+  Name: String,
+  Description: String,
+  Colour: String,
+  Price: Number,
+  Image: String,
+  SubCategory: String,
+  Stock_admin: Number,
+  Stock_Customer: Boolean,
+  Manufracturer: String,
+  Size: String
 });
 
 export default mongoose.model('Granite', GraniteSchema, 'Granite');
