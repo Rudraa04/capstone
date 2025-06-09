@@ -10,6 +10,7 @@ import Cart from "./pages/cart.jsx";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLogin from "./pages/adminLogin.jsx";
 import AdminHome from "./pages/adminHome.jsx";
+import AddProduct from "./admin/AddProduct";
 
 import SlabsInventory from "./admin/SlabsInventory.jsx";
 import CeramicsInventory from "./admin/CeramicsInventory.jsx";
@@ -40,7 +41,8 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/slabs" element={<Slabs />} />
         <Route path="/ceramics" element={<Ceramics />} />
-
+        <Route path="/admin/addproduct" element={<AddProduct />} />
+        
         {/* Admin routes */}
         <Route path="/adminLogin" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminHome />} />

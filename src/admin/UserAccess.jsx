@@ -11,6 +11,7 @@ import {
   FiHome,
   FiEdit2,
   FiTrash2,
+  FiGlobe,
 } from "react-icons/fi";
 
 export default function UserAccess() {
@@ -104,6 +105,12 @@ export default function UserAccess() {
           </button>
           <button className="w-full flex items-center gap-3 px-4 py-2 bg-gray-200 rounded-md font-semibold">
             <FiUsers /> User Access
+          </button>
+          <button
+            onClick={() => navigate("/", { state: { fromAdmin: true } })}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"
+          >
+            <FiGlobe /> Customer Homepage
           </button>
           <button
             onClick={() => {

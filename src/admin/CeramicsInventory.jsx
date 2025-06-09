@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { FaTh, FaBath, FaSink, FaToilet, FaPlus } from "react-icons/fa";
+import { FaTh, FaBath, FaSink, FaToilet } from "react-icons/fa";
 import {
   FiBox,
   FiPackage,
@@ -10,6 +10,7 @@ import {
   FiUsers,
   FiLogOut,
   FiHome,
+  FiGlobe,
 } from "react-icons/fi";
 
 export default function CeramicsInventory() {
@@ -22,32 +23,32 @@ export default function CeramicsInventory() {
 
   const items = [
     {
-      label: "Tiles",
+      label: "Tiles Inventory",
       description: "Browse and manage tile inventory",
       path: "/admin/inventory/tiles",
-      icon: <FaTh size={24} className="text-blue-600" />,
-      count: 40,
+      icon: <FaTh size={20} className="text-blue-600" />,
+      count: 2,
     },
     {
-      label: "Bathtubs",
+      label: "Bathtubs Inventory",
       description: "Manage bathtub products",
       path: "/admin/inventory/bathtubs",
-      icon: <FaBath size={24} className="text-blue-600" />,
-      count: 18,
+      icon: <FaBath size={20} className="text-blue-600" />,
+      count: 2,
     },
     {
-      label: "Sinks",
+      label: "Sinks Inventory",
       description: "Manage sink styles and inventory",
       path: "/admin/inventory/sinks",
-      icon: <FaSink size={24} className="text-blue-600" />,
-      count: 25,
+      icon: <FaSink size={20} className="text-blue-600" />,
+      count: 2,
     },
     {
-      label: "Toilets",
+      label: "Toilets Inventory",
       description: "Edit and view toilet stock",
       path: "/admin/inventory/toilets",
-      icon: <FaToilet size={24} className="text-blue-600" />,
-      count: 30,
+      icon: <FaToilet size={20} className="text-blue-600" />,
+      count: 2,
     },
   ];
 
@@ -72,7 +73,7 @@ export default function CeramicsInventory() {
           </button>
           <button
             onClick={() => navigate("/admin/ceramics")}
-            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+            className="w-full flex items-center gap-3 px-4 py-2 text-left bg-gray-200 rounded-md font-semibold"
           >
             <FiPackage /> Ceramics Inventory
           </button>
@@ -88,21 +89,24 @@ export default function CeramicsInventory() {
           >
             <FiHeadphones /> Customer Support
           </button>
-
           <button
             onClick={() => navigate("/admin/reports")}
             className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
           >
             <FiTrendingUp /> Sales & Reports
           </button>
-
           <button
             onClick={() => navigate("/admin/useraccess")}
             className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
           >
             <FiUsers /> User Access
           </button>
-
+          <button
+            onClick={() => navigate("/", { state: { fromAdmin: true } })}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"
+          >
+            <FiGlobe /> Customer Homepage
+          </button>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2 text-left text-red-600 hover:bg-red-100 rounded-md"
@@ -113,40 +117,34 @@ export default function CeramicsInventory() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 px-10 py-8">
-        <div className="flex justify-between items-center mb-10">
-          <h1 className="text-3xl font-bold text-blue-800">
-            Ceramics Inventory
-          </h1>
-          <div className="flex gap-3">
-            <button
-              onClick={() => alert("Add New feature coming soon!")}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-            >
-              <FaPlus /> Add New
-            </button>
-          </div>
-        </div>
+      <main className="flex-1 px-6 sm:px-10 py-6 sm:py-8">
+        <h1 className="text-3xl font-bold text-blue-800 mb-6">Ceramics Inventory</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           {items.map((item, index) => (
             <div
               key={index}
               onClick={() => navigate(item.path)}
-              className="bg-white border border-gray-200 hover:border-blue-500 rounded-xl p-6 shadow-sm hover:shadow-lg transition duration-200 cursor-pointer"
+              className="group bg-white/70 backdrop-blur-md border border-gray-200 hover:border-blue-600 rounded-2xl p-5 shadow hover:shadow-md transition cursor-pointer"
             >
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-3">
+              <div className="flex gap-4 items-start">
+                <div className="w-12 h-12 bg-blue-100 flex items-center justify-center rounded-full">
                   {item.icon}
-                  <h2 className="text-xl font-semibold text-gray-800">
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-gray-800 group-hover:text-blue-700 mb-1">
                     {item.label}
                   </h2>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {item.description}
+                  </p>
                 </div>
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                  {item.count}
+              </div>
+              <div className="flex justify-end mt-4">
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+                  {item.count} items
                 </span>
               </div>
-              <p className="text-gray-600">{item.description}</p>
             </div>
           ))}
         </div>

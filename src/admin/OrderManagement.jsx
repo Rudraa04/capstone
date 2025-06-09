@@ -9,6 +9,7 @@ import {
   FiUsers,
   FiLogOut,
   FiHome,
+  FiGlobe,
 } from "react-icons/fi";
 
 export default function OrderManagement() {
@@ -83,19 +84,25 @@ export default function OrderManagement() {
           >
             <FiHeadphones /> Customer Support
           </button>
-
           <button
             onClick={() => navigate("/admin/reports")}
             className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
           >
             <FiTrendingUp /> Sales & Reports
           </button>
-
           <button
             onClick={() => navigate("/admin/useraccess")}
             className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
           >
             <FiUsers /> User Access
+          </button>
+
+          {/* ✅ Customer Homepage Button */}
+          <button
+            onClick={() => navigate("/", { state: { fromAdmin: true } })}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"
+          >
+            <FiGlobe /> Customer Homepage
           </button>
 
           <button

@@ -10,6 +10,7 @@ import {
   FiLogOut,
   FiHome,
   FiBell,
+  FiGlobe,
 } from "react-icons/fi";
 import SalesChart from "../components/SalesChart";
 
@@ -67,19 +68,26 @@ export default function AdminHome() {
           >
             <FiHeadphones /> Customer Support
           </button>
-
           <button
             onClick={() => navigate("/admin/reports")}
             className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
           >
             <FiTrendingUp /> Sales & Reports
           </button>
-
           <button
             onClick={() => navigate("/admin/useraccess")}
             className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
           >
             <FiUsers /> User Access
+          </button>
+          <button
+            onClick={() => {
+              localStorage.setItem("fromAdmin", "true");
+              navigate("/", { state: { fromAdmin: true } });
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"
+          >
+            <FiGlobe /> Customer Homepage
           </button>
 
           <button
@@ -93,7 +101,6 @@ export default function AdminHome() {
 
       {/* Main Content */}
       <main className="flex-1 px-10 py-8">
-        {/* Header with Notifications */}
         <div className="flex justify-between items-center mb-8 relative">
           <div>
             <h1 className="text-3xl font-semibold mb-1">Welcome, Admin</h1>
@@ -102,7 +109,6 @@ export default function AdminHome() {
             </p>
           </div>
 
-          {/* Notification bell */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
@@ -138,7 +144,6 @@ export default function AdminHome() {
           </div>
         </div>
 
-        {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <div className="bg-white p-5 rounded-xl shadow-md">
             <h3 className="text-sm text-gray-500">Total Products</h3>
@@ -158,7 +163,6 @@ export default function AdminHome() {
           </div>
         </div>
 
-        {/* Recent Orders Table */}
         <div className="bg-white p-6 rounded-xl shadow-md mb-10">
           <h2 className="text-xl font-bold mb-4 text-blue-700">
             Recent Orders
@@ -195,7 +199,6 @@ export default function AdminHome() {
           </table>
         </div>
 
-        {/* Sales Chart */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-xl font-bold mb-4 text-blue-700">
             Sales Overview

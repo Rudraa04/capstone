@@ -42,7 +42,7 @@ export default function Signup() {
       });
 
       alert("Signup successful! You are logged in as a customer.");
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       alert(error.message);
     }
