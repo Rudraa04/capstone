@@ -38,6 +38,15 @@ import bathtub6 from "../images/bathtub6.png";
 import bathtub7 from "../images/bathtub7.png";
 import bathtub8 from "../images/bathtub8.png";
 
+import toilet1 from "../images/toilet1.png";
+import toilet2 from "../images/toilet2.png";
+import toilet3 from "../images/toilet3.png";
+import toilet4 from "../images/toilet4.png";
+import toilet5 from "../images/toilet5.png";
+import toilet6 from "../images/toilet6.png";
+import toilet7 from "../images/toilet7.png";
+import toilet8 from "../images/toilet8.png";
+
 export default function Ceramics() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("tiles");
@@ -173,6 +182,51 @@ export default function Ceramics() {
     {
       name: "Matte Black Freestanding Tub",
       desc: "Sleek matte black tub with modern black fixtures.",
+    },
+  ];
+
+  const toiletImages = [
+    toilet1,
+    toilet2,
+    toilet3,
+    toilet4,
+    toilet5,
+    toilet6,
+    toilet7,
+    toilet8,
+  ];
+  const toiletData = [
+    {
+      name: "Luxury Black Toilet",
+      desc: "Premium black finish with golden patterns and modern design.",
+    },
+    {
+      name: "Wall Hung White Toilet",
+      desc: "Compact wall-mounted toilet ideal for minimalist bathrooms.",
+    },
+    {
+      name: "One-Piece Brown Toilet",
+      desc: "Seamless ceramic toilet in earthy tones for modern homes.",
+    },
+    {
+      name: "Beige Round Toilet",
+      desc: "Soft beige color and rounded shape for a cozy look.",
+    },
+    {
+      name: "Indian Style Squat Toilet",
+      desc: "Traditional white ceramic squat pan for Indian households.",
+    },
+    {
+      name: "Extended Squat Toilet",
+      desc: "Wider squatting pan with maroon stopper. Elegant yet practical.",
+    },
+    {
+      name: "Elevated Indian Pan",
+      desc: "Ergonomic elevated pan for better comfort and support.",
+    },
+    {
+      name: "Basic Western Toilet",
+      desc: "Classic white western toilet with water-saving flush system.",
     },
   ];
 
@@ -654,30 +708,25 @@ export default function Ceramics() {
                   </div>
                 ))}
 
-              {activeTab !== "sinks" &&
-                activeTab !== "tiles" &&
-                activeTab !== "bathtub" &&
-                [...Array(8)].map((_, i) => (
+              {activeTab === "toilets" &&
+                toiletImages.map((img, i) => (
                   <div
                     key={i}
                     className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
                   >
                     <div className="relative">
                       <img
-                        src={`https://source.unsplash.com/400x300/?${activeTab},ceramic&sig=${i}`}
-                        alt={`${activeTab} ${i + 1}`}
+                        src={img}
+                        alt={toiletData[i].name}
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                     <div className="p-4">
                       <h3 className="text-lg font-bold text-gray-800">
-                        {otherCategories.find((cat) => cat.type === activeTab)
-                          ?.label || "Product"}{" "}
-                        #{i + 1}
+                        {toiletData[i].name}
                       </h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        {otherCategories.find((cat) => cat.type === activeTab)
-                          ?.desc || "Elegant and functional."}
+                        {toiletData[i].desc}
                       </p>
                       <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
                         View Details

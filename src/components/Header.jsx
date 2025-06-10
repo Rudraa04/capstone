@@ -12,7 +12,6 @@ export default function Header() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
-  const fromAdmin = location.state?.fromAdmin || false;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -103,16 +102,23 @@ export default function Header() {
                     WALL TILES
                   </h3>
                   {[
-                    "Bathroom Wall Tiles",
-                    "Kitchen Wall Tiles",
-                    "Outdoor Wall Tiles",
-                    "Living Room Wall Tiles",
-                    "Bedroom Wall Tiles",
-                    "Wall Tiles for Commercial Spaces",
+                    { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
+                    { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
+                    { name: "Outdoor Wall Tiles", to: "/outdoorwall" },
+                    { name: "Living Room Wall Tiles", to: "/livingwall" },
+                    { name: "Bedroom Wall Tiles", to: "/bedroomwall" },
+                    {
+                      name: "Wall Tiles for Commercial Spaces",
+                      to: "/commercialwall",
+                    },
                   ].map((item) => (
-                    <span key={item} className="block text-gray-700 mb-3">
-                      {item}
-                    </span>
+                    <Link
+                      key={item.name}
+                      to={item.to}
+                      className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                    >
+                      {item.name}
+                    </Link>
                   ))}
                 </div>
 
@@ -121,16 +127,23 @@ export default function Header() {
                     FLOOR TILES
                   </h3>
                   {[
-                    "Living Room Floor Tiles",
-                    "Outdoor Floor Tiles",
-                    "Bedroom Floor Tiles",
-                    "Kitchen Floor Tiles",
-                    "Bathroom Floor tiles",
-                    "Floor Tiles for Commercial Spaces",
+                    { name: "Living Room Floor Tiles", to: "/livingfloor" },
+                    { name: "Outdoor Floor Tiles", to: "/outdoorfloor" },
+                    { name: "Bedroom Floor Tiles", to: "/bedroomfloor" },
+                    { name: "Kitchen Floor Tiles", to: "/kitchenfloor" },
+                    { name: "Bathroom Floor tiles", to: "/bathroomfloor" },
+                    {
+                      name: "Floor Tiles for Commercial Spaces",
+                      to: "/commercialfloor",
+                    },
                   ].map((item) => (
-                    <span key={item} className="block text-gray-700 mb-3">
-                      {item}
-                    </span>
+                    <Link
+                      key={item.name}
+                      to={item.to}
+                      className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                    >
+                      {item.name}
+                    </Link>
                   ))}
                 </div>
 
@@ -237,11 +250,10 @@ export default function Header() {
                       ? { fromAdmin: true }
                       : {}
                   }
-                  className={`uppercase ${underlineHover} flex items-center gap-1`}
+                  className={`uppercase ${underlineHover}`}
                 >
                   Profile
                 </Link>
-
                 <button
                   onClick={handleLogout}
                   className="uppercase text-left text-red-500"

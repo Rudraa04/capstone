@@ -11,6 +11,13 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLogin from "./pages/adminLogin.jsx";
 import AdminHome from "./pages/adminHome.jsx";
 import AddProduct from "./admin/AddProduct";
+import Interior from "./pages/interior.jsx";
+import Exterior from "./pages/exterior.jsx";
+import Sanitary from "./pages/sanitary.jsx";
+import BedroomWall from "./pages/BedroomWall";
+import BedroomFloor from "./pages/BedroomFloor";
+
+
 
 import SlabsInventory from "./admin/SlabsInventory.jsx";
 import CeramicsInventory from "./admin/CeramicsInventory.jsx";
@@ -42,6 +49,11 @@ export default function App() {
         <Route path="/slabs" element={<Slabs />} />
         <Route path="/ceramics" element={<Ceramics />} />
         <Route path="/admin/addproduct" element={<AddProduct />} />
+        <Route path="/interior" element={<Interior />} />
+        <Route path="/exterior" element={<Exterior />} />
+        <Route path="/sanitary" element={<Sanitary />} />
+        <Route path="/bedroomwall" element={<BedroomWall />} />
+        <Route path="/bedroomfloor" element={<BedroomFloor />} />
         
         {/* Admin routes */}
         <Route path="/adminLogin" element={<AdminLogin />} />

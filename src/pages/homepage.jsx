@@ -34,6 +34,7 @@ import featured5 from "../images/featuredproduct5.png";
 import featured6 from "../images/featuredproduct6.png";
 import featured7 from "../images/featuredproduct7.png";
 import featured8 from "../images/featuredproduct8.png";
+import { path } from "framer-motion/client";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -152,33 +153,35 @@ export default function Home() {
           </div>
         ))}
       </Carousel>
+      
       {/* Category Highlights */}
-      <section className="px-4 sm:px-10 py-10" data-aos="fade-up">
+      <section className="px-4 sm:px-10 py-16 bg-white" data-aos="fade-up">
         <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center">
           Shop by Category
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {[
-            { name: "Interior", bg: interiorImage },
-            { name: "Exterior", bg: exteriorImg },
-            { name: "Sanitaryware", bg: sanitaryImage },
-          ].map((cat, i) => (
-            <div
-              key={i}
-              className="relative w-full h-56 sm:h-72 rounded-lg overflow-hidden group cursor-pointer shadow hover:shadow-lg transition"
-            >
-              <img
-                src={cat.bg}
-                alt={cat.name}
-                className="w-full h-full object-cover brightness-110 transition duration-300 group-hover:brightness-125"
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end justify-center p-4">
-                <h3 className="text-white text-xl font-semibold">{cat.name}</h3>
+            { name: "Interior", image: interiorImage, path: "/interior" },
+            { name: "Exterior", image: exteriorImg, path: "/exterior" },
+            { name: "Sanitaryware", image: sanitaryImage, path: "/sanitary" },
+          ].map((item, i) => (
+            <Link to={item.path} key={i}>
+              <div
+                className="relative rounded-xl overflow-hidden shadow hover:shadow-lg transition transform hover:-translate-y-1 h-60 bg-cover bg-center"
+                style={{ backgroundImage: `url(${item.image})` }}
+              >
+                <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+                <div className="absolute bottom-4 w-full text-center z-10">
+                  <h3 className="text-white text-xl font-semibold">
+                    {item.name}
+                  </h3>
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
+
       {/* Exclusive Collection */}
       <section className="bg-gray-50 py-16 px-4 sm:px-10" data-aos="fade-up">
         <div className="flex flex-col lg:flex-row items-start justify-between gap-12 max-w-7xl mx-auto">
