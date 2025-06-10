@@ -11,11 +11,43 @@ import {
 } from "react-icons/fa";
 import slabBanner from "../images/slabs-banner.png";
 
+import sink1 from "../images/sink1.png";
+import sink2 from "../images/sink2.png";
+import sink3 from "../images/sink3.png";
+import sink4 from "../images/sink4.png";
+import sink5 from "../images/sink5.png";
+import sink6 from "../images/sink6.png";
+import sink7 from "../images/sink7.png";
+import sink8 from "../images/sink8.png";
+
+import tile1 from "../images/Tiles1.png";
+import tile2 from "../images/Tiles2.png";
+import tile3 from "../images/Tiles3.png";
+import tile4 from "../images/Tiles4.png";
+import tile5 from "../images/Tiles5.png";
+import tile6 from "../images/Tiles6.png";
+import tile7 from "../images/Tiles7.png";
+import tile8 from "../images/Tiles8.png";
+
+import bathtub1 from "../images/bathtub1.png";
+import bathtub2 from "../images/bathtub2.png";
+import bathtub3 from "../images/bathtub3.png";
+import bathtub4 from "../images/bathtub4.png";
+import bathtub5 from "../images/bathtub5.png";
+import bathtub6 from "../images/bathtub6.png";
+import bathtub7 from "../images/bathtub7.png";
+import bathtub8 from "../images/bathtub8.png";
+
 export default function Ceramics() {
   const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const initialType = queryParams.get("type") || "tiles";
-  const [activeTab, setActiveTab] = useState(initialType.toLowerCase());
+  const [activeTab, setActiveTab] = useState("tiles");
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const type = queryParams.get("type") || "tiles";
+    setActiveTab(type.toLowerCase());
+  }, [location.search]);
+
   const [filters, setFilters] = useState({ category: [], size: [], color: [] });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
@@ -23,6 +55,144 @@ export default function Ceramics() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  const sinkImages = [sink1, sink2, sink3, sink4, sink5, sink6, sink7, sink8];
+
+  const sinkData = [
+    {
+      name: "Classic Ceramic Sink",
+      desc: "Simple square ceramic sink with chrome faucet. Ideal for modern bathrooms.",
+    },
+    {
+      name: "Oval White Sink",
+      desc: "Smooth oval design with glossy finish. Perfect for contemporary washrooms.",
+    },
+    {
+      name: "Double Bowl Black Sink",
+      desc: "Matte black dual compartment kitchen sink with matching tap.",
+    },
+    {
+      name: "Stone Finish Vessel Sink",
+      desc: "Elegant stone-textured bowl sink. Adds natural charm to any vanity.",
+    },
+    {
+      name: "Stainless Steel Sink",
+      desc: "Durable steel construction, ideal for heavy kitchen use.",
+    },
+    {
+      name: "Blue Glass Bowl Sink",
+      desc: "Vibrant glass sink with waterfall faucet. A luxurious centerpiece.",
+    },
+    {
+      name: "Square Glass Sink",
+      desc: "Clear angular glass vessel for minimalist bathrooms.",
+    },
+    {
+      name: "Leaf Design Sink",
+      desc: "Artistic leaf-shaped glass sink. Great for designer bathrooms.",
+    },
+  ];
+
+  const tileImages = [tile1, tile2, tile3, tile4, tile5, tile6, tile7, tile8];
+
+  const tileData = [
+    {
+      name: "Rustic Stone Look Tile",
+      desc: "Natural stone-inspired tile ideal for outdoor walls and patios.",
+    },
+    {
+      name: "White Marble Wall Tile",
+      desc: "Sleek marble tiles perfect for luxury bathroom walls.",
+    },
+    {
+      name: "Checkerboard Floor Tile",
+      desc: "Classic black-and-white tile design for modern interiors.",
+    },
+    {
+      name: "Yellow Kitchen Tile",
+      desc: "Digital printed tile with a cheerful tone for stylish kitchens.",
+    },
+    {
+      name: "Glossy Beige Living Room Tile",
+      desc: "Polished finish with warm tones for spacious living rooms.",
+    },
+    {
+      name: "Blue Marble Effect Tile",
+      desc: "Striking deep blue tiles for bold and elegant aesthetics.",
+    },
+    {
+      name: "Wood Look Chevron Tile",
+      desc: "Rich woodgrain ceramic tiles in herringbone pattern.",
+    },
+    {
+      name: "Black Stone Texture Tile",
+      desc: "Dramatic dark tile with natural textures for accent walls.",
+    },
+  ];
+
+  const bathtubImages = [
+    bathtub1,
+    bathtub2,
+    bathtub3,
+    bathtub4,
+    bathtub5,
+    bathtub6,
+    bathtub7,
+    bathtub8,
+  ];
+
+  const bathtubData = [
+    {
+      name: "Elegant White Tub",
+      desc: "Classic white standalone bathtub with chrome fixtures.",
+    },
+    {
+      name: "Blue Panel Tub",
+      desc: "Vintage style blue bathtub with elegant feet.",
+    },
+    {
+      name: "Maroon Glossy Tub",
+      desc: "Luxurious maroon tub with golden tap for a bold look.",
+    },
+    {
+      name: "Black Gloss Finish Tub",
+      desc: "High-gloss black bathtub for contemporary interiors.",
+    },
+    {
+      name: "Vintage White Tub",
+      desc: "Retro white tub with decorative claw feet.",
+    },
+    {
+      name: "Built-in White Tub",
+      desc: "Minimalistic rectangular tub built into bathroom nook.",
+    },
+    {
+      name: "Hydrotherapy Spa Tub",
+      desc: "Modern tub with built-in water jets and chrome controls.",
+    },
+    {
+      name: "Matte Black Freestanding Tub",
+      desc: "Sleek matte black tub with modern black fixtures.",
+    },
+  ];
+
+  const otherCategories = [
+    {
+      type: "tiles",
+      label: "Tile Product",
+      desc: "Premium ceramic tile for modern floors and walls.",
+    },
+    {
+      type: "bathtub",
+      label: "Bathtub",
+      desc: "Elegant bathtub design. Smooth, stylish, and relaxing.",
+    },
+    {
+      type: "toilets",
+      label: "Toilet Fixture",
+      desc: "Compact and efficient ceramic toilet for every home.",
+    },
+  ];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -64,7 +234,7 @@ export default function Ceramics() {
     <div className="bg-white text-gray-900">
       {/* HEADER */}
       <header className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(-1)}
@@ -108,27 +278,84 @@ export default function Ceramics() {
                 Products
               </button>
               {showProductDropdown && (
-                <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-4 gap-10 w-[1200px] max-w-screen-xl z-50 text-base font-sans translate-x-[100px]">
+                <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-4 gap-10 w-[1200px] max-w-screen-xl z-50 text-base font-sans transform translate-x-[100px]">
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
                       CATEGORY
                     </h3>
                     {[
-                      "Marble",
-                      "Granite",
-                      "Tiles",
-                      "Sinks",
-                      "Bathtubs",
-                      "Toilets",
+                      { name: "Marble", to: "/slabs?type=marble" },
+                      { name: "Granite", to: "/slabs?type=granite" },
+                      { name: "Tiles", to: "/ceramics?type=tiles" },
+                      { name: "Sinks", to: "/ceramics?type=sinks" },
+                      { name: "Bathtubs", to: "/ceramics?type=bathtub" },
+                      { name: "Toilets", to: "/ceramics?type=toilets" },
                     ].map((item) => (
                       <Link
-                        key={item}
-                        to={`/ceramics?type=${item.toLowerCase()}`}
+                        key={item.name}
+                        to={item.to}
                         className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
                       >
-                        {item}
+                        {item.name}
                       </Link>
                     ))}
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      WALL TILES
+                    </h3>
+                    {[
+                      "Bathroom Wall Tiles",
+                      "Kitchen Wall Tiles",
+                      "Outdoor Wall Tiles",
+                      "Living Room Wall Tiles",
+                      "Bedroom Wall Tiles",
+                      "Wall Tiles for Commercial Spaces",
+                    ].map((item) => (
+                      <span key={item} className="block text-gray-700 mb-3">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      FLOOR TILES
+                    </h3>
+                    {[
+                      "Living Room Floor Tiles",
+                      "Outdoor Floor Tiles",
+                      "Bedroom Floor Tiles",
+                      "Kitchen Floor Tiles",
+                      "Bathroom Floor tiles",
+                      "Floor Tiles for Commercial Spaces",
+                    ].map((item) => (
+                      <span key={item} className="block text-gray-700 mb-3">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      TILE FINDER
+                    </h3>
+                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
+                      <option>Select Size</option>
+                      <option>12x12</option>
+                      <option>16x16</option>
+                      <option>24x24</option>
+                    </select>
+                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
+                      <option>Select Finish</option>
+                      <option>Glossy</option>
+                      <option>Matte</option>
+                      <option>Textured</option>
+                    </select>
+                    <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+                      Search
+                    </button>
                   </div>
                 </div>
               )}
@@ -346,31 +573,118 @@ export default function Ceramics() {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl shadow-md hover:shadow-xl overflow-hidden transition"
-                >
-                  <img
-                    src={`https://source.unsplash.com/400x300/?${activeTab},ceramic&sig=${i}`}
-                    alt={`Ceramic ${i + 1}`}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
-                      {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} #
-                      {i + 1}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-3">
-                      Elegant and functional. Designed for modern spaces.
-                    </p>
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
-                      View Details
-                    </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {activeTab === "sinks" &&
+                sinkImages.map((img, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={img}
+                        alt={sinkData[i].name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-800">
+                        {sinkData[i].name}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {sinkData[i].desc}
+                      </p>
+                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                        View Details
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              {activeTab === "tiles" &&
+                tileImages.map((img, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={img}
+                        alt={tileData[i].name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-800">
+                        {tileData[i].name}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {tileData[i].desc}
+                      </p>
+                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+              {activeTab === "bathtub" &&
+                bathtubImages.map((img, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={img}
+                        alt={bathtubData[i].name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-800">
+                        {bathtubData[i].name}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {bathtubData[i].desc}
+                      </p>
+                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+              {activeTab !== "sinks" &&
+                activeTab !== "tiles" &&
+                activeTab !== "bathtub" &&
+                [...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={`https://source.unsplash.com/400x300/?${activeTab},ceramic&sig=${i}`}
+                        alt={`${activeTab} ${i + 1}`}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-800">
+                        {otherCategories.find((cat) => cat.type === activeTab)
+                          ?.label || "Product"}{" "}
+                        #{i + 1}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {otherCategories.find((cat) => cat.type === activeTab)
+                          ?.desc || "Elegant and functional."}
+                      </p>
+                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
         </div>

@@ -11,20 +11,131 @@ import {
 } from "react-icons/fa";
 import slabBanner from "../images/slabs-banner.png";
 
+import marble1 from "../images/marble1.png";
+import marble2 from "../images/marble2.png";
+import marble3 from "../images/marble3.png";
+import marble4 from "../images/marble4.png";
+import marble5 from "../images/marble5.png";
+import marble6 from "../images/marble6.png";
+import marble7 from "../images/marble7.png";
+import marble8 from "../images/marble8.png";
+
+import granite1 from "../images/granite1.png";
+import granite2 from "../images/granite2.png";
+import granite3 from "../images/granite3.png";
+import granite4 from "../images/granite4.png";
+import granite5 from "../images/granite5.png";
+import granite6 from "../images/granite6.png";
+import granite7 from "../images/granite7.png";
+import granite8 from "../images/granite8.png";
+
 export default function Slabs() {
   const navigate = useNavigate();
   const location = useLocation();
   const fromAdmin = location.state?.fromAdmin || false;
-  const queryParams = new URLSearchParams(location.search);
-  const initialType = queryParams.get("type") || "marble";
+  const [activeTab, setActiveTab] = useState("marble"); // default
 
-  const [activeTab, setActiveTab] = useState(initialType.toLowerCase());
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const type = queryParams.get("type") || "marble";
+    setActiveTab(type.toLowerCase());
+  }, [location.search]);
+
   const [filters, setFilters] = useState({ category: [], size: [], color: [] });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
+  const marbleImages = [
+    marble1,
+    marble2,
+    marble3,
+    marble4,
+    marble5,
+    marble6,
+    marble7,
+    marble8,
+  ];
+  const graniteImages = [
+    granite1,
+    granite2,
+    granite3,
+    granite4,
+    granite5,
+    granite6,
+    granite7,
+    granite8,
+  ];
+  const graniteData = [
+    {
+      name: "Black Galaxy Granite",
+      desc: "Classic black finish with golden speckles. Perfect for countertops and vanities.",
+    },
+    {
+      name: "Ruby Red Granite",
+      desc: "Deep red granite with dark veins. Ideal for bold, statement interiors.",
+    },
+    {
+      name: "Alaska White Granite",
+      desc: "Bright white granite with subtle gray patterns. Enhances modern kitchens.",
+    },
+    {
+      name: "Steel Grey Granite",
+      desc: "Mid-tone grey with consistent grain. Suitable for both floors and facades.",
+    },
+    {
+      name: "Ivory Brown Granite",
+      desc: "A warm blend of beige and brown. Great for cozy living spaces.",
+    },
+    {
+      name: "Forest Green Granite",
+      desc: "Natural green with dark accents. Adds a lush, earthy feel to any setting.",
+    },
+    {
+      name: "Blue Pearl Granite",
+      desc: "Luxurious blue granite with a shimmering finish. A favorite for luxury spaces.",
+    },
+    {
+      name: "Tan Brown Granite",
+      desc: "Dark brown with chocolate and black flecks. Durable and elegant.",
+    },
+  ];
+
+  const marbleData = [
+    {
+      name: "Golden Emperador Marble",
+      desc: "Rich golden tones with dramatic dark veins. A luxurious choice for upscale interiors.",
+    },
+    {
+      name: "Rosa Aurora Marble",
+      desc: "Soft pink hue with delicate veining. Ideal for bathrooms and serene settings.",
+    },
+    {
+      name: "Verde Alpi Marble",
+      desc: "Deep green marble with white veins. Adds bold character to any space.",
+    },
+    {
+      name: "Crema Marfil Marble",
+      desc: "Creamy beige marble, classic and versatile. Matches any decor style.",
+    },
+    {
+      name: "Carrara White Marble",
+      desc: "Iconic white marble with soft gray veins. A timeless choice for elegant surfaces.",
+    },
+    {
+      name: "Jaisalmer Yellow Marble",
+      desc: "Warm golden-yellow tones. Popular in Indian architecture and temples.",
+    },
+    {
+      name: "Calacatta Gold Marble",
+      desc: "White marble with bold gold and brown veins. Premium and eye-catching.",
+    },
+    {
+      name: "Udaipur Green Marble",
+      desc: "Bright green marble with natural white veining. Eco-inspired and unique.",
+    },
+  ];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -406,35 +517,101 @@ export default function Slabs() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-                >
-                  <div className="relative">
-                    <img
-                      src={`https://source.unsplash.com/400x300/?slab,${activeTab}&sig=${i}`}
-                      alt={`Slab ${i + 1}`}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-lg font-bold text-gray-800">
-                      {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}{" "}
-                      Slab #{i + 1}
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Highly durable, matte finish. Size: 8x4 ft
-                    </p>
-                    <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
+              {activeTab === "granite" &&
+                graniteImages.map((img, i) => {
+                  return (
+                    <div
+                      key={i}
+                      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                    >
+                      <div className="relative">
+                        <img
+                          src={img}
+                          alt={graniteData[i].name}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="text-lg font-bold text-gray-800">
+                          {graniteData[i].name}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {graniteData[i].desc}
+                        </p>
+                        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {activeTab === "marble" &&
+                  marbleImages.map((img, i) => {
+                    const marbleData = [
+                      {
+                        name: "Golden Emperador Marble",
+                        desc: "Golden tones with bold dark veins. Premium interior choice.",
+                      },
+                      {
+                        name: "Rosa Aurora Marble",
+                        desc: "Soft pink marble with delicate lines. Ideal for bathrooms.",
+                      },
+                      {
+                        name: "Verde Alpi Marble",
+                        desc: "Dark green marble with white veins. Striking and rich.",
+                      },
+                      {
+                        name: "Crema Marfil Marble",
+                        desc: "Beige marble, elegant and timeless. Works in all spaces.",
+                      },
+                      {
+                        name: "Carrara White Marble",
+                        desc: "Classic white marble with light gray veining. Versatile look.",
+                      },
+                      {
+                        name: "Jaisalmer Yellow Marble",
+                        desc: "Warm yellow marble from Rajasthan. Great for sunny interiors.",
+                      },
+                      {
+                        name: "Calacatta Gold Marble",
+                        desc: "White with dramatic gold veins. Perfect for luxury designs.",
+                      },
+                      {
+                        name: "Udaipur Green Marble",
+                        desc: "Natural green tones. Durable and nature-inspired style.",
+                      },
+                    ];
+
+                    return (
+                      <div
+                        key={i}
+                        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                      >
+                        <div className="relative">
+                          <img
+                            src={img}
+                            alt={marbleData[i].name}
+                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="text-lg font-bold text-gray-800">
+                            {marbleData[i].name}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {marbleData[i].desc}
+                          </p>
+                          <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                            View Details
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
           </div>
-        </div>
       </section>
 
       {/* Footer */}

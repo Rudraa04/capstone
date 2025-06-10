@@ -4,7 +4,14 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { FaChevronLeft, FaChevronRight,FaSearch, FaBars, FaShoppingCart, FaTimes } from "react-icons/fa";
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaSearch,
+  FaBars,
+  FaShoppingCart,
+  FaTimes,
+} from "react-icons/fa";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 
@@ -19,6 +26,14 @@ import interiorImage from "../images/interior.png";
 import sanitaryImage from "../images/sanitary.png";
 import slabImage from "../images/slab.png";
 import ceramicImage from "../images/ceramic.png";
+import featured1 from "../images/featuredproduct1.png";
+import featured2 from "../images/featuredproduct2.png";
+import featured3 from "../images/featuredproduct3.png";
+import featured4 from "../images/featuredproduct4.png";
+import featured5 from "../images/featuredproduct5.png";
+import featured6 from "../images/featuredproduct6.png";
+import featured7 from "../images/featuredproduct7.png";
+import featured8 from "../images/featuredproduct8.png";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -62,222 +77,7 @@ export default function Home() {
   return (
     <div className="bg-white text-gray-900 font-sans">
       {/* Header */}
-      <header className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <Link
-            to="/"
-            className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
-          >
-            PATEL CERAMICS
-          </Link>
-
-          {/* Search Bar - hidden on small, full width on md+ */}
-          <div className="hidden md:flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full max-w-md hover:border-gray-600 transition-colors duration-200">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-base px-2 text-gray-700 font-medium"
-            />
-            <button
-              onClick={() => console.log("Search query:", query)}
-              className="text-blue-600 hover:text-blue-800 p-1"
-            >
-              <FaSearch size={18} />
-            </button>
-          </div>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
-            <Link to="/" className={`uppercase ${underlineHover}`}>
-              Home
-            </Link>
-
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setShowProductDropdown(!showProductDropdown)}
-                className={`uppercase ${underlineHover}`}
-              >
-                Products
-              </button>
-              {showProductDropdown && (
-                <div
-                  className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-4 gap-10
-                  w-[1200px] max-w-screen-xl z-50 text-base font-sans transform translate-x-[100px]"
-                >
-                  {/* CATEGORY */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      CATEGORY
-                    </h3>
-                    {[
-                      { name: "Marble", to: "/slabs?type=marble" },
-                      { name: "Granite", to: "/slabs?type=granite" },
-                      { name: "Tiles", to: "/ceramics?type=tiles" },
-                      { name: "Sinks", to: "/ceramics?type=sinks" },
-                      { name: "Bathtubs", to: "/ceramics?type=bathtub" },
-                      { name: "Toilets", to: "/ceramics?type=toilets" },
-                    ].map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.to}
-                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* WALL TILES */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      WALL TILES
-                    </h3>
-                    {[
-                      "Bathroom Wall Tiles",
-                      "Kitchen Wall Tiles",
-                      "Outdoor Wall Tiles",
-                      "Living Room Wall Tiles",
-                      "Bedroom Wall Tiles",
-                      "Wall Tiles for Commercial Spaces",
-                    ].map((item) => (
-                      <span key={item} className="block text-gray-700 mb-3">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* FLOOR TILES */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      FLOOR TILES
-                    </h3>
-                    {[
-                      "Living Room Floor Tiles",
-                      "Outdoor Floor Tiles",
-                      "Bedroom Floor Tiles",
-                      "Kitchen Floor Tiles",
-                      "Bathroom Floor tiles",
-                      "Floor Tiles for Commercial Spaces",
-                    ].map((item) => (
-                      <span key={item} className="block text-gray-700 mb-3">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* TILE FINDER */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      TILE FINDER
-                    </h3>
-                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
-                      <option>Select Size</option>
-                      <option>12x12</option>
-                      <option>16x16</option>
-                      <option>24x24</option>
-                    </select>
-                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
-                      <option>Select Finish</option>
-                      <option>Glossy</option>
-                      <option>Matte</option>
-                      <option>Textured</option>
-                    </select>
-                    <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-                      Search
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {user ? (
-              <>
-                <Link
-                  to="/cart"
-                  className={`uppercase ${underlineHover} flex items-center gap-1`}
-                >
-                  <FaShoppingCart /> Cart
-                </Link>
-                <Link to="/profile" className={`uppercase ${underlineHover}`}>
-                  Profile
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className={`uppercase text-red-500 hover:text-red-600 ${underlineHover}`}
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className={`uppercase ${underlineHover}`}>
-                Login/Signup
-              </Link>
-            )}
-          </nav>
-
-          {/* Mobile Hamburger Menu Button */}
-          <button
-            className="md:hidden text-xl"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            {menuOpen ? <FaTimes /> : <FaBars />}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        {menuOpen && (
-          <div className="md:hidden px-6 pb-4">
-            <div className="flex items-center border rounded-full px-4 py-2 bg-gray-100 shadow-sm my-4">
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-base px-2"
-              />
-              <button
-                onClick={() => console.log("Search query:", query)}
-                className="text-blue-600 hover:text-blue-800 p-1"
-              >
-                <FaSearch size={18} />
-              </button>
-            </div>
-            <div className="flex flex-col gap-4 text-[16px] font-medium text-gray-700">
-              <Link to="/" className="uppercase">
-                Home
-              </Link>
-              <Link to="/slabs" className="uppercase">
-                Slabs
-              </Link>
-              <Link to="/ceramics" className="uppercase">
-                Ceramics
-              </Link>
-              {user ? (
-                <>
-                  <Link to="/cart" className="uppercase">
-                    Cart
-                  </Link>
-                  <Link to="/profile" className="uppercase">
-                    Profile
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="uppercase text-left text-red-500"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <Link to="/login" className="uppercase">
-                  Login/Signup
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
-      </header>
+      <Header />
 
       {/* Carousel */}
       <Carousel
@@ -498,7 +298,16 @@ export default function Home() {
           Featured Products
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
+          {[
+            featured1,
+            featured2,
+            featured3,
+            featured4,
+            featured5,
+            featured6,
+            featured7,
+            featured8,
+          ].map((img, i) => (
             <div
               key={i}
               className="rounded overflow-hidden shadow hover:shadow-lg transition"
@@ -506,8 +315,8 @@ export default function Home() {
               data-aos-delay={i * 100}
             >
               <img
-                src={`https://source.unsplash.com/400x400/?tiles,ceramic&sig=${i}`}
-                alt={`Tile ${i + 1}`}
+                src={img}
+                alt={`Featured Product ${i + 1}`}
                 className="w-full h-48 object-cover"
               />
             </div>
