@@ -226,7 +226,7 @@ export default function Cart() {
                 </div>
                 <hr />
                 <div className="flex justify-between text-lg font-semibold">
-                  <span>Total</span>
+                  <span>SubTotal</span>
                   <span>₹{total}</span>
                 </div>
               </div>
