@@ -6,11 +6,13 @@ import { getDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { FaArrowLeft } from "react-icons/fa";
 import { MdEmail, MdLock } from "react-icons/md";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
@@ -87,14 +89,21 @@ export default function Login() {
               </label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
+                  className="w-full border-b-2 border-black py-2 pl-10 pr-10 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
                 <MdLock className="absolute left-2 top-2.5 text-gray-600 text-lg" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-2.5 text-gray-600"
+                >
+                  {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                </button>
               </div>
               <div className="text-right mt-1">
                 <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
@@ -124,7 +133,7 @@ export default function Login() {
           <p className="mt-4 text-sm text-center text-gray-600">
             Don’t have an account?{' '}
             <Link to="/signup" className="text-blue-700 font-semibold hover:underline">
-              Create one
+              Sign up
             </Link>
           </p>
         </div>
