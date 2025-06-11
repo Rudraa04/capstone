@@ -77,10 +77,8 @@ export default function Home() {
 
   return (
     <div className="bg-white text-gray-900 font-sans">
-      {/* Header */}
       <Header />
 
-      {/* Carousel */}
       <Carousel
         autoPlay
         infiniteLoop
@@ -124,7 +122,6 @@ export default function Home() {
             style={{ backgroundImage: `url(${image})` }}
           >
             <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-
             <div className="absolute inset-0 flex items-center justify-center px-4 md:px-10">
               <div className="w-full max-w-7xl mx-auto text-white text-center">
                 <h2 className="text-3xl sm:text-4xl md:text-6xl font-extrabold drop-shadow-xl mb-4">
@@ -153,10 +150,10 @@ export default function Home() {
           </div>
         ))}
       </Carousel>
-      
-      {/* Category Highlights */}
+
+      {/* Shop by Category */}
       <section className="px-4 sm:px-10 py-16 bg-white" data-aos="fade-up">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center">
+        <h2 className="text-3xl sm:text-4xl font-bold mb-8 text-center">
           Shop by Category
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -204,7 +201,7 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-6 lg:w-2/3">
-            {/* Slabs Card */}
+            {/* Slabs */}
             <Link to="/slabs" className="flex-1 min-w-[180px] sm:min-w-[240px]">
               <div className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition h-full overflow-hidden flex flex-col rounded-lg">
                 <div className="h-40 overflow-hidden">
@@ -231,11 +228,8 @@ export default function Home() {
               </div>
             </Link>
 
-            {/* Ceramics Card */}
-            <Link
-              to="/ceramics"
-              className="flex-1 min-w-[180px] sm:min-w-[240px]"
-            >
+            {/* Ceramics */}
+            <Link to="/ceramics" className="flex-1 min-w-[180px] sm:min-w-[240px]">
               <div className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition h-full overflow-hidden flex flex-col rounded-lg">
                 <div className="h-40 overflow-hidden">
                   <img
@@ -263,7 +257,40 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* Why Choose Us */}
+
+      {/* === Moved Featured Products Above === */}
+      <section className="px-4 sm:px-10 py-16 bg-gray-50" data-aos="fade-up">
+        <h2 className="text-4xl sm:text-4xl font-bold mb-8 text-center">
+          Featured Products
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            featured1,
+            featured2,
+            featured3,
+            featured4,
+            featured5,
+            featured6,
+            featured7,
+            featured8,
+          ].map((img, i) => (
+            <div
+              key={i}
+              className="rounded overflow-hidden shadow hover:shadow-lg transition"
+              data-aos="fade-up"
+              data-aos-delay={i * 100}
+            >
+              <img
+                src={img}
+                alt={`Featured Product ${i + 1}`}
+                className="w-full h-48 object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* === What Sets Us Apart (now below) === */}
       <section
         className="px-2 md:px-4 lg:px-6 py-12 bg-white text-center relative"
         data-aos="fade-up"
@@ -295,37 +322,7 @@ export default function Home() {
         </div>
         <div className="absolute inset-0 opacity-5 pointer-events-none bg-[url('/images/pattern-light.png')] bg-center bg-cover"></div>
       </section>
-      {/* Featured Products */}
-      <section className="px-4 sm:px-10 py-16 bg-gray-50" data-aos="fade-up">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-8 text-center">
-          Featured Products
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            featured1,
-            featured2,
-            featured3,
-            featured4,
-            featured5,
-            featured6,
-            featured7,
-            featured8,
-          ].map((img, i) => (
-            <div
-              key={i}
-              className="rounded overflow-hidden shadow hover:shadow-lg transition"
-              data-aos="fade-up"
-              data-aos-delay={i * 100}
-            >
-              <img
-                src={img}
-                alt={`Featured Product ${i + 1}`}
-                className="w-full h-48 object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+
       <Footer />
     </div>
   );
