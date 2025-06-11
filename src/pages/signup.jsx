@@ -9,7 +9,7 @@ import { auth } from "../firebase/firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { FaArrowLeft } from "react-icons/fa";
-import { MdEmail, MdLock, MdPerson, MdPhone } from "react-icons/md";
+import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 export default function Signup() {
@@ -18,37 +18,10 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
-
-  const sendOtp = () => {
-    if (phone.length < 10) {
-      setMessage("Enter a valid phone number.");
-      setMessageType("error");
-      return;
-    }
-    // Simulated OTP sending
-    setOtpSent(true);
-    setMessage("OTP sent successfully to " + phone);
-    setMessageType("success");
-  };
-
-  const verifyOtp = () => {
-    if (otp === "123456") {
-      setIsPhoneVerified(true);
-      setMessage("Phone number verified successfully.");
-      setMessageType("success");
-    } else {
-      setMessage("Invalid OTP. Try again.");
-      setMessageType("error");
-    }
-  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -61,12 +34,6 @@ export default function Signup() {
 
     if (password !== confirm) {
       setMessage("Passwords do not match");
-      setMessageType("error");
-      return;
-    }
-
-    if (!isPhoneVerified) {
-      setMessage("Please verify your phone number before signing up.");
       setMessageType("error");
       return;
     }
@@ -89,7 +56,6 @@ export default function Signup() {
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         fullName: fullName,
-        phone: phone,
         role: "customer",
       });
 
@@ -156,48 +122,6 @@ export default function Signup() {
 
             <div>
               <label className="block text-lg font-semibold text-gray-800 mb-1">
-                Phone Number
-              </label>
-              <div className="relative flex gap-2 items-center">
-                <input
-                  type="tel"
-                  placeholder="e.g. +91 9876543210"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
-                />
-                <MdPhone className="absolute left-2 top-2.5 text-gray-600 text-lg" />
-                <button
-                  type="button"
-                  onClick={sendOtp}
-                  className="text-sm font-semibold text-blue-600 hover:underline"
-                >
-                  Send OTP
-                </button>
-              </div>
-              {otpSent && (
-                <div className="mt-3 flex gap-2 items-center">
-                  <input
-                    type="text"
-                    placeholder="Enter OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className="flex-1 border-b-2 border-black py-1 px-2 focus:outline-none focus:border-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={verifyOtp}
-                    className="bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 text-sm"
-                  >
-                    Verify
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">
                 Password
               </label>
               <div className="relative">
@@ -246,8 +170,7 @@ export default function Signup() {
 
             <button
               type="submit"
-              disabled={!isPhoneVerified}
-              className="bg-blue-600 to-purple-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow disabled:opacity-50"
+              className="bg-blue-600 to-purple-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow"
             >
               Sign Up
             </button>
