@@ -22,12 +22,40 @@ export default function Signup() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [strength, setStrength] = useState("");
+  const [validations, setValidations] = useState({
+    length: false,
+    upper: false,
+    lower: false,
+    number: false,
+    special: false,
+  });
+
+  const evaluatePassword = (pwd) => {
+    const newValidations = {
+      length: pwd.length >= 8,
+      upper: /[A-Z]/.test(pwd),
+      lower: /[a-z]/.test(pwd),
+      number: /[0-9]/.test(pwd),
+      special: /[^A-Za-z0-9]/.test(pwd),
+    };
+    setValidations(newValidations);
+    const passed = Object.values(newValidations).filter(Boolean).length;
+    setStrength(passed <= 2 ? "Weak" : passed <= 4 ? "Medium" : "Strong");
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
     const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!isValidEmail) {
       setMessage("Please enter a valid email address.");
+      setMessageType("error");
+      return;
+    }
+
+    const allValid = Object.values(validations).every(Boolean);
+    if (!allValid) {
+      setMessage("Password does not meet all criteria.");
       setMessageType("error");
       return;
     }
@@ -129,7 +157,10 @@ export default function Signup() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    evaluatePassword(e.target.value);
+                  }}
                   required
                   className="w-full border-b-2 border-black py-2 pl-10 pr-10 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
@@ -141,6 +172,39 @@ export default function Signup() {
                 >
                   {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                 </button>
+              </div>
+              <div className="mt-2">
+                <div className="h-2 w-full bg-gray-200 rounded">
+                  <div
+                    className={`h-full rounded transition-all duration-300 ${
+                      strength === "Weak"
+                        ? "w-1/4 bg-red-500"
+                        : strength === "Medium"
+                        ? "w-2/4 bg-yellow-500"
+                        : strength === "Strong"
+                        ? "w-full bg-green-500"
+                        : "w-0"
+                    }`}
+                  ></div>
+                </div>
+                <p
+                  className={`text-sm mt-1 font-semibold ${
+                    strength === "Strong"
+                      ? "text-green-600"
+                      : strength === "Medium"
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  Strength: {strength || "N/A"}
+                </p>
+                <ul className="text-sm mt-1 space-y-1">
+                  <li className={validations.length ? "text-green-600" : "text-red-600"}>✓ At least 8 characters</li>
+                  <li className={validations.upper ? "text-green-600" : "text-red-600"}>✓ At least 1 uppercase letter</li>
+                  <li className={validations.lower ? "text-green-600" : "text-red-600"}>✓ At least 1 lowercase letter</li>
+                  <li className={validations.number ? "text-green-600" : "text-red-600"}>✓ At least 1 number</li>
+                  <li className={validations.special ? "text-green-600" : "text-red-600"}>✓ At least 1 special character</li>
+                </ul>
               </div>
             </div>
 
