@@ -231,7 +231,10 @@ export default function Cart() {
                 </div>
               </div>
               <button
-                onClick={() => alert("Proceeding to checkout")}
+                onClick={() => {
+                  localStorage.setItem("cartItems", JSON.stringify(cartItems));
+                  navigate("/checkout");
+                }}
                 className="w-full py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition"
               >
                 Checkout
