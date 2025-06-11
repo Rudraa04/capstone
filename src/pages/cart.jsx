@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import Tiles2 from "../images/Tiles2.png";
+import sink5 from "../images/sink5.png";
 
 function getDeliveryDate() {
   const today = new Date();
@@ -31,23 +33,24 @@ export default function Cart() {
   const [cartItems, setCartItems] = useState([
     {
       id: 1,
-      name: "Glossy White Floor Tile",
+      name: "White Marble Wall Tile",
       price: 25,
+      discount: 0,
       quantity: 2,
       stock: 10,
-      image: "https://source.unsplash.com/300x300/?tile,white",
+      image: [Tiles2],
     },
     {
       id: 2,
-      name: "Marble Effect Wall Tile",
-      price: 40,
+      name: "Stainless Steel Sink",
+      price: 1099,
+      discount: 199,
       quantity: 1,
       stock: 2,
-      image: "https://source.unsplash.com/300x300/?tile,marble",
+      image: [sink5],
     },
   ]);
 
-  const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
 
   const handleQuantityChange = (id, newQuantity) => {
@@ -62,16 +65,23 @@ export default function Cart() {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const total = cartItems.reduce(
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const totalItemDiscount = cartItems.reduce(
+    (sum, item) => sum + item.discount * item.quantity,
+    0
+  );
+
+  const total = subtotal - totalItemDiscount - discount;
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900 font-sans">
       <Header />
 
-      <div className="flex-grow px-2 py-6 sm:px-4 lg:apx-10 bg-gray-100">
+      <div className="flex-grow px-2 py-6 sm:px-4 lg:px-10 bg-gray-100">
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center lg:text-left">
           🛒 Your Cart
         </h1>
@@ -98,7 +108,6 @@ export default function Cart() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Cart Items */}
             <div className="lg:col-span-2 space-y-5">
               <AnimatePresence>
                 {cartItems.map((item) => (
@@ -116,31 +125,45 @@ export default function Cart() {
                       className="w-full sm:w-32 h-32 object-cover rounded-lg border"
                     />
                     <div className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
-                          {item.name}
-                        </h2>
-                        <p className="text-sm text-gray-500 mt-1">
-                          ₹{item.price} / piece
-                        </p>
-                        <p
-                          className={`text-sm mt-1 font-medium ${
-                            item.stock === 0
-                              ? "text-red-500"
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h2 className="text-xl font-semibold text-gray-800">
+                            {item.name}
+                          </h2>
+                          <p
+                            className={`text-sm mt-1 font-medium ${
+                              item.stock === 0
+                                ? "text-red-500"
+                                : item.stock <= 3
+                                ? "text-yellow-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            {item.stock === 0
+                              ? "Out of Stock"
                               : item.stock <= 3
-                              ? "text-yellow-600"
-                              : "text-green-600"
-                          }`}
-                        >
-                          {item.stock === 0
-                            ? "Out of Stock"
-                            : item.stock <= 3
-                            ? `Only ${item.stock} left`
-                            : "In Stock"}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          🚚 Estimated delivery by {getDeliveryDate()}
-                        </p>
+                              ? `Only ${item.stock} left`
+                              : "In Stock"}
+                          </p>
+                          <p className="text-sm text-gray-500 font-bold mt-1">
+                            Estimated delivery by {getDeliveryDate()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          {item.discount > 0 && (
+                            <p className="text-sm text-gray-500 line-through">
+                              ₹{item.price * item.quantity}
+                            </p>
+                          )}
+                          <p className="text-lg font-bold text-gray-900">
+                            ₹{(item.price - item.discount) * item.quantity}
+                          </p>
+                          {item.discount > 0 && (
+                            <p className="text-xs text-green-600 font-medium">
+                              You save ₹{item.discount * item.quantity}
+                            </p>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex items-center flex-wrap gap-3 mt-4">
@@ -149,18 +172,20 @@ export default function Cart() {
                             item.quantity > 1 &&
                             handleQuantityChange(item.id, item.quantity - 1)
                           }
-                          className="px-3 py-1 border rounded-lg hover:bg-gray-100"
+                          className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 text-lg font-bold"
                           disabled={item.quantity <= 1}
                         >
-                          -
+                          −
                         </button>
-                        <span className="px-4 text-md">{item.quantity}</span>
+                        <span className="px-4 text-md font-medium bg-gray-100 px-3 py-1 rounded">
+                          {item.quantity}
+                        </span>
                         <button
                           onClick={() =>
                             item.quantity < item.stock &&
                             handleQuantityChange(item.id, item.quantity + 1)
                           }
-                          className={`px-3 py-1 border rounded-lg ${
+                          className={`px-3 py-1 border border-gray-300 rounded-lg text-lg font-bold ${
                             item.quantity >= item.stock
                               ? "text-gray-400 cursor-not-allowed"
                               : "hover:bg-gray-100"
@@ -171,7 +196,7 @@ export default function Cart() {
                         </button>
                         <button
                           onClick={() => handleRemoveItem(item.id)}
-                          className="text-red-600 hover:underline text-sm ml-auto"
+                          className="text-red-600 hover:underline text-sm ml-auto font-bold"
                         >
                           Remove
                         </button>
@@ -182,38 +207,34 @@ export default function Cart() {
               </AnimatePresence>
             </div>
 
-            {/* Order Summary */}
             <div className="bg-white p-6 rounded-2xl shadow border space-y-4">
               <h3 className="text-2xl font-bold text-gray-800">
                 Order Summary
               </h3>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-700">
+                <div className="flex justify-between text-sm text-gray-700 font-semibold">
                   <span>Subtotal</span>
-                  <span>₹{total}</span>
+                  <span>₹{subtotal}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-700">
-                  <span>Discount</span>
+                <div className="flex justify-between text-sm text-gray-700 font-semibold">
+                  <span>Total Item Discount</span>
+                  <span>- ₹{totalItemDiscount}</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-700 font-semibold">
+                  <span>Extra Discount</span>
                   <span>- ₹{discount}</span>
                 </div>
                 <hr />
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total</span>
-                  <span>₹{total - discount}</span>
+                  <span>₹{total}</span>
                 </div>
               </div>
-              <input
-                type="text"
-                placeholder="Promo code"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none"
-              />
               <button
-                onClick={() => setDiscount(50)}
-                className="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition"
+                onClick={() => alert("Proceeding to checkout")}
+                className="w-full py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition"
               >
-                Apply Code
+                Checkout
               </button>
             </div>
           </div>
