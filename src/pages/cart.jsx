@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { motion, AnimatePresence } from "framer-motion";
-
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Tiles2 from "../images/Tiles2.png";
@@ -238,6 +237,12 @@ export default function Cart() {
                 className="w-full py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition"
               >
                 Checkout
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                className="w-full mt-2 py-2 rounded-lg font-medium bg-gray-200 hover:bg-gray-300 text-gray-800 transition"
+              >
+                ← Back to Shopping
               </button>
             </div>
           </div>
