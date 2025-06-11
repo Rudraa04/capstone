@@ -248,6 +248,30 @@ export default function Ceramics() {
     },
   ];
 
+  const filterOptions = {
+    tiles: {
+      size: ["12x12", "24x24", "16x16"],
+      finish: ["Glossy", "Matte", "Textured"],
+      color: ["White", "Beige", "Grey", "Black"],
+    },
+    sinks: {
+      type: ["Wall Mount", "Pedestal", "Countertop"],
+      material: ["Ceramic", "Stone", "Glass"],
+      size: ["16 inch", "18 inch", "20 inch", "22 inch"],
+    },
+
+    bathtub: {
+      material: ["Acrylic", "Ceramic", "Stone Resin"],
+      size: ["5ft", "5.5ft", "6ft"],
+      color: ["White", "Black", "Maroon"],
+    },
+    toilets: {
+      type: ["One Piece", "Two Piece", "Wall Hung"],
+      flush: ["Single", "Dual", "Touchless"],
+      color: ["White", "Ivory", "Grey"],
+    },
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -547,65 +571,30 @@ export default function Ceramics() {
               <h3 className="text-xl font-semibold mb-6 text-gray-800">
                 Filter Products
               </h3>
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">
-                  Search by Category
-                </h4>
-                {["Tiles", "Sinks", "Bathtubs", "Toilets"].map((option) => (
-                  <label
-                    key={option}
-                    className="block text-sm text-gray-800 mb-1"
-                  >
-                    <input
-                      type="checkbox"
-                      className="mr-2"
-                      checked={filters.category.includes(option)}
-                      onChange={() => toggleFilter("category", option)}
-                    />
-                    {option}
-                  </label>
-                ))}
-              </div>
 
-              <div className="mb-6">
-                <h4 className="font-medium text-gray-700 mb-2">
-                  Search by Size
-                </h4>
-                {["12x12", "16x16", "24x24", "30x30"].map((option) => (
-                  <label
-                    key={option}
-                    className="block text-sm text-gray-800 mb-1"
-                  >
-                    <input
-                      type="checkbox"
-                      className="mr-2"
-                      checked={filters.size.includes(option)}
-                      onChange={() => toggleFilter("size", option)}
-                    />
-                    {option}
-                  </label>
-                ))}
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-700 mb-2">
-                  Search by Color
-                </h4>
-                {["White", "Ivory", "Beige", "Gray", "Black"].map((option) => (
-                  <label
-                    key={option}
-                    className="block text-sm text-gray-800 mb-1"
-                  >
-                    <input
-                      type="checkbox"
-                      className="mr-2"
-                      checked={filters.color.includes(option)}
-                      onChange={() => toggleFilter("color", option)}
-                    />
-                    {option}
-                  </label>
-                ))}
-              </div>
+              {Object.entries(filterOptions[activeTab] || {}).map(
+                ([filterKey, values]) => (
+                  <div key={filterKey} className="mb-6">
+                    <h4 className="font-medium text-gray-700 mb-2 capitalize">
+                      {filterKey}
+                    </h4>
+                    {values.map((option) => (
+                      <label
+                        key={option}
+                        className="block text-sm text-gray-800 mb-1"
+                      >
+                        <input
+                          type="checkbox"
+                          className="mr-2"
+                          checked={filters[filterKey]?.includes(option)}
+                          onChange={() => toggleFilter(filterKey, option)}
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </div>
+                )
+              )}
             </div>
           </aside>
 

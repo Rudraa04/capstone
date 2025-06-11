@@ -137,6 +137,17 @@ export default function Slabs() {
     },
   ];
 
+  const filterOptions = {
+    marble: {
+      size: ["8x4 ft", "10x5 ft", "12x6 ft"],
+      color: ["White", "Beige", "Pink", "Green", "Gold"],
+    },
+    granite: {
+      size: ["4x2 ft", "6x3 ft", "8x4 ft"],
+      color: ["Black", "Red", "White", "Brown", "Gray"],
+    },
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -447,26 +458,12 @@ export default function Slabs() {
               <h3 className="text-xl font-bold mb-4 text-gray-900">Filters</h3>
 
               <div className="space-y-4">
-                {/* Category Filter */}
-                <div>
-                  <h4 className="text-gray-800 font-semibold mb-2">Category</h4>
-                  {["Marble", "Granite"].map((item) => (
-                    <label key={item} className="block text-sm text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={filters.category.includes(item)}
-                        onChange={() => toggleFilter("category", item)}
-                        className="mr-2"
-                      />
-                      {item}
-                    </label>
-                  ))}
-                </div>
+            
 
                 {/* Size Filter */}
                 <div>
                   <h4 className="text-gray-800 font-semibold mb-2">Size</h4>
-                  {["8x4 ft", "10x5 ft", "12x6 ft"].map((item) => (
+                  {(filterOptions[activeTab]?.size || []).map((item) => (
                     <label key={item} className="block text-sm text-gray-700">
                       <input
                         type="checkbox"
@@ -482,7 +479,7 @@ export default function Slabs() {
                 {/* Color Filter */}
                 <div>
                   <h4 className="text-gray-800 font-semibold mb-2">Color</h4>
-                  {["White", "Black", "Gray", "Beige"].map((item) => (
+                  {(filterOptions[activeTab]?.color || []).map((item) => (
                     <label key={item} className="block text-sm text-gray-700">
                       <input
                         type="checkbox"
