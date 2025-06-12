@@ -17,6 +17,7 @@ import Exterior from "./pages/exterior.jsx";
 import Sanitary from "./pages/sanitary.jsx";
 import BedroomWall from "./pages/BedroomWall";
 import BedroomFloor from "./pages/BedroomFloor";
+import ProductDetail from "./pages/ProductDetail";
 
 import SlabsInventory from "./admin/SlabsInventory.jsx";
 import CeramicsInventory from "./admin/CeramicsInventory.jsx";
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/bedroomfloor" element={<BedroomFloor />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} /> {/* ✅ Added */}
+        <Route path="/product/:type/:id" element={<ProductDetail />} />
 
         {/* Admin routes */}
         <Route path="/adminLogin" element={<AdminLogin />} />

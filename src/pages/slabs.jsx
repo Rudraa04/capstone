@@ -564,9 +564,11 @@ export default function Slabs() {
                         <p className="text-sm text-gray-500 mt-1">
                           {marbleData[i].desc}
                         </p>
-                        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                          View Details
-                        </button>
+                        <Link to={`/product/granite/${i}`}>
+                          <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                            View Details
+                          </button>
+                        </Link>
                       </div>
                     </div>
                   );
