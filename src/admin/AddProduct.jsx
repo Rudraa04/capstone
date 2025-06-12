@@ -70,11 +70,12 @@ export default function AddProduct() {
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <div>
           <button
-            onClick={() => navigate("/adminHome")}
-            className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
-          >
-            <FiHome /> Admin Panel
-          </button>
+  onClick={() => navigate("/admin")}
+  className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
+>
+  <FiHome /> Admin Panel
+</button>
+
         </div>
         <nav className="space-y-4 text-sm">
           <button

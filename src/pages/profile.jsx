@@ -81,7 +81,7 @@ export default function Profile() {
         bio: profileData.bio,
         phone: profileData.phone,
         address: profileData.address,
-        role: fromAdmin ? "admin" : "customer", // this is optional
+        role: fromAdmin ? "admin" : "customer", 
       });
       alert("Profile updated!");
       setEditing(false);
@@ -120,7 +120,7 @@ export default function Profile() {
     <div className="bg-white text-gray-900 font-sans min-h-screen">
       <Header />
 
-      <main className="min-h-screen bg-gradient-to-br from-blue-100 to-white py-16 px-4">
+      <main className="min-h-screen bg-white py-16 px-4">
         <div className="max-w-2xl mx-auto bg-white/30 backdrop-blur-lg rounded-2xl border border-gray-200 shadow-2xl p-10 text-gray-800">
           {fromAdmin && (
             <div className="flex justify-end mb-4">

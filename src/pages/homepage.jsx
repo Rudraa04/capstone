@@ -259,7 +259,7 @@ export default function Home() {
       </section>
 
       {/* === Moved Featured Products Above === */}
-      <section className="px-4 sm:px-10 py-16 bg-gray-50" data-aos="fade-up">
+      <section className="px-4 sm:px-10 py-16 bg-white" data-aos="fade-up">
         <h2 className="text-4xl sm:text-4xl font-bold mb-8 text-center">
           Featured Products
         </h2>

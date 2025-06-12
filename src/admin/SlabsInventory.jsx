@@ -44,11 +44,12 @@ export default function SlabsInventory() {
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <div>
           <button
-            onClick={() => navigate("/adminHome")}
-            className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
-          >
-            <FiHome /> Admin Panel
-          </button>
+  onClick={() => navigate("/admin")}
+  className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
+>
+  <FiHome /> Admin Panel
+</button>
+
         </div>
         <nav className="space-y-4 text-sm">
           <button
@@ -104,7 +105,9 @@ export default function SlabsInventory() {
 
       {/* Main Content */}
       <main className="flex-1 px-6 sm:px-10 py-6 sm:py-8">
-        <h1 className="text-3xl font-bold text-blue-800 mb-6">Slabs Inventory</h1>
+        <h1 className="text-3xl font-bold text-blue-800 mb-6">
+          Slabs Inventory
+        </h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {items.map((item, index) => (

@@ -133,11 +133,12 @@ export default function SalesReports() {
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <button
-          onClick={() => navigate("/adminHome")}
-          className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
-        >
-          <FiHome /> Admin Panel
-        </button>
+  onClick={() => navigate("/admin")}
+  className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
+>
+  <FiHome /> Admin Panel
+</button>
+
         <nav className="space-y-4 text-sm">
           <button onClick={() => navigate("/admin/slabs")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md">
             <FiBox /> Slabs Inventory
