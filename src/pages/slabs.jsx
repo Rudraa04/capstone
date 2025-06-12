@@ -458,8 +458,6 @@ export default function Slabs() {
               <h3 className="text-xl font-bold mb-4 text-gray-900">Filters</h3>
 
               <div className="space-y-4">
-            
-
                 {/* Size Filter */}
                 <div>
                   <h4 className="text-gray-800 font-semibold mb-2">Size</h4>
@@ -535,9 +533,11 @@ export default function Slabs() {
                         <p className="text-sm text-gray-500 mt-1">
                           {graniteData[i].desc}
                         </p>
-                        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                          View Details
-                        </button>
+                        <Link to={`/product/granite/${i}`}>
+                          <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                            View Details
+                          </button>
+                        </Link>
                       </div>
                     </div>
                   );
@@ -564,7 +564,7 @@ export default function Slabs() {
                         <p className="text-sm text-gray-500 mt-1">
                           {marbleData[i].desc}
                         </p>
-                        <Link to={`/product/granite/${i}`}>
+                        <Link to={`/product/marble/${i}`}>
                           <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
                             View Details
                           </button>
