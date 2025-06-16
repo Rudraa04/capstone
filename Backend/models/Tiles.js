@@ -4,14 +4,14 @@ const TilesSchema = new mongoose.Schema({
   ID: String,
   Name: String,
   Description: String,
-  Colour: String,
+  Color: String,
   Price: Number,
   Image: String,
   Category: String,
   SubCategory: String,
   Stock_admin: Number,
   Stock_Customer: Boolean,
-  Manufracturer: String,
+  Manufacturer: String,
   Size: String
 });
 
