@@ -27,6 +27,14 @@ export default function AddProduct() {
     description: "",
   });
   const [image, setImage] = useState(null);
+  const brands = [
+    "Kajaria",
+    "Cera",
+    "Hindware",
+    "Johnson",
+    "Somany",
+    "Simpolo",
+  ];
 
   const productTypes = [
     "Granite",
@@ -70,12 +78,11 @@ export default function AddProduct() {
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <div>
           <button
-  onClick={() => navigate("/admin")}
-  className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
->
-  <FiHome /> Admin Panel
-</button>
-
+            onClick={() => navigate("/admin")}
+            className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
+          >
+            <FiHome /> Admin Panel
+          </button>
         </div>
         <nav className="space-y-4 text-sm">
           <button
@@ -144,159 +151,223 @@ export default function AddProduct() {
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+            {/* Compact Grid*/}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
+              {/* Product Name */}
               <div>
-                <label className="block mb-1 font-semibold">Product Name</label>
+                <label className="block font-semibold mb-1">Product Name</label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full p-3 border rounded-lg"
+                  className="w-full p-2 border rounded-md"
                 />
               </div>
-              <div>
-                <label className="block mb-1 font-semibold">Price ($)</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-semibold">Quantity</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-semibold">
-                  Brand / Manufacturer
-                </label>
-                <input
-                  type="text"
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-semibold">Product Type</label>
-                <select
-                  name="productType"
-                  value={formData.productType}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-3 border rounded-lg"
-                >
-                  <option value="">Select Type</option>
-                  {productTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block mb-1 font-semibold">Usage Type</label>
-                <select
-                  name="usageType"
-                  value={formData.usageType}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-3 border rounded-lg"
-                >
-                  <option value="">Select Usage</option>
-                  {usageTypes.map((usage) => (
-                    <option key={usage} value={usage}>
-                      {usage}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block mb-1 font-semibold">
-                  Size / Dimensions
-                </label>
-                <input
-                  type="text"
-                  name="size"
-                  value={formData.size}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-semibold">
-                  Tags / Keywords
-                </label>
-                <input
-                  type="text"
-                  name="tags"
-                  value={formData.tags}
-                  onChange={handleChange}
-                  placeholder="e.g. polished, matte, classic"
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
-            </div>
 
-            <div>
-              <label className="block mb-1 font-semibold">
-                Product Description
-              </label>
-              <textarea
-                name="description"
-                rows="3"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg"
-              ></textarea>
-            </div>
-
-            <div>
-              <label className="block mb-1 font-semibold">
-                Upload Product Image
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="w-full"
-              />
-              {image && (
-                <div className="mt-4 w-40 h-40 border rounded-lg overflow-hidden">
-                  <img
-                    src={image}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
+              {/* Price & Quantity */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold mb-1">Price ($)</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded-md"
                   />
                 </div>
-              )}
+                <div>
+                  <label className="block font-semibold mb-1">Quantity</label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+              </div>
+
+              {/* Product Type & Usage Type */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold mb-1">
+                    Product Type
+                  </label>
+                  <select
+                    name="productType"
+                    value={formData.productType}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="">Select Type</option>
+                    {productTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Usage Type</label>
+                  <select
+                    name="usageType"
+                    value={formData.usageType}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="">Select Usage</option>
+                    {usageTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Brand, Size, and Tags*/}
+              <div className="grid md:grid-cols-3 gap-4 items-end">
+                {/* Brand */}
+                <div>
+                  <label className="block font-semibold mb-1">
+                    Brand / Manufacturer
+                  </label>
+                  <select
+                    name="brand"
+                    value={formData.brand}
+                    onChange={handleChange}
+                    required
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="">Select Brand</option>
+                    {brands.map((brand) => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Size - Centered */}
+                <div className="flex flex-col items-center">
+                  <label className="block font-semibold mb-1 text-center">
+                    Size / Dimensions (in)
+                  </label>
+                  <div className="flex gap-2 justify-center">
+                    <input
+                      type="text"
+                      name="length"
+                      value={formData.length || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d{0,3}$/.test(val)) {
+                          setFormData((prev) => ({ ...prev, length: val }));
+                        }
+                      }}
+                      placeholder="Len"
+                      className="w-20 p-2 border rounded-md text-center"
+                      inputMode="numeric"
+                    />
+                    <span className="text-lg font-bold">x</span>
+                    <input
+                      type="text"
+                      name="width"
+                      value={formData.width || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d{0,3}$/.test(val)) {
+                          setFormData((prev) => ({ ...prev, width: val }));
+                        }
+                      }}
+                      placeholder="Wid"
+                      className="w-20 p-2 border rounded-md text-center"
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block font-semibold mb-1">
+                    Tags / Keywords
+                  </label>
+                  <input
+                    type="text"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleChange}
+                    placeholder="e.g. polished, matte, classic"
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="flex justify-end gap-4 pt-4">
+            {/* Description & Image*/}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold mb-1">
+                  Product Description
+                </label>
+                <textarea
+                  name="description"
+                  rows="2"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded-md"
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">
+                  Upload Product Image
+                </label>
+                <div className="border border-dashed rounded-md p-4 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="upload-image"
+                  />
+                  <label
+                    htmlFor="upload-image"
+                    className="cursor-pointer text-blue-600 font-medium"
+                  >
+                    Click to upload product image
+                  </label>
+                  {image && (
+                    <div className="mt-4 w-32 h-32 mx-auto border rounded overflow-hidden">
+                      <img
+                        src={image}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* Buttons */}
+            <div className="flex justify-end gap-3 pt-4">
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="px-6 py-2 border border-gray-400 rounded-lg hover:bg-gray-100"
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold"
               >
                 Save Product
               </button>
