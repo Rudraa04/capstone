@@ -31,11 +31,11 @@ export default function Checkout() {
       id: 1,
       label: "Home",
       fullName: "Harshil Rathod",
-      street: "2309-205 Heritage Drive SE",
+      street: "1601 16 Ave NW",
       city: "Calgary",
-      postalCode: "T2H 2J8",
+      postalCode: "T29 xxx",
       country: "Canada",
-      phone: "825-558-2103",
+      phone: "xxx-xxx-xxx",
     },
   ]);
   const [newAddress, setNewAddress] = useState({
