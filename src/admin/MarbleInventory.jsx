@@ -94,7 +94,7 @@ export default function MarbleInventory() {
             </button>
             <button
               onClick={() =>
-                navigate("/admin/addproduct", {
+                navigate("/admin/addmarble", {
                   state: { category: "Granite" },
                 })
               }

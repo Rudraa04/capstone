@@ -92,7 +92,7 @@ export default function ToiletInventory() {
             </button>
             <button
               onClick={() =>
-                navigate("/admin/addproduct", {
+                navigate("/admin/addtoilet", {
                   state: { category: "Granite" },
                 })
               }

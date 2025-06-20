@@ -96,7 +96,7 @@ export default function BathtubInventory() {
             </button>
             <button
               onClick={() =>
-                navigate("/admin/addproduct", {
+                navigate("/admin/addbathtub", {
                   state: { category: "Granite" },
                 })
               }

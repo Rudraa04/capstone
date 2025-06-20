@@ -92,7 +92,7 @@ export default function TilesInventory() {
             </button>
             <button
               onClick={() =>
-                navigate("/admin/addproduct", {
+                navigate("/admin/addtiles", {
                   state: { category: "Granite" },
                 })
               }

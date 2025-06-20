@@ -18,6 +18,12 @@ import Sanitary from "./pages/sanitary.jsx";
 import BedroomWall from "./pages/BedroomWall";
 import BedroomFloor from "./pages/BedroomFloor";
 import ProductDetail from "./pages/ProductDetail";
+import AddMarble from "./admin/AddMarble";
+import AddGranite from "./admin/AddGranite";
+import AddTiles from "./admin/AddTiles";
+import AddBathtub from "./admin/AddBathtub";
+import AddSink from "./admin/AddSink";
+import AddToilet from "./admin/AddToilet";
 
 import SlabsInventory from "./admin/SlabsInventory.jsx";
 import CeramicsInventory from "./admin/CeramicsInventory.jsx";
@@ -68,7 +74,13 @@ export default function App() {
         <Route path="/admin/orders" element={<OrderManagement />} />
         <Route path="/admin/support" element={<CustomerSupport />} />
         <Route path="/admin/reports" element={<SalesReports />} />
-      
+        <Route path="/admin/addmarble" element={<AddMarble />} />
+        <Route path="/admin/addgranite" element={<AddGranite />} />
+        <Route path="/admin/addtiles" element={<AddTiles />} />
+        <Route path="/admin/addbathtub" element={<AddBathtub />} />
+        <Route path="/admin/addsink" element={<AddSink />} />
+        <Route path="/admin/addtoilet" element={<AddToilet />} />
+        
       </Routes>
     </BrowserRouter>
   );

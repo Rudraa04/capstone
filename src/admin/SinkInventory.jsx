@@ -92,7 +92,7 @@ export default function SinkInventory() {
             </button>
             <button
               onClick={() =>
-                navigate("/admin/addproduct", {
+                navigate("/admin/addsink", {
                   state: { category: "Granite" },
                 })
               }
