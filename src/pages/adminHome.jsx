@@ -74,12 +74,7 @@ export default function AdminHome() {
           >
             <FiTrendingUp /> Sales & Reports
           </button>
-          <button
-            onClick={() => navigate("/admin/useraccess")}
-            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
-          >
-            <FiUsers /> User Access
-          </button>
+          
           <button
             onClick={() => {
               localStorage.setItem("fromAdmin", "true");

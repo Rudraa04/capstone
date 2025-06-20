@@ -31,7 +31,7 @@ import ToiletInventory from "./admin/ToiletInventory.jsx";
 import OrderManagement from "./admin/OrderManagement";
 import CustomerSupport from "./admin/CustomerSupport.jsx";
 import SalesReports from "./admin/SalesReports.jsx";
-import UserAccess from "./admin/UserAccess.jsx";
+
 
 export default function App() {
   return (
@@ -68,7 +68,7 @@ export default function App() {
         <Route path="/admin/orders" element={<OrderManagement />} />
         <Route path="/admin/support" element={<CustomerSupport />} />
         <Route path="/admin/reports" element={<SalesReports />} />
-        <Route path="/admin/useraccess" element={<UserAccess />} />
+      
       </Routes>
     </BrowserRouter>
   );
