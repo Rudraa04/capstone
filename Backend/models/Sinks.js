@@ -1,7 +1,10 @@
 import mongoose from 'mongoose';
+import dotenv from "dotenv";
+dotenv.config();
+
+const ceramicsConnection = mongoose.createConnection(process.env.CERAMICS_URI);
 
 const SinksSchema = new mongoose.Schema({
-  ID: String,
   Name: String,
   Description: String,
   Color: String,
@@ -14,4 +17,4 @@ const SinksSchema = new mongoose.Schema({
   Size: String
 });
 
-export default mongoose.model('Sinks', SinksSchema, 'Sinks');
+export default ceramicsConnection.model('Sinks', SinksSchema, 'Sinks');

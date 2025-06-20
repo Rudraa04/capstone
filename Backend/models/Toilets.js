@@ -1,7 +1,10 @@
 import mongoose from 'mongoose';
+import dotenv from "dotenv";
+dotenv.config();
+
+const ceramicsConnection = mongoose.createConnection(process.env.CERAMICS_URI);
 
 const ToiletsSchema = new mongoose.Schema({
-  ID: String,
   name: String,
   description: String,
   Color: String, 
@@ -13,4 +16,4 @@ const ToiletsSchema = new mongoose.Schema({
   Manufacturer: String,
 });
 
-export default mongoose.model('Toilets', ToiletsSchema, 'Toilets');
+export default ceramicsConnection.model('Toilets', ToiletsSchema, 'Toilets');

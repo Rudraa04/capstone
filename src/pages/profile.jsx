@@ -16,6 +16,7 @@ import {
 import { auth, db } from "../firebase/firebase";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { storage } from "../firebase/firebase";
 
 export default function Profile() {
   const maskEmail = (email) => {
@@ -127,11 +128,24 @@ export default function Profile() {
       await uploadBytes(storageRef, file);
 
       const url = await getDownloadURL(storageRef);
+
+      // Update Firebase Auth profile
       await updateProfile(auth.currentUser, { photoURL: url });
 
-      setUser({
-        ...auth.currentUser,
+      // Update Firestore user document
+      await setDoc(doc(db, "users", auth.currentUser.uid), {
+        ...profileData,
         photoURL: url,
+        role: fromAdmin ? "admin" : "customer",
+      });
+
+      // Reload and refresh user
+      await auth.currentUser.reload();
+      const refreshedUser = auth.currentUser;
+
+      setUser({
+        ...refreshedUser,
+        photoURL: refreshedUser.photoURL,
       });
 
       alert("Profile picture updated!");
@@ -200,7 +214,6 @@ export default function Profile() {
 
             <p className="text-sm text-gray-600 mb-4">
               {fromAdmin ? maskEmail(user?.email) : user?.email}
-              {/* no toggle here as requested */}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -230,7 +243,7 @@ export default function Profile() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {[
+            {[ 
               { label: "Full Name", key: "fullName" },
               { label: "Phone", key: "phone" },
               { label: "Email", key: "email", value: user?.email },

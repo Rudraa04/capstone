@@ -7,7 +7,6 @@ dotenv.config();
 const slabsConnection = mongoose.createConnection(process.env.SLABS_URI);
 
 const MarbleSchema = new mongoose.Schema({
-  ID: String,
   Name: String,
   Description: String,
   Color: String,

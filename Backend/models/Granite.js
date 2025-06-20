@@ -1,11 +1,12 @@
 import mongoose from 'mongoose';
 import dotenv from "dotenv";
 dotenv.config();
+
+
 // Use a separate connection for Slabs DB
 const slabsConnection = mongoose.createConnection(process.env.SLABS_URI);
 
 const GraniteSchema = new mongoose.Schema({
-  ID: String,
   Name: String,
   Description: String,
   Color: String,
