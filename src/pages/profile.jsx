@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   onAuthStateChanged,
   signOut,
@@ -7,16 +7,35 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
 import { auth, db } from "../firebase/firebase";
-
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 export default function Profile() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const maskEmail = (email) => {
+    if (!email) return "";
+    const [name, domain] = email.split("@");
+    const visible = name.slice(0, 2);
+    return `${visible}*****@${domain}`;
+  };
 
+  const maskPhone = (phone) => {
+    if (!phone) return "";
+    return phone.slice(0, 2) + "*****" + phone.slice(-2);
+  };
+
+  const maskAddress = (address) => {
+    if (!address) return "";
+    return "Confidential";
+  };
+
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [fromAdmin, setFromAdmin] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -27,37 +46,39 @@ export default function Profile() {
   });
   const [editing, setEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(null);
+
+  const [showEmail, setShowEmail] = useState(false);
+  const [showPhone, setShowPhone] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
-
         const docRef = doc(db, "users", currentUser.uid);
         const docSnap = await getDoc(docRef);
+        const userData = docSnap.exists() ? docSnap.data() : {};
 
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
+        const isAdmin =
+          localStorage.getItem("fromAdmin") === "true" &&
+          userData.role === "admin";
 
-          const isAdmin =
-            localStorage.getItem("fromAdmin") === "true" &&
-            userData.role === "admin";
-
-          setFromAdmin(isAdmin);
-
-          if (!isAdmin) {
-            localStorage.removeItem("fromAdmin");
-          }
-
-          setProfileData((prev) => ({
-            ...prev,
-            fullName: currentUser.displayName || "",
-            bio: userData.bio || "",
-            phone: userData.phone || "",
-            address: userData.address || "",
-          }));
+        setFromAdmin(isAdmin);
+        if (!isAdmin) {
+          localStorage.removeItem("fromAdmin");
         }
+
+        setUser({
+          ...currentUser,
+          photoURL: currentUser.photoURL || null,
+        });
+
+        setProfileData((prev) => ({
+          ...prev,
+          fullName: currentUser.displayName || "",
+          bio: userData.bio || "",
+          phone: userData.phone || "",
+          address: userData.address || "",
+        }));
       } else {
         navigate("/login");
       }
@@ -81,7 +102,7 @@ export default function Profile() {
         bio: profileData.bio,
         phone: profileData.phone,
         address: profileData.address,
-        role: fromAdmin ? "admin" : "customer", 
+        role: fromAdmin ? "admin" : "customer",
       });
       alert("Profile updated!");
       setEditing(false);
@@ -92,21 +113,26 @@ export default function Profile() {
 
   const handleProfilePicUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file || !user) return;
+    if (!file || !auth.currentUser) return;
 
-    const localUrl = URL.createObjectURL(file);
-    setPreviewUrl(localUrl);
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File too large! Max size allowed is 2MB.");
+      return;
+    }
 
     setUploading(true);
     try {
       const storage = getStorage();
-      const storageRef = ref(storage, `profilePictures/${user.uid}.jpg`);
+      const storageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
       await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
 
-      await updateProfile(user, { photoURL: url });
-      setUser({ ...user, photoURL: url });
-      setPreviewUrl(null);
+      const url = await getDownloadURL(storageRef);
+      await updateProfile(auth.currentUser, { photoURL: url });
+
+      setUser({
+        ...auth.currentUser,
+        photoURL: url,
+      });
 
       alert("Profile picture updated!");
     } catch (err) {
@@ -119,7 +145,6 @@ export default function Profile() {
   return (
     <div className="bg-white text-gray-900 font-sans min-h-screen">
       <Header />
-
       <main className="min-h-screen bg-white py-16 px-4">
         <div className="max-w-2xl mx-auto bg-white/30 backdrop-blur-lg rounded-2xl border border-gray-200 shadow-2xl p-10 text-gray-800">
           {fromAdmin && (
@@ -134,10 +159,10 @@ export default function Profile() {
           )}
 
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-28 h-28 mb-4 relative group">
-              {previewUrl || user?.photoURL ? (
+            <div className="w-28 h-28 mb-2 relative">
+              {user?.photoURL ? (
                 <img
-                  src={previewUrl || user.photoURL}
+                  src={user.photoURL}
                   alt="Profile"
                   className="w-full h-full object-cover rounded-full border-2 border-blue-500 shadow"
                 />
@@ -146,15 +171,22 @@ export default function Profile() {
                   {profileData.fullName?.charAt(0) || "U"}
                 </div>
               )}
-              <label className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/40 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition cursor-pointer">
-                {uploading ? "Uploading..." : "Change"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfilePicUpload}
-                  className="hidden"
-                />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">
+                {uploading
+                  ? "Uploading..."
+                  : user?.photoURL
+                  ? "Change Picture"
+                  : "Upload Picture"}
               </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleProfilePicUpload}
+                className="text-sm"
+              />
             </div>
 
             <h2 className="text-2xl font-bold mb-1 flex items-center justify-center gap-2">
@@ -165,7 +197,11 @@ export default function Profile() {
                 </span>
               )}
             </h2>
-            <p className="text-sm text-gray-600 mb-4">{user?.email}</p>
+
+            <p className="text-sm text-gray-600 mb-4">
+              {fromAdmin ? maskEmail(user?.email) : user?.email}
+              {/* no toggle here as requested */}
+            </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
@@ -199,7 +235,7 @@ export default function Profile() {
               { label: "Phone", key: "phone" },
               { label: "Email", key: "email", value: user?.email },
               { label: "Address", key: "address" },
-            ].map(({ label, key, value }) => (
+            ].map(({ label, key, value = null }) => (
               <div key={key}>
                 <label className="text-sm font-medium text-gray-700 mb-1 block">
                   {label}
@@ -231,8 +267,56 @@ export default function Profile() {
                     />
                   )
                 ) : (
-                  <div className="w-full border border-gray-200 px-4 py-3 rounded-lg bg-white/70 text-gray-700">
-                    {value || profileData[key] || "-"}
+                  <div className="w-full border border-gray-200 px-4 py-3 rounded-lg bg-white/70 text-gray-700 flex justify-between items-center">
+                    {(() => {
+                      const actualValue = value || profileData[key] || "-";
+
+                      if (!fromAdmin) return actualValue;
+
+                      if (key === "email") {
+                        return (
+                          <>
+                            <span>{showEmail ? actualValue : maskEmail(actualValue)}</span>
+                            <button
+                              onClick={() => setShowEmail(!showEmail)}
+                              className="ml-2 text-sm text-blue-600 underline"
+                            >
+                              {showEmail ? "Hide" : "Show"}
+                            </button>
+                          </>
+                        );
+                      }
+
+                      if (key === "phone") {
+                        return (
+                          <>
+                            <span>{showPhone ? actualValue : maskPhone(actualValue)}</span>
+                            <button
+                              onClick={() => setShowPhone(!showPhone)}
+                              className="ml-2 text-sm text-blue-600 underline"
+                            >
+                              {showPhone ? "Hide" : "Show"}
+                            </button>
+                          </>
+                        );
+                      }
+
+                      if (key === "address") {
+                        return (
+                          <>
+                            <span>{showAddress ? actualValue : maskAddress(actualValue)}</span>
+                            <button
+                              onClick={() => setShowAddress(!showAddress)}
+                              className="ml-2 text-sm text-blue-600 underline"
+                            >
+                              {showAddress ? "Hide" : "Show"}
+                            </button>
+                          </>
+                        );
+                      }
+
+                      return actualValue;
+                    })()}
                   </div>
                 )}
               </div>
@@ -251,7 +335,6 @@ export default function Profile() {
           )}
         </div>
       </main>
-
       <Footer />
     </div>
   );

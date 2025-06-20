@@ -16,8 +16,16 @@ export default function Login() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
+  // Track failed login attempts using localStorage
+  const [failedAttempts, setFailedAttempts] = useState(() => {
+    return parseInt(localStorage.getItem("failedAttempts") || "0", 10);
+  });
+  const [showCaptcha, setShowCaptcha] = useState(failedAttempts >= 5);
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    setMessage("");
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -36,6 +44,11 @@ export default function Login() {
         setMessage("Login successful!");
         setMessageType("success");
 
+        // ✅ Reset failed attempts after successful login
+        localStorage.removeItem("failedAttempts");
+        setFailedAttempts(0);
+        setShowCaptcha(false);
+
         setTimeout(() => {
           if (role === "admin") navigate("/admin");
           else navigate("/");
@@ -45,7 +58,16 @@ export default function Login() {
         setMessageType("error");
       }
     } catch (error) {
-      setMessage(error.message);
+      // ❌ Increase failed attempts
+      const newFailed = failedAttempts + 1;
+      setFailedAttempts(newFailed);
+      localStorage.setItem("failedAttempts", newFailed.toString());
+
+      if (newFailed >= 5) {
+        setShowCaptcha(true);
+      }
+
+      setMessage("Login failed. " + error.message);
       setMessageType("error");
     }
   };
@@ -112,6 +134,15 @@ export default function Login() {
               </div>
             </div>
 
+            {/* CAPTCHA Placeholder */}
+            {showCaptcha && (
+              <div className="mt-4">
+                <div className="border p-4 rounded-md bg-yellow-50 border-yellow-300 text-yellow-800 text-center font-semibold">
+                  CAPTCHA required: Please verify you’re not a robot 🔒
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               className="bg-blue-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow"
@@ -131,7 +162,7 @@ export default function Login() {
           </form>
 
           <p className="mt-4 text-sm text-center text-gray-600">
-            Don’t have an account?{' '}
+            Don’t have an account?{" "}
             <Link to="/signup" className="text-blue-700 font-semibold hover:underline">
               Sign up
             </Link>

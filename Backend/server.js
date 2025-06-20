@@ -12,7 +12,7 @@ app.use(express.json());
 
 // Routes (example)
 import productRoutes from './routes/productRoutes.js';
-app.use("/api/products", productRoutes);
+app.use("/", productRoutes);
 
 
 // DB & Server

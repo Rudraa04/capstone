@@ -1,4 +1,8 @@
 import mongoose from 'mongoose';
+import dotenv from "dotenv";
+dotenv.config();
+// Use a separate connection for Slabs DB
+const slabsConnection = mongoose.createConnection(process.env.SLABS_URI);
 
 const GraniteSchema = new mongoose.Schema({
   ID: String,
@@ -14,4 +18,5 @@ const GraniteSchema = new mongoose.Schema({
   Size: String
 });
 
-export default mongoose.model('Granite', GraniteSchema, 'Granite');
+// Create model on the slabsConnection
+export default slabsConnection.model("Granite", GraniteSchema, "Granite");

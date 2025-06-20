@@ -1,4 +1,10 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+
+dotenv.config();
+// Use a separate connection for Slabs DB
+const slabsConnection = mongoose.createConnection(process.env.SLABS_URI);
 
 const MarbleSchema = new mongoose.Schema({
   ID: String,
@@ -13,4 +19,5 @@ const MarbleSchema = new mongoose.Schema({
   Size: String
 });
 
-export default mongoose.model('Marble', MarbleSchema, 'Marble');
+// Create model on the slabsConnection
+export default slabsConnection.model("Marble", MarbleSchema, "Marble");
