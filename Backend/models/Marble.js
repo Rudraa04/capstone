@@ -19,4 +19,4 @@ const MarbleSchema = new mongoose.Schema({
 });
 
 // Create model on the slabsConnection
-export default slabsConnection.model("Marble", MarbleSchema, "Marble");
+export default slabsConnection.model("Marble_Model", MarbleSchema, "Marble_Collection");

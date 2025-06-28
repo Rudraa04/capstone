@@ -8,12 +8,12 @@ import {
   getToilets
 } from "../controllers/productController.js";
 
-import Marble from "../models/Marble.js";
-import Granite from "../models/Granite.js";
-import Tile from "../models/Tiles.js";
-import Sink from "../models/Sinks.js";
-import Bathtub from "../models/Bathtubs.js";
-import Toilet from "../models/Toilets.js";
+import Marble_Model from "../models/Marble.js";
+import Granite_Model from "../models/Granite.js";
+import Tiles_Model from "../models/Tiles.js";
+import Sinks_Model from "../models/Sinks.js";
+import Bathtubs_Model from "../models/Bathtubs.js";
+import Toilets_Model from "../models/Toilets.js";
 
 const router = express.Router();
 
@@ -27,7 +27,7 @@ router.get("/toilets", getToilets);
 // POST route for adding new marble product
 router.post("/marble", async (req, res) => {
   try {
-    const newMarble = new Marble(req.body);
+    const newMarble = new Marble_Model(req.body);
     const saved = await newMarble.save();
     res.status(201).json({ message: `${saved.name} added successfully`, product: saved });
   } catch (err) {
@@ -38,7 +38,7 @@ router.post("/marble", async (req, res) => {
 // POST route for adding new granite product
 router.post("/granite", async (req, res) => {
   try {
-    const newGranite = new Granite(req.body);
+    const newGranite = new Granite_Model(req.body);
     const saved = await newGranite.save();
     res.status(201).json({ message: `${saved.name} added successfully`, product: saved });
   } catch (err) {
@@ -49,7 +49,7 @@ router.post("/granite", async (req, res) => {
 // POST route for adding new tile product
 router.post("/tiles", async (req, res) => {
   try {
-    const newTile = new Tile(req.body);
+    const newTile = new Tiles_Model(req.body);
     const saved = await newTile.save();
     res.status(201).json({ message: `${saved.name} added successfully`, product: saved });
   } catch (err) {
@@ -60,7 +60,7 @@ router.post("/tiles", async (req, res) => {
 // POST route for adding new sink product
 router.post("/sinks", async (req, res) => {
   try {
-    const newSink = new Sink(req.body);
+    const newSink = new Sinks_Model(req.body);
     const saved = await newSink.save();
     res.status(201).json({ message: `${saved.name} added successfully`, product: saved });
   } catch (err) {
@@ -71,7 +71,7 @@ router.post("/sinks", async (req, res) => {
 // POST route for adding new bathtub product
 router.post("/bathtubs", async (req, res) => {
   try {
-    const newBathtub = new Bathtub(req.body);
+    const newBathtub = new Bathtubs_Model(req.body);
     const saved = await newBathtub.save();
     res.status(201).json({ message: `${saved.name} added successfully`, product: saved });
   } catch (err) {
@@ -82,7 +82,7 @@ router.post("/bathtubs", async (req, res) => {
 // POST route for adding new toilet product
 router.post("/toilets", async (req, res) => {
   try {
-    const newToilet = new Toilet(req.body);
+    const newToilet = new Toilets_Model(req.body);
     const saved = await newToilet.save();
     res.status(201).json({ message: `${saved.name} added successfully`, product: saved });
   } catch (err) {

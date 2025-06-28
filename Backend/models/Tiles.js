@@ -17,4 +17,4 @@ const TilesSchema = new mongoose.Schema({
   Size: String
 });
 
-export default ceramicsConnection.model('Tiles', TilesSchema, 'Tiles');
+export default ceramicsConnection.model('Tiles_Model', TilesSchema, 'Tiles_Collection');

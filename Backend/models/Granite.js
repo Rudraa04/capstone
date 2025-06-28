@@ -20,4 +20,4 @@ const GraniteSchema = new mongoose.Schema({
 });
 
 // Create model on the slabsConnection
-export default slabsConnection.model("Granite", GraniteSchema, "Granite");
+export default slabsConnection.model("Granite_Model", GraniteSchema, "Granite_Collection");

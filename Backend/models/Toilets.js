@@ -16,4 +16,4 @@ const ToiletsSchema = new mongoose.Schema({
   Manufacturer: String,
 });
 
-export default ceramicsConnection.model('Toilets', ToiletsSchema, 'Toilets');
+export default ceramicsConnection.model('Toilets_Model', ToiletsSchema, 'Toilets_Collection');

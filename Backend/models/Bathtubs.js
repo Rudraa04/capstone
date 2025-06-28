@@ -16,4 +16,4 @@ const BathtubsSchema = new mongoose.Schema({
   Size: String
 });
 
-export default ceramicsConnection.model('Bathtubs', BathtubsSchema, 'Bathtubs' );
+export default ceramicsConnection.model('Bathtubs_Model', BathtubsSchema, 'Bathtubs_Collection' );

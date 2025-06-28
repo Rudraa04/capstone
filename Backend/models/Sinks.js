@@ -17,4 +17,4 @@ const SinksSchema = new mongoose.Schema({
   Size: String
 });
 
-export default ceramicsConnection.model('Sinks', SinksSchema, 'Sinks');
+export default ceramicsConnection.model('Sinks_Model', SinksSchema, 'Sinks_Collection');
