@@ -11,8 +11,8 @@ const ToiletsSchema = new mongoose.Schema({
   price: Number,
   image: String,
   category: String,
+  Subcategory: String,
   Stock_admin: Number,
-  Stock_Customer: Boolean,
   Manufacturer: String,
 });
 

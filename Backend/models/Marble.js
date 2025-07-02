@@ -12,8 +12,8 @@ const MarbleSchema = new mongoose.Schema({
   Color: String,
   Price: Number,
   Image: String,
+  Category: String,
   Stock_admin: Number,
-  Stock_Customer: Boolean,
   Manufacturer: String,
   Size: String
 });

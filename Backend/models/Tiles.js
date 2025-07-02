@@ -12,7 +12,6 @@ const TilesSchema = new mongoose.Schema({
   Category: String,
   SubCategory: String,
   Stock_admin: Number,
-  Stock_Customer: Boolean,
   Manufacturer: String,
   Size: String
 });

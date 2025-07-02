@@ -11,8 +11,8 @@ const SinksSchema = new mongoose.Schema({
   Price: Number,
   Image: String,
   Category: String,
+  SubCategory: String,
   Stock_admin: Number,
-  Stock_Customer: Boolean,
   Manufacturer: String,
   Size: String
 });

@@ -12,9 +12,9 @@ const GraniteSchema = new mongoose.Schema({
   Color: String,
   Price: Number,
   Image: String,
-  Series: String,
+  Category: String,
+  SubCategory: String,
   Stock_admin: Number,
-  Stock_Customer: Boolean,
   Manufacturer: String,
   Size: String
 });

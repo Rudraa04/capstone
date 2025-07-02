@@ -10,7 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes (example)
+// Routes
 import productRoutes from './routes/productRoutes.js';
 app.use("/", productRoutes);
 
