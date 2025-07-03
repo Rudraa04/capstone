@@ -15,6 +15,7 @@ const MarbleSchema = new mongoose.Schema({
   Category: String,
   Stock_admin: Number,
   Manufacturer: String,
+  Origin: String,
   Size: String
 });
 

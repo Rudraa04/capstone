@@ -13,9 +13,9 @@ const GraniteSchema = new mongoose.Schema({
   Price: Number,
   Image: String,
   Category: String,
-  SubCategory: String,
   Stock_admin: Number,
   Manufacturer: String,
+  Origin: String,
   Size: String
 });
 

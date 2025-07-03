@@ -17,6 +17,7 @@ import Toilets_Model from "../models/Toilets.js";
 
 const router = express.Router();
 
+// GET routes
 router.get("/tiles", getTiles);
 router.get("/bathtubs", getBathtubs);
 router.get("/granite", getGranite);
@@ -24,7 +25,7 @@ router.get("/marble", getMarble);
 router.get("/sinks", getSinks);
 router.get("/toilets", getToilets);
 
-// POST route for adding new marble product
+// POST routes
 router.post("/marble", async (req, res) => {
   try {
     const newMarble = new Marble_Model(req.body);
@@ -35,7 +36,6 @@ router.post("/marble", async (req, res) => {
   }
 });
 
-// POST route for adding new granite product
 router.post("/granite", async (req, res) => {
   try {
     const newGranite = new Granite_Model(req.body);
@@ -46,7 +46,6 @@ router.post("/granite", async (req, res) => {
   }
 });
 
-// POST route for adding new tile product
 router.post("/tiles", async (req, res) => {
   try {
     const newTile = new Tiles_Model(req.body);
@@ -57,7 +56,6 @@ router.post("/tiles", async (req, res) => {
   }
 });
 
-// POST route for adding new sink product
 router.post("/sinks", async (req, res) => {
   try {
     const newSink = new Sinks_Model(req.body);
@@ -68,7 +66,6 @@ router.post("/sinks", async (req, res) => {
   }
 });
 
-// POST route for adding new bathtub product
 router.post("/bathtubs", async (req, res) => {
   try {
     const newBathtub = new Bathtubs_Model(req.body);
@@ -79,7 +76,6 @@ router.post("/bathtubs", async (req, res) => {
   }
 });
 
-// POST route for adding new toilet product
 router.post("/toilets", async (req, res) => {
   try {
     const newToilet = new Toilets_Model(req.body);
@@ -87,6 +83,116 @@ router.post("/toilets", async (req, res) => {
     res.status(201).json({ message: `${saved.name} added successfully`, product: saved });
   } catch (err) {
     res.status(500).json({ message: `Failed to add ${req.body.name || "toilet"}`, error: err.message });
+  }
+});
+
+// PUT (Edit) routes
+router.put("/marble/:id", async (req, res) => {
+  try {
+    const updated = await Marble_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Product updated successfully", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update product", error: err.message });
+  }
+});
+
+router.put("/granite/:id", async (req, res) => {
+  try {
+    const updated = await Granite_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Product updated successfully", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update product", error: err.message });
+  }
+});
+
+router.put("/tiles/:id", async (req, res) => {
+  try {
+    const updated = await Tiles_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Product updated successfully", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update product", error: err.message });
+  }
+});
+
+router.put("/sinks/:id", async (req, res) => {
+  try {
+    const updated = await Sinks_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Product updated successfully", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update product", error: err.message });
+  }
+});
+
+router.put("/bathtubs/:id", async (req, res) => {
+  try {
+    const updated = await Bathtubs_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Product updated successfully", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update product", error: err.message });
+  }
+});
+
+router.put("/toilets/:id", async (req, res) => {
+  try {
+    const updated = await Toilets_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Product updated successfully", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update product", error: err.message });
+  }
+});
+
+// DELETE routes
+router.delete("/marble/:id", async (req, res) => {
+  try {
+    await Marble_Model.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete product", error: err.message });
+  }
+});
+
+router.delete("/granite/:id", async (req, res) => {
+  try {
+    await Granite_Model.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete product", error: err.message });
+  }
+});
+
+router.delete("/tiles/:id", async (req, res) => {
+  try {
+    await Tiles_Model.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete product", error: err.message });
+  }
+});
+
+router.delete("/sinks/:id", async (req, res) => {
+  try {
+    await Sinks_Model.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete product", error: err.message });
+  }
+});
+
+router.delete("/bathtubs/:id", async (req, res) => {
+  try {
+    await Bathtubs_Model.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete product", error: err.message });
+  }
+});
+
+router.delete("/toilets/:id", async (req, res) => {
+  try {
+    await Toilets_Model.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete product", error: err.message });
   }
 });
 
