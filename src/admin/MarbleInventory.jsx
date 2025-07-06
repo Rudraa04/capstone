@@ -53,20 +53,29 @@ export default function MarbleInventory() {
   const [showModal, setShowModal] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    color: "",
-    price: "",
-    quantity: "",
-    brand: "",
+    ProductName: "",
+    ProductDescription: "",
+    Color: "",
+    Price: "",
+    Image: "",
+    Category: "Marble",
+    Quantity: "",
+    Manufacturer: "",
+    customBrand: "",
+    Origin: "",
     length: "",
     width: "",
-    usageType: "",
   });
 
   const [image, setImage] = useState(null);
 
-  const brands = ["Bhandari", "Classic Marble", "R K Marble", "Imported"];
+  const brands = [
+    "Bhandari",
+    "Classic Marble",
+    "R K Marble",
+    "Imported",
+    "Other",
+  ];
   const usageTypes = ["Interior", "Exterior"];
 
   const handleChange = (e) =>
@@ -79,8 +88,20 @@ export default function MarbleInventory() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const size = `${formData.length}x${formData.width}`;
-    const marbleData = { ...formData, size };
+    const Size = `${formData.length}x${formData.width}`;
+    const finalBrand = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+    const marbleData = {
+      Name: formData.ProductName,
+      Description: formData.ProductDescription,
+      Color: formData.Color,
+      Price: formData.Price,
+      Image: image || "",
+      Category: formData.Category,
+      Stock_admin: formData.Quantity,
+      Manufacturer: formData.Manufacturer,
+      Origin: formData.Origin,
+      Size: Size,
+    };
     console.log("Submitted:", marbleData);
     alert("Marble product added successfully!");
     setShowModal(false);
@@ -235,17 +256,16 @@ export default function MarbleInventory() {
             onSubmit={handleSubmit}
             className="space-y-6 text-sm text-gray-700"
           >
-            {/* Product Info */}
             <div className="space-y-4 bg-gray-50 p-4 rounded-md border">
               <div>
                 <label className="block font-medium mb-1">Product Name</label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="ProductName"
+                  value={formData.ProductName}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
 
@@ -254,27 +274,37 @@ export default function MarbleInventory() {
                   Product Description
                 </label>
                 <textarea
-                  name="description"
+                  name="ProductDescription"
                   rows="3"
-                  value={formData.description}
+                  value={formData.ProductDescription}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="w-full px-3 py-2 border rounded-md"
                 ></textarea>
+              </div>
+              <div>
+                <label className="block font-medium mb-1">Category</label>
+                <input
+                  type="text"
+                  name="Category"
+                  value={formData.Category}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border rounded-md"
+                />
               </div>
             </div>
 
-            {/* Attributes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md border">
               <div>
                 <label className="block font-medium mb-1">Color</label>
                 <input
                   type="text"
-                  name="color"
-                  value={formData.color}
+                  name="Color"
+                  value={formData.Color}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
 
@@ -282,11 +312,11 @@ export default function MarbleInventory() {
                 <label className="block font-medium mb-1">Price ($)</label>
                 <input
                   type="number"
-                  name="price"
-                  value={formData.price}
+                  name="Price"
+                  value={formData.Price}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
 
@@ -294,11 +324,11 @@ export default function MarbleInventory() {
                 <label className="block font-medium mb-1">Quantity</label>
                 <input
                   type="number"
-                  name="quantity"
-                  value={formData.quantity}
+                  name="Quantity"
+                  value={formData.Quantity}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
 
@@ -307,11 +337,11 @@ export default function MarbleInventory() {
                   Brand / Manufacturer
                 </label>
                 <select
-                  name="brand"
-                  value={formData.brand}
+                  name="Manufacturer"
+                  value={formData.Manufacturer}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="w-full px-3 py-2 border rounded-md"
                 >
                   <option value="">Select Brand</option>
                   {brands.map((brand) => (
@@ -320,16 +350,39 @@ export default function MarbleInventory() {
                     </option>
                   ))}
                 </select>
+                {formData.Manufacturer === "Other" && (
+                  <input
+                    type="text"
+                    name="customBrand"
+                    value={formData.customBrand}
+                    onChange={handleChange}
+                    placeholder="Enter Brand Name"
+                    className="mt-2 w-full px-3 py-2 border rounded-md"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium mb-1">
+                  Place of Origin
+                </label>
+                <input
+                  type="text"
+                  name="Origin"
+                  value={formData.Origin}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border rounded-md"
+                />
               </div>
             </div>
 
-            {/* Size & Usage */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md border">
               <div>
                 <label className="block font-medium mb-1">
                   Size / Dimensions (in)
                 </label>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     name="length"
@@ -337,7 +390,7 @@ export default function MarbleInventory() {
                     onChange={handleChange}
                     placeholder="Length"
                     required
-                    className="w-1/2 px-3 py-2 border rounded-md text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="w-1/2 px-3 py-2 border rounded-md"
                   />
                   <span className="font-bold">x</span>
                   <input
@@ -347,31 +400,12 @@ export default function MarbleInventory() {
                     onChange={handleChange}
                     placeholder="Width"
                     required
-                    className="w-1/2 px-3 py-2 border rounded-md text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="w-1/2 px-3 py-2 border rounded-md"
                   />
                 </div>
               </div>
-
-              <div>
-                <label className="block font-medium mb-1">Usage Type</label>
-                <select
-                  name="usageType"
-                  value={formData.usageType}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400"
-                >
-                  <option value="">Select Usage</option>
-                  {usageTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
-            {/* Image Upload */}
             <div className="bg-gray-50 p-4 rounded-md border space-y-3">
               <label className="block font-medium">Upload Image</label>
               <input
@@ -391,11 +425,10 @@ export default function MarbleInventory() {
               )}
             </div>
 
-            {/* Submit Button */}
             <div className="text-right pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-700 text-white font-semibold rounded hover:bg-blue-800 transition"
+                className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
                 Save Marble
               </button>

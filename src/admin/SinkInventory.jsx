@@ -53,20 +53,31 @@ export default function SinkInventory() {
   const [showModal, setShowModal] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    color: "",
-    price: "",
-    category: "",
+    ProductName: "",
+    ProductDescription: "",
+    Color: "",
+    Price: "",
+    Image: "",
+    Category: "Sink",
+    SubCategory: "",
+    Quantity: "",
+    Manufacturer: "",
+    customBrand: "",
     length: "",
     width: "",
-    brand: "",
-    quantity: "",
   });
 
   const [image, setImage] = useState(null);
 
-  const brands = ["Hindware", "Jaquar", "Cera", "Parryware", "Imported"];
+  const brands = [
+    "Hindware",
+    "Jaquar",
+    "Cera",
+    "Parryware",
+    "Imported",
+    "Other",
+  ];
+
   const categories = [
     "Wall Mounted",
     "Table Top",
@@ -84,8 +95,20 @@ export default function SinkInventory() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const size = `${formData.length}x${formData.width}`;
-    const sinkData = { ...formData, size };
+    const Size = `${formData.length}x${formData.width}`;
+    const ManufacturerFinal = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+    const sinkData = {
+      Name: formData.ProductName,
+      Description: formData.ProductDescription,
+      Color: formData.Color,
+      Price: formData.Price,
+      Image: image || "",
+      Category: formData.Category,
+      SubCategory: formData.SubCategory,
+      Stock_admin: formData.Quantity,
+      Manufacturer: formData.Manufacturer,
+      Size: Size,
+    };
     console.log("Submitted:", sinkData);
     alert("Sink product added successfully!");
     setShowModal(false);
@@ -234,150 +257,166 @@ export default function SinkInventory() {
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
             Add Sink Product
           </h2>
+
           <form
             onSubmit={handleSubmit}
             className="space-y-6 text-sm text-gray-700"
           >
             <div className="space-y-4 bg-gray-50 p-4 rounded-md border">
               <div>
-                <label className="block font-semibold mb-1">Product Name</label>
+                <label className="block font-medium mb-1">Product Name</label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="ProductName"
+                  value={formData.ProductName}
                   onChange={handleChange}
                   required
-                  className="w-full p-2 border rounded"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
               <div>
-                <label className="block font-semibold mb-1">
+                <label className="block font-medium mb-1">
                   Product Description
                 </label>
                 <textarea
-                  name="description"
-                  rows="2"
-                  value={formData.description}
+                  name="ProductDescription"
+                  rows="3"
+                  value={formData.ProductDescription}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
-                />
+                  className="w-full px-3 py-2 border rounded-md"
+                ></textarea>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-medium mb-1">Category</label>
+                  <input
+                    type="text"
+                    name="Category"
+                    value={formData.Category}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">Sub Category</label>
+                  <input
+                    type="text"
+                    name="SubCategory"
+                    value={formData.SubCategory}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md border">
               <div>
-                <label className="block font-semibold mb-1">Color</label>
+                <label className="block font-medium mb-1">Color</label>
                 <input
                   type="text"
-                  name="color"
-                  value={formData.color}
+                  name="Color"
+                  value={formData.Color}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Price ($)</label>
+                <label className="block font-medium mb-1">Price ($)</label>
                 <input
                   type="number"
-                  name="price"
-                  value={formData.price}
+                  name="Price"
+                  value={formData.Price}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
-
               <div>
-                <label className="block font-semibold mb-1">
-                  Product Category
+                <label className="block font-medium mb-1">Quantity</label>
+                <input
+                  type="number"
+                  name="Quantity"
+                  value={formData.Quantity}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block font-medium mb-1">
+                  Brand / Manufacturer
                 </label>
                 <select
-                  name="category"
-                  value={formData.category}
+                  name="Manufacturer"
+                  value={formData.Manufacturer}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
+                  className="w-full px-3 py-2 border rounded-md"
                 >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                  <option value="">Select Brand</option>
+                  {brands.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
                     </option>
                   ))}
                 </select>
+
+                {formData.Manufacturer === "Other" && (
+                  <input
+                    type="text"
+                    name="customBrand"
+                    value={formData.customBrand}
+                    onChange={handleChange}
+                    placeholder="Enter Brand Name"
+                    className="mt-2 w-full px-3 py-2 border rounded-md"
+                  />
+                )}
               </div>
 
               <div>
-                <label className="block font-semibold mb-1">
-                  Size (inches)
+                <label className="block font-medium mb-1">
+                  Size / Dimensions (in)
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     name="length"
                     value={formData.length}
                     onChange={handleChange}
                     placeholder="Length"
-                    className="w-1/2 p-2 border rounded text-center"
                     required
+                    className="w-1/2 px-3 py-2 border rounded-md"
                   />
-                  <span className="text-lg font-bold">x</span>
+                  <span className="font-bold">x</span>
                   <input
                     type="text"
                     name="width"
                     value={formData.width}
                     onChange={handleChange}
                     placeholder="Width"
-                    className="w-1/2 p-2 border rounded text-center"
                     required
+                    className="w-1/2 px-3 py-2 border rounded-md"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">
-                  Brand / Manufacturer
-                </label>
-                <select
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  required
-                >
-                  <option value="">Select Brand</option>
-                  {brands.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">Quantity</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
               </div>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-md border space-y-3">
-              <label className="block font-semibold mb-1">Upload Image</label>
+              <label className="block font-medium">Upload Image</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
+                className="block"
               />
               {image && (
-                <div className="mt-4 w-32 h-32 border rounded overflow-hidden">
+                <div className="w-32 h-32 border rounded overflow-hidden">
                   <img
                     src={image}
                     alt="Preview"
@@ -390,7 +429,7 @@ export default function SinkInventory() {
             <div className="text-right pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700"
+                className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
                 Save Sink
               </button>

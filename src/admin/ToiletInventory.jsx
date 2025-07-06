@@ -43,20 +43,31 @@ export default function ToiletInventory() {
     navigate("/login");
   };
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    color: "",
-    price: "",
-    productType: "",
-    flushType: "",
-    quantity: "",
-    brand: "",
+    ProductName: "",
+    ProductDescription: "",
+    Color: "",
+    Price: "",
+    Image: "",
+    Category: "Toilet",
+    SubCategory: "",
+    Quantity: "",
+    Manufacturer: "",
+    customBrand: "",
+    length: "",
+    width: "",
   });
   const [image, setImage] = useState(null);
-
+  const [showModal, setShowModal] = useState(false);
   const flushTypes = ["Dual Flush", "Single Flush", "Pressure Assisted"];
   const productTypes = ["One-Piece", "Two-Piece", "Wall Hung"];
-  const brands = ["Hindware", "Cera", "Jaquar", "Parryware", "Imported"];
+  const brands = [
+    "Hindware",
+    "Cera",
+    "Jaquar",
+    "Parryware",
+    "Imported",
+    "Other",
+  ];
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -69,11 +80,26 @@ export default function ToiletInventory() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const toiletData = { ...formData };
+    const Size = `${formData.length}x${formData.width}`;
+    const ManufacturerFinal =
+      formData.Manufacturer === "Other"
+        ? formData.customBrand
+        : formData.Manufacturer;
+    const toiletData = {
+      name: formData.ProductName,
+      description: formData.ProductDescription,
+      Color: formData.Color,
+      price: formData.Price,
+      image: image || "",
+      category: formData.Category,
+      Subcategory: formData.SubCategory,
+      Stock_admin: formData.Quantity,
+      Manufacturer: formData.Manufacturer,
+      Size: Size,
+    };
     console.log("Submitted:", toiletData);
     alert("Toilet product added successfully!");
-    onSave(toiletData);
-    onClose();
+    setShowModal(false);
   };
 
   return (
@@ -216,136 +242,169 @@ export default function ToiletInventory() {
           </div>
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
-          <h2 className="text-xl font-bold text-blue-700 mb-4">
+          <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
             Add Toilet Product
           </h2>
+
           <form
             onSubmit={handleSubmit}
             className="space-y-6 text-sm text-gray-700"
           >
             <div className="space-y-4 bg-gray-50 p-4 rounded-md border">
               <div>
-                <label className="block font-semibold mb-1">Product Name</label>
+                <label className="block font-medium mb-1">Product Name</label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="ProductName"
+                  value={formData.ProductName}
                   onChange={handleChange}
                   required
-                  className="w-full p-2 border rounded"
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
               <div>
-                <label className="block font-semibold mb-1">
+                <label className="block font-medium mb-1">
                   Product Description
                 </label>
                 <textarea
-                  name="description"
-                  rows="2"
-                  value={formData.description}
+                  name="ProductDescription"
+                  rows="3"
+                  value={formData.ProductDescription}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
-                />
+                  className="w-full px-3 py-2 border rounded-md"
+                ></textarea>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-medium mb-1">Category</label>
+                  <input
+                    type="text"
+                    name="Category"
+                    value={formData.Category}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium mb-1">Sub Category</label>
+                  <input
+                    type="text"
+                    name="SubCategory"
+                    value={formData.SubCategory}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md border">
               <div>
-                <label className="block font-semibold mb-1">Color</label>
+                <label className="block font-medium mb-1">Color</label>
                 <input
                   type="text"
-                  name="color"
-                  value={formData.color}
+                  name="Color"
+                  value={formData.Color}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Price ($)</label>
+                <label className="block font-medium mb-1">Price ($)</label>
                 <input
                   type="number"
-                  name="price"
-                  value={formData.price}
+                  name="Price"
+                  value={formData.Price}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
+                  className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Product Type</label>
-                <select
-                  name="productType"
-                  value={formData.productType}
+                <label className="block font-medium mb-1">Quantity</label>
+                <input
+                  type="number"
+                  name="Quantity"
+                  value={formData.Quantity}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
-                >
-                  <option value="">Select Type</option>
-                  {productTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
+                  className="w-full px-3 py-2 border rounded-md"
+                />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Flush Type</label>
+                <label className="block font-medium mb-1">
+                  Brand / Manufacturer
+                </label>
                 <select
-                  name="flushType"
-                  value={formData.flushType}
+                  name="Manufacturer"
+                  value={formData.Manufacturer}
                   onChange={handleChange}
-                  className="w-full p-2 border rounded"
                   required
-                >
-                  <option value="">Select Flush</option>
-                  {flushTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block font-semibold mb-1">Brand</label>
-                <select
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  required
+                  className="w-full px-3 py-2 border rounded-md"
                 >
                   <option value="">Select Brand</option>
-                  {brands.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
+                  {brands.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
                     </option>
                   ))}
                 </select>
+
+                {formData.Manufacturer === "Other" && (
+                  <input
+                    type="text"
+                    name="customBrand"
+                    value={formData.customBrand}
+                    onChange={handleChange}
+                    placeholder="Enter Brand Name"
+                    className="mt-2 w-full px-3 py-2 border rounded-md"
+                  />
+                )}
               </div>
-              <div>
-                <label className="block font-semibold mb-1">Quantity</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded"
-                  required
-                />
+
+              <div className="bg-gray-50">
+                <label className="block font-medium mb-1">
+                  Size / Dimensions (in)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    name="length"
+                    value={formData.length}
+                    onChange={handleChange}
+                    placeholder="Length"
+                    required
+                    className="w-1/2 px-3 py-2 border rounded-md text-center"
+                  />
+                  <span className="font-bold">x</span>
+                  <input
+                    type="text"
+                    name="width"
+                    value={formData.width}
+                    onChange={handleChange}
+                    placeholder="Width"
+                    required
+                    className="w-1/2 px-3 py-2 border rounded-md text-center"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-md border space-y-3">
-              <label className="block font-semibold mb-1">Upload Image</label>
+              <label className="block font-medium">Upload Image</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
+                className="block"
               />
               {image && (
-                <div className="mt-4 w-32 h-32 border rounded overflow-hidden">
+                <div className="w-32 h-32 border rounded overflow-hidden">
                   <img
                     src={image}
                     alt="Preview"
@@ -358,7 +417,7 @@ export default function ToiletInventory() {
             <div className="text-right pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700"
+                className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
                 Save Toilet
               </button>
