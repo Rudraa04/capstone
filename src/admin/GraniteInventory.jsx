@@ -87,23 +87,56 @@ export default function GraniteInventory() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const Size = `${formData.length}x${formData.width}`;
-    const finalBrand = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+    const finalBrand =
+      formData.Manufacturer === "Other"
+        ? formData.customBrand
+        : formData.Manufacturer;
+
     const graniteData = {
-      Name: formData.ProductName,
-      Description: formData.ProductDescription,
+      ProductName: formData.ProductName,
+      ProductDescription: formData.ProductDescription,
       Color: formData.Color,
       Price: formData.Price,
       Image: image || "",
       Category: formData.Category,
-      Stock_admin: formData.Quantity,
-      Manufacturer: formData.Manufacturer,
+      Quantity: formData.Quantity,
+      Manufacturer: finalBrand,
       Origin: formData.Origin,
       Size: Size,
     };
-    console.log("Submitted:", graniteData);
-    alert("Granite product added successfully!");
+
+    if (selectedIndex !== null) {
+      const updated = [...products];
+      updated[selectedIndex] = graniteData;
+      setProducts(updated);
+      alert("Granite product updated successfully!");
+    } else {
+      setProducts([...products, graniteData]);
+      alert("Granite product added successfully!");
+    }
+
+    setFormData({});
+    setImage(null);
+    setSelectedIndex(null);
     setShowModal(false);
   };
+
+  const [products, setProducts] = useState([
+    {
+      ProductName: "Polished Black Granite",
+      ProductDescription: "High-quality black granite slab.",
+      Color: "Black",
+      Price: 900,
+      Category: "Granite",
+      Quantity: 20,
+      Manufacturer: "Regatta",
+      Origin: "India",
+      Size: "12x12",
+      Image: "",
+    },
+  ]);
+
+  const [selectedIndex, setSelectedIndex] = useState(null);
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -178,7 +211,25 @@ export default function GraniteInventory() {
               ← Back
             </button>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setFormData({
+                  ProductName: "",
+                  ProductDescription: "",
+                  Color: "",
+                  Price: "",
+                  Image: "",
+                  Category: "Granite",
+                  Quantity: "",
+                  Manufacturer: "",
+                  customBrand: "",
+                  Origin: "",
+                  length: "",
+                  width: "",
+                });
+                setSelectedIndex(null);
+                setImage(null);
+                setShowModal(true);
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               <FaPlus /> Add New
@@ -215,41 +266,53 @@ export default function GraniteInventory() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Polished Black Granite</td>
-                  <td className="px-6 py-4">Granite</td>
-                  <td className="px-6 py-4">$900</td>
-                  <td className="px-6 py-4">20</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Gray Mist Granite</td>
-                  <td className="px-6 py-4">Granite</td>
-                  <td className="px-6 py-4">$850</td>
-                  <td className="px-6 py-4">15</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                {products.map((item, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="px-6 py-4">{item.ProductName}</td>
+                    <td className="px-6 py-4">{item.Category}</td>
+                    <td className="px-6 py-4">${item.Price}</td>
+                    <td className="px-6 py-4">{item.Quantity}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              ProductName: item.ProductName,
+                              ProductDescription: item.ProductDescription,
+                              Color: item.Color,
+                              Price: item.Price,
+                              Category: item.Category,
+                              Quantity: item.Quantity,
+                              Manufacturer: item.Manufacturer,
+                              customBrand: "",
+                              Origin: item.Origin,
+                              length: item.Size?.split("x")[0] || "",
+                              width: item.Size?.split("x")[1] || "",
+                            });
+                            setImage(item.Image || null);
+                            setSelectedIndex(index);
+                            setShowModal(true);
+                          }}
+                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                        >
+                          Edit
+                        </button>
+                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            Add Granite Product
+            {selectedIndex !== null
+              ? "Edit Granite Product"
+              : "Add Granite Product"}
           </h2>
 
           <form
@@ -432,7 +495,7 @@ export default function GraniteInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                Save Granite
+                {selectedIndex !== null ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>

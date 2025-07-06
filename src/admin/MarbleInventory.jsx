@@ -69,6 +69,8 @@ export default function MarbleInventory() {
 
   const [image, setImage] = useState(null);
 
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
   const brands = [
     "Bhandari",
     "Classic Marble",
@@ -89,23 +91,69 @@ export default function MarbleInventory() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const Size = `${formData.length}x${formData.width}`;
-    const finalBrand = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+    const finalBrand =
+      formData.Manufacturer === "Other"
+        ? formData.customBrand
+        : formData.Manufacturer;
+
     const marbleData = {
-      Name: formData.ProductName,
-      Description: formData.ProductDescription,
+      ProductName: formData.ProductName,
+      ProductDescription: formData.ProductDescription,
       Color: formData.Color,
       Price: formData.Price,
       Image: image || "",
       Category: formData.Category,
-      Stock_admin: formData.Quantity,
-      Manufacturer: formData.Manufacturer,
+      Quantity: formData.Quantity,
+      Manufacturer: finalBrand,
       Origin: formData.Origin,
       Size: Size,
     };
-    console.log("Submitted:", marbleData);
-    alert("Marble product added successfully!");
+
+    if (selectedIndex !== null) {
+      // It's an Edit
+      const updatedProducts = [...products];
+      updatedProducts[selectedIndex] = marbleData;
+      setProducts(updatedProducts);
+      alert("Product updated successfully!");
+    } else {
+      // It's a New Add
+      setProducts([...products, marbleData]);
+      alert("Marble product added successfully!");
+    }
+
+    setFormData({}); // Clear form
+    setSelectedIndex(null);
     setShowModal(false);
+    setImage(null);
   };
+
+  const [products, setProducts] = useState([
+    {
+      ProductName: "White Italian Marble",
+      ProductDescription: "Premium white marble",
+      Color: "White",
+      Price: 980,
+      Quantity: 18,
+      Manufacturer: "Bhandari",
+      Category: "Marble",
+      Origin: "Italy",
+      Size: "12x12",
+      Image: "",
+    },
+    {
+      ProductName: "Makrana Classic",
+      ProductDescription: "Classic marble from Makrana",
+      Color: "Cream",
+      Price: 920,
+      Quantity: 10,
+      Manufacturer: "Classic Marble",
+      Category: "Marble",
+      Origin: "India",
+      Size: "12x12",
+      Image: "",
+    },
+  ]);
+  const [selectedIndex, setSelectedIndex] = useState(null); // For Edit
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -178,8 +226,26 @@ export default function MarbleInventory() {
               ← Back
             </button>
             <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              onClick={() => {
+                setFormData({
+                  ProductName: "",
+                  ProductDescription: "",
+                  Color: "",
+                  Price: "",
+                  Image: "",
+                  Category: "Marble",
+                  Quantity: "",
+                  Manufacturer: "",
+                  customBrand: "",
+                  Origin: "",
+                  length: "",
+                  width: "",
+                });
+                setSelectedIndex(null); // ✅ Reset the edit state
+                setImage(null); // ✅ Optional: Reset image
+                setShowModal(true);
+              }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               <FaPlus /> Add New
             </button>
@@ -215,41 +281,53 @@ export default function MarbleInventory() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="px-6 py-4">White Italian Marble</td>
-                  <td className="px-6 py-4">Marble</td>
-                  <td className="px-6 py-4">$980</td>
-                  <td className="px-6 py-4">18</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Makrana Classic</td>
-                  <td className="px-6 py-4">Marble</td>
-                  <td className="px-6 py-4">$920</td>
-                  <td className="px-6 py-4">10</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                {products.map((item, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="px-6 py-4">{item.ProductName}</td>
+                    <td className="px-6 py-4">{item.Category}</td>
+                    <td className="px-6 py-4">${item.Price}</td>
+                    <td className="px-6 py-4">{item.Quantity}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              ProductName: item.ProductName,
+                              ProductDescription: item.ProductDescription,
+                              Color: item.Color,
+                              Price: item.Price,
+                              Category: item.Category,
+                              Quantity: item.Quantity,
+                              Manufacturer: item.Manufacturer,
+                              Origin: item.Origin,
+                              length: item.Size?.split("x")[0] || "",
+                              width: item.Size?.split("x")[1] || "",
+                              customBrand: "",
+                            });
+                            setSelectedIndex(index);
+                            setShowModal(true);
+                          }}
+                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                        >
+                          Edit
+                        </button>
+
+                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            Add Marble Product
+            {selectedIndex !== null
+              ? "Edit Marble Product"
+              : "Add Marble Product"}
           </h2>
 
           <form
@@ -430,7 +508,7 @@ export default function MarbleInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                Save Marble
+                {selectedIndex !== null ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>

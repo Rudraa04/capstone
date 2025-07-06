@@ -85,22 +85,66 @@ export default function ToiletInventory() {
       formData.Manufacturer === "Other"
         ? formData.customBrand
         : formData.Manufacturer;
+
     const toiletData = {
-      name: formData.ProductName,
-      description: formData.ProductDescription,
+      ProductName: formData.ProductName,
+      ProductDescription: formData.ProductDescription,
       Color: formData.Color,
-      price: formData.Price,
-      image: image || "",
-      category: formData.Category,
-      Subcategory: formData.SubCategory,
-      Stock_admin: formData.Quantity,
-      Manufacturer: formData.Manufacturer,
+      Price: formData.Price,
+      Image: image || "",
+      Category: formData.Category,
+      SubCategory: formData.SubCategory,
+      Quantity: formData.Quantity,
+      Manufacturer: ManufacturerFinal,
       Size: Size,
     };
-    console.log("Submitted:", toiletData);
-    alert("Toilet product added successfully!");
+
+    if (selectedIndex !== null) {
+      const updated = [...products];
+      updated[selectedIndex] = toiletData;
+      setProducts(updated);
+      alert("Toilet product updated successfully!");
+    } else {
+      setProducts([...products, toiletData]);
+      alert("Toilet product added successfully!");
+    }
+
+    setFormData({});
+    setImage(null);
+    setSelectedIndex(null);
     setShowModal(false);
   };
+
+  const [products, setProducts] = useState([
+    {
+      ProductName: "Dual Flush Toilet",
+      ProductDescription: "Water-saving dual flush system.",
+      Color: "White",
+      Price: 280,
+      Category: "Toilet",
+      SubCategory: "Two-Piece",
+      Quantity: 40,
+      Manufacturer: "Hindware",
+      Origin: "India",
+      Size: "28x18",
+      Image: "",
+    },
+    {
+      ProductName: "Compact Ceramic Toilet",
+      ProductDescription: "Space-saving ceramic toilet.",
+      Color: "Beige",
+      Price: 250,
+      Category: "Toilet",
+      SubCategory: "One-Piece",
+      Quantity: 35,
+      Manufacturer: "Cera",
+      Origin: "India",
+      Size: "26x16",
+      Image: "",
+    },
+  ]);
+
+  const [selectedIndex, setSelectedIndex] = useState(null);
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -172,7 +216,25 @@ export default function ToiletInventory() {
               ← Back
             </button>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setFormData({
+                  ProductName: "",
+                  ProductDescription: "",
+                  Color: "",
+                  Price: "",
+                  Image: "",
+                  Category: "Toilet",
+                  SubCategory: "",
+                  Quantity: "",
+                  Manufacturer: "",
+                  customBrand: "",
+                  length: "",
+                  width: "",
+                });
+                setSelectedIndex(null);
+                setImage(null);
+                setShowModal(true);
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               <FaPlus /> Add New
@@ -209,41 +271,54 @@ export default function ToiletInventory() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Dual Flush Toilet</td>
-                  <td className="px-6 py-4">Toilet</td>
-                  <td className="px-6 py-4">$280</td>
-                  <td className="px-6 py-4">40</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Compact Ceramic Toilet</td>
-                  <td className="px-6 py-4">Toilet</td>
-                  <td className="px-6 py-4">$250</td>
-                  <td className="px-6 py-4">35</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                {products.map((item, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="px-6 py-4">{item.ProductName}</td>
+                    <td className="px-6 py-4">{item.Category}</td>
+                    <td className="px-6 py-4">${item.Price}</td>
+                    <td className="px-6 py-4">{item.Quantity}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              ProductName: item.ProductName,
+                              ProductDescription: item.ProductDescription,
+                              Color: item.Color,
+                              Price: item.Price,
+                              Category: item.Category,
+                              SubCategory: item.SubCategory,
+                              Quantity: item.Quantity,
+                              Manufacturer: item.Manufacturer,
+                              customBrand: "",
+                              length: item.Size?.split("x")[0] || "",
+                              width: item.Size?.split("x")[1] || "",
+                            });
+                            setImage(item.Image || null);
+                            setSelectedIndex(index);
+                            setShowModal(true);
+                          }}
+                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                        >
+                          Edit
+                        </button>
+
+                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            Add Toilet Product
+            {selectedIndex !== null
+              ? "Edit Toilet Product"
+              : "Add Toilet Product"}
           </h2>
 
           <form
@@ -419,7 +494,7 @@ export default function ToiletInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                Save Toilet
+                {selectedIndex !== null ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>

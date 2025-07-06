@@ -95,23 +95,70 @@ export default function TilesInventory() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const Size = `${formData.length}x${formData.width}`;
-    const ManufacturerFinal = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+    const ManufacturerFinal =
+      formData.Manufacturer === "Other"
+        ? formData.customBrand
+        : formData.Manufacturer;
+
     const tileData = {
-      Name: formData.ProductName,
-      Description: formData.ProductDescription,
+      ProductName: formData.ProductName,
+      ProductDescription: formData.ProductDescription,
       Color: formData.Color,
       Price: formData.Price,
       Image: image || "",
       Category: formData.Category,
       SubCategory: formData.SubCategory,
-      Stock_admin: formData.Quantity,
-      Manufacturer: formData.Manufacturer,
+      Quantity: formData.Quantity,
+      Manufacturer: ManufacturerFinal,
       Size: Size,
     };
-    console.log("Submitted:", tileData);
-    alert("Tile product added successfully!");
+
+    if (selectedIndex !== null) {
+      const updated = [...products];
+      updated[selectedIndex] = tileData;
+      setProducts(updated);
+      alert("Tile product updated successfully!");
+    } else {
+      setProducts([...products, tileData]);
+      alert("Tile product added successfully!");
+    }
+
+    setFormData({});
+    setImage(null);
+    setSelectedIndex(null);
     setShowModal(false);
   };
+
+  const [products, setProducts] = useState([
+    {
+      ProductName: "Glossy Wall Tile",
+      ProductDescription: "High gloss wall tile.",
+      Color: "White",
+      Price: 15,
+      Category: "Tile",
+      SubCategory: "Wall",
+      Quantity: 100,
+      Manufacturer: "Kajaria",
+      Origin: "India",
+      Size: "12x12",
+      Image: "",
+    },
+    {
+      ProductName: "Anti-Skid Floor Tile",
+      ProductDescription: "Slip-resistant floor tile.",
+      Color: "Grey",
+      Price: 18,
+      Category: "Tile",
+      SubCategory: "Floor",
+      Quantity: 75,
+      Manufacturer: "Nitco",
+      Origin: "India",
+      Size: "12x12",
+      Image: "",
+    },
+  ]);
+
+  const [selectedIndex, setSelectedIndex] = useState(null);
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -183,7 +230,25 @@ export default function TilesInventory() {
               ← Back
             </button>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setFormData({
+                  ProductName: "",
+                  ProductDescription: "",
+                  Color: "",
+                  Price: "",
+                  Image: "",
+                  Category: "Tile",
+                  SubCategory: "",
+                  Quantity: "",
+                  Manufacturer: "",
+                  customBrand: "",
+                  length: "",
+                  width: "",
+                });
+                setSelectedIndex(null);
+                setImage(null);
+                setShowModal(true);
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               <FaPlus /> Add New
@@ -220,41 +285,53 @@ export default function TilesInventory() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Glossy Wall Tile</td>
-                  <td className="px-6 py-4">Tile</td>
-                  <td className="px-6 py-4">$15</td>
-                  <td className="px-6 py-4">100</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Anti-Skid Floor Tile</td>
-                  <td className="px-6 py-4">Tile</td>
-                  <td className="px-6 py-4">$18</td>
-                  <td className="px-6 py-4">75</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                {products.map((item, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="px-6 py-4">{item.ProductName}</td>
+                    <td className="px-6 py-4">{item.Category}</td>
+                    <td className="px-6 py-4">${item.Price}</td>
+                    <td className="px-6 py-4">{item.Quantity}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              ProductName: item.ProductName,
+                              ProductDescription: item.ProductDescription,
+                              Color: item.Color,
+                              Price: item.Price,
+                              Category: item.Category,
+                              SubCategory: item.SubCategory,
+                              Quantity: item.Quantity,
+                              Manufacturer: item.Manufacturer,
+                              customBrand: "",
+                              Origin: item.Origin,
+                              length: item.Size?.split("x")[0] || "",
+                              width: item.Size?.split("x")[1] || "",
+                            });
+                            setImage(item.Image || null);
+                            setSelectedIndex(index);
+                            setShowModal(true);
+                          }}
+                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                        >
+                          Edit
+                        </button>
+
+                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            Add Tile Product
+            {selectedIndex !== null ? "Edit Tile Product" : "Add Tile Product"}
           </h2>
 
           <form
@@ -437,7 +514,7 @@ export default function TilesInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                Save Tile
+                {selectedIndex !== null ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>

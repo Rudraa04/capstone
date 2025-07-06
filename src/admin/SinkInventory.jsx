@@ -96,23 +96,70 @@ export default function SinkInventory() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const Size = `${formData.length}x${formData.width}`;
-    const ManufacturerFinal = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+    const ManufacturerFinal =
+      formData.Manufacturer === "Other"
+        ? formData.customBrand
+        : formData.Manufacturer;
+
     const sinkData = {
-      Name: formData.ProductName,
-      Description: formData.ProductDescription,
+      ProductName: formData.ProductName,
+      ProductDescription: formData.ProductDescription,
       Color: formData.Color,
       Price: formData.Price,
       Image: image || "",
       Category: formData.Category,
       SubCategory: formData.SubCategory,
-      Stock_admin: formData.Quantity,
-      Manufacturer: formData.Manufacturer,
+      Quantity: formData.Quantity,
+      Manufacturer: ManufacturerFinal,
       Size: Size,
     };
-    console.log("Submitted:", sinkData);
-    alert("Sink product added successfully!");
+
+    if (selectedIndex !== null) {
+      const updated = [...products];
+      updated[selectedIndex] = sinkData;
+      setProducts(updated);
+      alert("Sink product updated successfully!");
+    } else {
+      setProducts([...products, sinkData]);
+      alert("Sink product added successfully!");
+    }
+
+    setFormData({});
+    setImage(null);
+    setSelectedIndex(null);
     setShowModal(false);
   };
+
+  const [products, setProducts] = useState([
+    {
+      ProductName: "Modern Steel Sink",
+      ProductDescription: "Durable steel sink with modern design.",
+      Color: "Silver",
+      Price: 220,
+      Category: "Sink",
+      SubCategory: "Wall Mounted",
+      Quantity: 30,
+      Manufacturer: "Jaquar",
+      Origin: "India",
+      Size: "22x18",
+      Image: "",
+    },
+    {
+      ProductName: "Ceramic Bowl Sink",
+      ProductDescription: "Elegant ceramic bowl sink.",
+      Color: "White",
+      Price: 180,
+      Category: "Sink",
+      SubCategory: "Table Top",
+      Quantity: 25,
+      Manufacturer: "Hindware",
+      Origin: "India",
+      Size: "16x16",
+      Image: "",
+    },
+  ]);
+
+  const [selectedIndex, setSelectedIndex] = useState(null);
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -184,10 +231,28 @@ export default function SinkInventory() {
               ← Back
             </button>
             <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              onClick={() => {
+                setFormData({
+                  ProductName: "",
+                  ProductDescription: "",
+                  Color: "",
+                  Price: "",
+                  Image: "",
+                  Category: "Sink",
+                  SubCategory: "",
+                  Quantity: "",
+                  Manufacturer: "",
+                  customBrand: "",
+                  length: "",
+                  width: "",
+                });
+                setSelectedIndex(null);
+                setImage(null);
+                setShowModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
-              + Add New
+              <FaPlus /> Add New
             </button>
           </div>
         </div>
@@ -221,41 +286,52 @@ export default function SinkInventory() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Modern Steel Sink</td>
-                  <td className="px-6 py-4">Sink</td>
-                  <td className="px-6 py-4">$220</td>
-                  <td className="px-6 py-4">30</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="px-6 py-4">Ceramic Bowl Sink</td>
-                  <td className="px-6 py-4">Sink</td>
-                  <td className="px-6 py-4">$180</td>
-                  <td className="px-6 py-4">25</td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:underline mr-2">
-                      Edit
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                {products.map((item, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="px-6 py-4">{item.ProductName}</td>
+                    <td className="px-6 py-4">{item.Category}</td>
+                    <td className="px-6 py-4">${item.Price}</td>
+                    <td className="px-6 py-4">{item.Quantity}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setFormData({
+                              ProductName: item.ProductName,
+                              ProductDescription: item.ProductDescription,
+                              Color: item.Color,
+                              Price: item.Price,
+                              Category: item.Category,
+                              SubCategory: item.SubCategory,
+                              Quantity: item.Quantity,
+                              Manufacturer: item.Manufacturer,
+                              customBrand: "",
+                              length: item.Size?.split("x")[0] || "",
+                              width: item.Size?.split("x")[1] || "",
+                            });
+                            setImage(item.Image || null);
+                            setSelectedIndex(index);
+                            setShowModal(true);
+                          }}
+                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                        >
+                          Edit
+                        </button>
+
+                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            Add Sink Product
+            {selectedIndex !== null ? "Edit Sink Product" : "Add Sink Product"}
           </h2>
 
           <form
@@ -431,7 +507,7 @@ export default function SinkInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                Save Sink
+                {selectedIndex !== null ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>
