@@ -446,25 +446,29 @@ export default function ToiletInventory() {
                 <label className="block font-medium mb-1">
                   Size / Dimensions (in)
                 </label>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <input
-                    type="text"
+                    type="number"
                     name="length"
                     value={formData.length}
                     onChange={handleChange}
                     placeholder="Length"
+                    min="0"
+                    step="any"
                     required
-                    className="w-1/2 px-3 py-2 border rounded-md text-center"
+                    className="w-1/2 px-3 py-2 border rounded-md"
                   />
-                  <span className="font-bold">x</span>
+                  <span className="font-bold text-lg leading-none">X</span>
                   <input
-                    type="text"
+                    type="number"
                     name="width"
                     value={formData.width}
                     onChange={handleChange}
                     placeholder="Width"
+                    min="0"
+                    step="any"
                     required
-                    className="w-1/2 px-3 py-2 border rounded-md text-center"
+                    className="w-1/2 px-3 py-2 border rounded-md"
                   />
                 </div>
               </div>

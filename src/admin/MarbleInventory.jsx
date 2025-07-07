@@ -245,7 +245,7 @@ export default function MarbleInventory() {
                 setImage(null); // ✅ Optional: Reset image
                 setShowModal(true);
               }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               <FaPlus /> Add New
             </button>
@@ -412,36 +412,6 @@ export default function MarbleInventory() {
 
               <div>
                 <label className="block font-medium mb-1">
-                  Brand / Manufacturer
-                </label>
-                <select
-                  name="Manufacturer"
-                  value={formData.Manufacturer}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md"
-                >
-                  <option value="">Select Brand</option>
-                  {brands.map((brand) => (
-                    <option key={brand} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-                </select>
-                {formData.Manufacturer === "Other" && (
-                  <input
-                    type="text"
-                    name="customBrand"
-                    value={formData.customBrand}
-                    onChange={handleChange}
-                    placeholder="Enter Brand Name"
-                    className="mt-2 w-full px-3 py-2 border rounded-md"
-                  />
-                )}
-              </div>
-
-              <div>
-                <label className="block font-medium mb-1">
                   Place of Origin
                 </label>
                 <input
@@ -460,23 +430,27 @@ export default function MarbleInventory() {
                 <label className="block font-medium mb-1">
                   Size / Dimensions (in)
                 </label>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <input
-                    type="text"
+                    type="number"
                     name="length"
                     value={formData.length}
                     onChange={handleChange}
                     placeholder="Length"
+                    min="0"
+                    step="any"
                     required
                     className="w-1/2 px-3 py-2 border rounded-md"
                   />
-                  <span className="font-bold">x</span>
+                  <span className="font-bold text-lg leading-none">X</span>
                   <input
-                    type="text"
+                    type="number"
                     name="width"
                     value={formData.width}
                     onChange={handleChange}
                     placeholder="Width"
+                    min="0"
+                    step="any"
                     required
                     className="w-1/2 px-3 py-2 border rounded-md"
                   />
