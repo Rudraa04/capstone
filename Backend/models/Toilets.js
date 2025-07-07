@@ -6,7 +6,7 @@ const ceramicsConnection = mongoose.createConnection(process.env.CERAMICS_URI);
 
 const ToiletsSchema = new mongoose.Schema({
   name: String,
-  description: String,
+  Flush_Type: String,
   Color: String, 
   price: Number,
   image: String,
