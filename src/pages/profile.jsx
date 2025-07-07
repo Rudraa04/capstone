@@ -7,12 +7,7 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db } from "../firebase/firebase";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -70,7 +65,7 @@ export default function Profile() {
 
         setUser({
           ...currentUser,
-          photoURL: currentUser.photoURL || null,
+          photoURL: currentUser.photoURL || userData.photoURL || null,
         });
 
         setProfileData((prev) => ({
@@ -116,30 +111,38 @@ export default function Profile() {
     const file = e.target.files[0];
     if (!file || !auth.currentUser) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("File too large! Max size allowed is 2MB.");
+    if (file.size > 200 * 1024) {
+      alert("File too large! Max size allowed is 200KB.");
       return;
     }
 
     setUploading(true);
     try {
+      console.log("Upload started");
+
       const storage = getStorage();
-      const storageRef = ref(storage, `profilePictures/${auth.currentUser.uid}.jpg`);
+      const storageRef = ref(storage, `Profile/${auth.currentUser.uid}.jpg`);
+
       await uploadBytes(storageRef, file);
+      console.log("File uploaded");
 
       const url = await getDownloadURL(storageRef);
+      console.log("Download URL:", url);
 
-      // Update Firebase Auth profile
       await updateProfile(auth.currentUser, { photoURL: url });
+      console.log("Firebase Auth updated");
 
-      // Update Firestore user document
-      await setDoc(doc(db, "users", auth.currentUser.uid), {
-        ...profileData,
-        photoURL: url,
-        role: fromAdmin ? "admin" : "customer",
-      });
+      await setDoc(
+        doc(db, "users", auth.currentUser.uid),
+        {
+          ...profileData,
+          photoURL: url,
+          role: fromAdmin ? "admin" : "customer",
+        },
+        { merge: true }
+      );
+      console.log("Firestore updated");
 
-      // Reload and refresh user
       await auth.currentUser.reload();
       const refreshedUser = auth.currentUser;
 
@@ -148,10 +151,15 @@ export default function Profile() {
         photoURL: refreshedUser.photoURL,
       });
 
+      setProfileData((prev) => ({
+        ...prev,
+        photoURL: refreshedUser.photoURL,
+      }));
+
       alert("Profile picture updated!");
     } catch (err) {
-      console.error(err);
-      alert("Error uploading picture");
+      console.error("Upload failed:", err);
+      alert("Error uploading picture: " + err.message);
     }
     setUploading(false);
   };
@@ -243,7 +251,7 @@ export default function Profile() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {[ 
+            {[
               { label: "Full Name", key: "fullName" },
               { label: "Phone", key: "phone" },
               { label: "Email", key: "email", value: user?.email },
@@ -289,7 +297,9 @@ export default function Profile() {
                       if (key === "email") {
                         return (
                           <>
-                            <span>{showEmail ? actualValue : maskEmail(actualValue)}</span>
+                            <span>
+                              {showEmail ? actualValue : maskEmail(actualValue)}
+                            </span>
                             <button
                               onClick={() => setShowEmail(!showEmail)}
                               className="ml-2 text-sm text-blue-600 underline"
@@ -303,7 +313,9 @@ export default function Profile() {
                       if (key === "phone") {
                         return (
                           <>
-                            <span>{showPhone ? actualValue : maskPhone(actualValue)}</span>
+                            <span>
+                              {showPhone ? actualValue : maskPhone(actualValue)}
+                            </span>
                             <button
                               onClick={() => setShowPhone(!showPhone)}
                               className="ml-2 text-sm text-blue-600 underline"
@@ -317,7 +329,11 @@ export default function Profile() {
                       if (key === "address") {
                         return (
                           <>
-                            <span>{showAddress ? actualValue : maskAddress(actualValue)}</span>
+                            <span>
+                              {showAddress
+                                ? actualValue
+                                : maskAddress(actualValue)}
+                            </span>
                             <button
                               onClick={() => setShowAddress(!showAddress)}
                               className="ml-2 text-sm text-blue-600 underline"
