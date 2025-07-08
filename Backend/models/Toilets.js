@@ -14,6 +14,7 @@ const ToiletsSchema = new mongoose.Schema({
   Subcategory: String,
   Stock_admin: Number,
   Manufacturer: String,
+  Size: String
 });
 
 export default ceramicsConnection.model('Toilets_Model', ToiletsSchema, 'Toilets_Collection');
