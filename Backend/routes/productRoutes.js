@@ -20,7 +20,7 @@ const router = express.Router();
 // GET routes
 router.get("/api/products/tiles", getTiles);
 router.get("/bathtubs", getBathtubs);
-router.get("/granite", getGranite);
+router.get("/api/products/granite", getGranite);
 router.get("/marble", getMarble);
 router.get("/sinks", getSinks);
 router.get("/toilets", getToilets);

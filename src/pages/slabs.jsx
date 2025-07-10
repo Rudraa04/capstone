@@ -20,27 +20,11 @@ import marble6 from "../images/marble6.png";
 import marble7 from "../images/marble7.png";
 import marble8 from "../images/marble8.png";
 
-import granite1 from "../images/granite1.png";
-import granite2 from "../images/granite2.png";
-import granite3 from "../images/granite3.png";
-import granite4 from "../images/granite4.png";
-import granite5 from "../images/granite5.png";
-import granite6 from "../images/granite6.png";
-import granite7 from "../images/granite7.png";
-import granite8 from "../images/granite8.png";
-
 export default function Slabs() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const fromAdmin = location.state?.fromAdmin || false;
+
   const [activeTab, setActiveTab] = useState("marble");
-
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const type = queryParams.get("type") || "marble";
-    setActiveTab(type.toLowerCase());
-  }, [location.search]);
-
+  const [graniteProducts, setGraniteProducts] = useState([]);
   const [filters, setFilters] = useState({ category: [], size: [], color: [] });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
@@ -56,50 +40,6 @@ export default function Slabs() {
     marble6,
     marble7,
     marble8,
-  ];
-  const graniteImages = [
-    granite1,
-    granite2,
-    granite3,
-    granite4,
-    granite5,
-    granite6,
-    granite7,
-    granite8,
-  ];
-  const graniteData = [
-    {
-      name: "Black Galaxy Granite",
-      desc: "Classic black finish with golden speckles. Perfect for countertops and vanities.",
-    },
-    {
-      name: "Ruby Red Granite",
-      desc: "Deep red granite with dark veins. Ideal for bold, statement interiors.",
-    },
-    {
-      name: "Alaska White Granite",
-      desc: "Bright white granite with subtle gray patterns. Enhances modern kitchens.",
-    },
-    {
-      name: "Steel Grey Granite",
-      desc: "Mid-tone grey with consistent grain. Suitable for both floors and facades.",
-    },
-    {
-      name: "Ivory Brown Granite",
-      desc: "A warm blend of beige and brown. Great for cozy living spaces.",
-    },
-    {
-      name: "Forest Green Granite",
-      desc: "Natural green with dark accents. Adds a lush, earthy feel to any setting.",
-    },
-    {
-      name: "Blue Pearl Granite",
-      desc: "Luxurious blue granite with a shimmering finish. A favorite for luxury spaces.",
-    },
-    {
-      name: "Tan Brown Granite",
-      desc: "Dark brown with chocolate and black flecks. Durable and elegant.",
-    },
   ];
 
   const marbleData = [
@@ -165,6 +105,19 @@ export default function Slabs() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const fetchGraniteProducts = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/products/granite");
+        const data = await response.json();
+        setGraniteProducts(data);
+      } catch (error) {
+        console.error("Error fetching granite products:", error);
+      }
+    };
+    fetchGraniteProducts();
+  }, []);
+
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
@@ -186,6 +139,7 @@ export default function Slabs() {
 
   return (
     <div className="bg-white text-gray-900">
+      
       {/* === HEADER === */}
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -512,36 +466,26 @@ export default function Slabs() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {activeTab === "granite" &&
-                graniteImages.map((img, i) => {
-                  return (
-                    <div
-                      key={i}
-                      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-                    >
-                      <div className="relative">
-                        <img
-                          src={img}
-                          alt={graniteData[i].name}
-                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="text-lg font-bold text-gray-800">
-                          {graniteData[i].name}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {graniteData[i].desc}
-                        </p>
-                        <Link to={`/product/granite/${i}`}>
-                          <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                            View Details
-                          </button>
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
+              {activeTab === "granite" && graniteProducts.map((product) => (
+                <div key={product._id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
+                  <div className="relative">
+                    <img
+                      src={product.Image}
+                      alt={product.Name}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-bold text-gray-800">{product.Name}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{product.Description}</p>
+                    <Link to={`/product/granite/${product._id}`}>
+                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                        View Details
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
 
               {activeTab === "marble" &&
                 marbleImages.map((img, i) => {
