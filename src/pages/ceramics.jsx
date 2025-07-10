@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+import axios from "axios";
+
 import {
   FaSearch,
   FaShoppingCart,
@@ -19,15 +21,6 @@ import sink5 from "../images/sink5.png";
 import sink6 from "../images/sink6.png";
 import sink7 from "../images/sink7.png";
 import sink8 from "../images/sink8.png";
-
-import tile1 from "../images/Tiles1.png";
-import tile2 from "../images/Tiles2.png";
-import tile3 from "../images/Tiles3.png";
-import tile4 from "../images/Tiles4.png";
-import tile5 from "../images/Tiles5.png";
-import tile6 from "../images/Tiles6.png";
-import tile7 from "../images/Tiles7.png";
-import tile8 from "../images/Tiles8.png";
 
 import bathtub1 from "../images/bathtub1.png";
 import bathtub2 from "../images/bathtub2.png";
@@ -50,13 +43,7 @@ import toilet8 from "../images/toilet8.png";
 export default function Ceramics() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("tiles");
-
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const type = queryParams.get("type") || "tiles";
-    setActiveTab(type.toLowerCase());
-  }, [location.search]);
-
+  const [tiles, setTiles] = useState([]);
   const [filters, setFilters] = useState({ category: [], size: [], color: [] });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
@@ -99,43 +86,6 @@ export default function Ceramics() {
     {
       name: "Leaf Design Sink",
       desc: "Artistic leaf-shaped glass sink. Great for designer bathrooms.",
-    },
-  ];
-
-  const tileImages = [tile1, tile2, tile3, tile4, tile5, tile6, tile7, tile8];
-
-  const tileData = [
-    {
-      name: "Rustic Stone Look Tile",
-      desc: "Natural stone-inspired tile ideal for outdoor walls and patios.",
-    },
-    {
-      name: "White Marble Wall Tile",
-      desc: "Sleek marble tiles perfect for luxury bathroom walls.",
-    },
-    {
-      name: "Checkerboard Floor Tile",
-      desc: "Classic black-and-white tile design for modern interiors.",
-    },
-    {
-      name: "Yellow Kitchen Tile",
-      desc: "Digital printed tile with a cheerful tone for stylish kitchens.",
-    },
-    {
-      name: "Glossy Beige Living Room Tile",
-      desc: "Polished finish with warm tones for spacious living rooms.",
-    },
-    {
-      name: "Blue Marble Effect Tile",
-      desc: "Striking deep blue tiles for bold and elegant aesthetics.",
-    },
-    {
-      name: "Wood Look Chevron Tile",
-      desc: "Rich woodgrain ceramic tiles in herringbone pattern.",
-    },
-    {
-      name: "Black Stone Texture Tile",
-      desc: "Dramatic dark tile with natural textures for accent walls.",
     },
   ];
 
@@ -273,6 +223,12 @@ export default function Ceramics() {
   };
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const type = queryParams.get("type") || "tiles";
+    setActiveTab(type.toLowerCase());
+  }, [location.search]);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
@@ -289,6 +245,22 @@ export default function Ceramics() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (activeTab === "tiles") {
+      fetchTiles();
+    }
+  }, [activeTab]);
+
+  const fetchTiles = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/products/tiles");
+      console.log("Fetched Tiles:", response.data);
+      setTiles(response.data);
+    } catch (error) {
+      console.error("Failed to fetch tiles:", error);
+    }
+  };
+  
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
@@ -644,31 +616,28 @@ export default function Ceramics() {
                   </div>
                 ))}
               {activeTab === "tiles" &&
-                tileImages.map((img, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-                  >
-                    <div className="relative">
-                      <img
-                        src={img}
-                        alt={tileData[i].name}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold text-gray-800">
-                        {tileData[i].name}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {tileData[i].desc}
-                      </p>
-                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
+  tiles.map((tile, i) => (
+    <div
+      key={tile._id || i}
+      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+    >
+      <div className="relative">
+        <img
+          src={tile.Image}
+          alt={tile.Name}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-bold text-gray-800">{tile.Name}</h3>
+        <p className="text-sm text-gray-500 mt-1">{tile.Description}</p>
+        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+          View Details
+        </button>
+      </div>
+    </div>
+  ))}
+
 
               {activeTab === "bathtub" &&
                 bathtubImages.map((img, i) => (

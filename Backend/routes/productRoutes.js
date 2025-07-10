@@ -18,7 +18,7 @@ import Toilets_Model from "../models/Toilets.js";
 const router = express.Router();
 
 // GET routes
-router.get("/tiles", getTiles);
+router.get("/api/products/tiles", getTiles);
 router.get("/bathtubs", getBathtubs);
 router.get("/granite", getGranite);
 router.get("/marble", getMarble);
