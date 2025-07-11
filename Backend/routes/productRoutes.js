@@ -105,12 +105,15 @@ router.put("/granite/:id", async (req, res) => {
   }
 });
 
-router.put("/tiles/:id", async (req, res) => {
+router.get("/api/products/tiles/:id", async (req, res) => {
   try {
-    const updated = await Tiles_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json({ message: "Product updated successfully", product: updated });
+    const tile = await Tiles_Model.findById(req.params.id);
+    if (!tile) {
+      return res.status(404).json({ message: "Tile not found" });
+    }
+    res.json(tile);
   } catch (err) {
-    res.status(500).json({ message: "Failed to update product", error: err.message });
+    res.status(500).json({ message: "Failed to fetch tile", error: err.message });
   }
 });
 

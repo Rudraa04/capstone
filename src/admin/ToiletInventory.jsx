@@ -146,6 +146,11 @@ export default function ToiletInventory() {
 
   const [selectedIndex, setSelectedIndex] = useState(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [usageTypeFilter, setUsageTypeFilter] = useState("");
+  const [flushTypeFilter, setFlushTypeFilter] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("");
+
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
       {/* Sidebar */}
@@ -259,6 +264,123 @@ export default function ToiletInventory() {
           <h2 className="text-xl font-semibold text-gray-700 mb-4">
             Product List
           </h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            {/* Search Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Search Product
+              </label>
+              <input
+                type="text"
+                placeholder="Search by Name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              />
+            </div>
+
+            {/* Usage Type Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Usage Type
+              </label>
+              <select
+                value={usageTypeFilter}
+                onChange={(e) => setUsageTypeFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Usage Types</option>
+                <option value="Rimless One Piece Closet">
+                  Rimless One Piece Closet
+                </option>
+                <option value="One Piece Closet">One Piece Closet</option>
+              </select>
+            </div>
+
+            {/* Flush Type Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Flush Type
+              </label>
+              <select
+                value={flushTypeFilter}
+                onChange={(e) => setFlushTypeFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Flush Types</option>
+                <option value="5D Vortex Siphonic Flushing">
+                  5D Vortex Siphonic Flushing
+                </option>
+                <option value="Siphonic Flushing">Siphonic Flushing</option>
+                <option value="Washdown Flushing">Washdown Flushing</option>
+                <option value="with jet / without jet">
+                  with jet / without jet
+                </option>
+                <option value="4D Vortex Flushing">4D Vortex Flushing</option>
+              </select>
+            </div>
+
+            {/* Size Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Size
+              </label>
+              <select
+                value={sizeFilter}
+                onChange={(e) => setSizeFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Sizes</option>
+                <option value="640 x 365 x 775mm">640 x 365 x 775mm</option>
+                <option value="665 x 365 x 750mm">665 x 365 x 750mm</option>
+                <option value="665 x 360 x 750mm">665 x 360 x 750mm</option>
+                <option value="675 x 355 x 750mm">675 x 355 x 750mm</option>
+                <option value="715 x 380 x 775mm">715 x 380 x 775mm</option>
+                <option value="670 x 360x 730mm">670 x 360x 730mm</option>
+                <option value="655 x 350 x 740mm">655 x 350 x 740mm</option>
+                <option value="700 x 365 x 730mm">700 x 365 x 730mm</option>
+                <option value="675 x 390 x 790mm">675 x 390 x 790mm</option>
+                <option value="660 x 355 x 740mm">660 x 355 x 740mm</option>
+                <option value="660 x 360 x 725mm">660 x 360 x 725mm</option>
+                <option value="715 x 385 x 760mm">715 x 385 x 760mm</option>
+                <option value="665 x 350 x 715mm">665 x 350 x 715mm</option>
+                <option value="715 x 370 x 680mm">715 x 370 x 680mm</option>
+                <option value="715 x 405 x 685mm">715 x 405 x 685mm</option>
+                <option value="700 x 350 x 690mm">700 x 350 x 690mm</option>
+                <option value="685 x 365 x 675mm">685 x 365 x 675mm</option>
+                <option value="520 x 290 x 515mm">520 x 290 x 515mm</option>
+              </select>
+            </div>
+
+            {/* Reset Button */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center p-2">
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setColorFilter("");
+                  setOriginFilter("");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582M20 20v-5h-.581M5 19A9 9 0 0119 5M5 5l14 14"
+                  />
+                </svg>
+                Reset Filters
+              </button>
+            </div>
+          </div>
+
           <div className="overflow-x-auto bg-white rounded-xl shadow">
             <table className="min-w-full text-sm text-left text-gray-600">
               <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
@@ -271,45 +393,57 @@ export default function ToiletInventory() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-6 py-4">{item.ProductName}</td>
-                    <td className="px-6 py-4">{item.Category}</td>
-                    <td className="px-6 py-4">${item.Price}</td>
-                    <td className="px-6 py-4">{item.Quantity}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setFormData({
-                              ProductName: item.ProductName,
-                              ProductDescription: item.ProductDescription,
-                              Color: item.Color,
-                              Price: item.Price,
-                              Category: item.Category,
-                              SubCategory: item.SubCategory,
-                              Quantity: item.Quantity,
-                              Manufacturer: item.Manufacturer,
-                              customBrand: "",
-                              length: item.Size?.split("x")[0] || "",
-                              width: item.Size?.split("x")[1] || "",
-                            });
-                            setImage(item.Image || null);
-                            setSelectedIndex(index);
-                            setShowModal(true);
-                          }}
-                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
-                        >
-                          Edit
-                        </button>
+                {products
+                  .filter(
+                    (item) =>
+                      item.ProductName.toLowerCase().includes(
+                        searchTerm.toLowerCase()
+                      ) &&
+                      (usageTypeFilter === "" ||
+                        item.SubCategory === usageTypeFilter) &&
+                      (flushTypeFilter === "" ||
+                        item.FlushType === flushTypeFilter) &&
+                      (sizeFilter === "" || item.Size === sizeFilter)
+                  )
+                  .map((item, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Category}</td>
+                      <td className="px-6 py-4">${item.Price}</td>
+                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setFormData({
+                                ProductName: item.ProductName,
+                                ProductDescription: item.ProductDescription,
+                                Color: item.Color,
+                                Price: item.Price,
+                                Category: item.Category,
+                                SubCategory: item.SubCategory,
+                                Quantity: item.Quantity,
+                                Manufacturer: item.Manufacturer,
+                                FlushType: item.FlushType,
+                                length: item.Size?.split("x")[0] || "",
+                                width: item.Size?.split("x")[1] || "",
+                              });
+                              setImage(item.Image || null);
+                              setSelectedIndex(index);
+                              setShowModal(true);
+                            }}
+                            className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                          >
+                            Edit
+                          </button>
 
-                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

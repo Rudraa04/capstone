@@ -242,44 +242,16 @@ const mapToiletManufacturer = (manufacturer) => {
 
   const fetchTiles = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/products/tiles");
+      const response = await axios.get(
+        "http://localhost:5000/api/products/tiles"
+      );
       console.log("Fetched Tiles:", response.data);
       setTiles(response.data);
     } catch (error) {
       console.error("Failed to fetch tiles:", error);
     }
   };
-
-  useEffect(() => {
-  const fetchSinks = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/products/sinks");
-      setSinks(response.data);
-    } catch (error) {
-      console.error("Failed to fetch sinks:", error);
-    }
-  };
-
-  if (activeTab === "sinks") {
-    fetchSinks();
-  }
-}, [activeTab]);
-
-  useEffect(() => {
-  const fetchToilets = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/products/toilets");
-      setToilets(response.data);
-    } catch (error) {
-      console.error("Failed to fetch toilets:", error);
-    }
-  };
-
-  if (activeTab === "toilets") {
-    fetchToilets();
-  }
-}, [activeTab]);
-
+  
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
@@ -667,20 +639,28 @@ const filteredToilets = toilets.filter(toilet => {
     </div>
   ))}
 
-  {activeTab === "tiles" &&
-  filteredTiles.map((tile, i) => (
-    <div key={tile._id || i} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
+              {activeTab === "tiles" &&
+  tiles.map((tile, i) => (
+    <div
+      key={tile._id || i}
+      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+    >
       <div className="relative">
-        <img src={tile.Image} alt={tile.Name} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
+        <img
+          src={tile.Image}
+          alt={tile.Name}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+        />
       </div>
       <div className="p-4">
         <h3 className="text-lg font-bold text-gray-800">{tile.Name}</h3>
         <p className="text-sm text-gray-500 mt-1">{tile.Description}</p>
-        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">View Details</button>
+        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+          View Details
+        </button>
       </div>
     </div>
   ))}
-
 
 
               {activeTab === "bathtub" &&
