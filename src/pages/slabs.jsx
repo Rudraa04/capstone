@@ -11,72 +11,19 @@ import {
 } from "react-icons/fa";
 import slabBanner from "../images/slabs-banner.png";
 
-import marble1 from "../images/marble1.png";
-import marble2 from "../images/marble2.png";
-import marble3 from "../images/marble3.png";
-import marble4 from "../images/marble4.png";
-import marble5 from "../images/marble5.png";
-import marble6 from "../images/marble6.png";
-import marble7 from "../images/marble7.png";
-import marble8 from "../images/marble8.png";
-
 export default function Slabs() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("marble");
   const [graniteProducts, setGraniteProducts] = useState([]);
+  const [marbleProducts, setMarbleProducts] = useState([]);
   const [filters, setFilters] = useState({ category: [], size: [], color: [] });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
-  const marbleImages = [
-    marble1,
-    marble2,
-    marble3,
-    marble4,
-    marble5,
-    marble6,
-    marble7,
-    marble8,
-  ];
-
-  const marbleData = [
-    {
-      name: "Golden Emperador Marble",
-      desc: "Rich golden tones with dramatic dark veins. A luxurious choice for upscale interiors.",
-    },
-    {
-      name: "Rosa Aurora Marble",
-      desc: "Soft pink hue with delicate veining. Ideal for bathrooms and serene settings.",
-    },
-    {
-      name: "Verde Alpi Marble",
-      desc: "Deep green marble with white veins. Adds bold character to any space.",
-    },
-    {
-      name: "Crema Marfil Marble",
-      desc: "Creamy beige marble, classic and versatile. Matches any decor style.",
-    },
-    {
-      name: "Carrara White Marble",
-      desc: "Iconic white marble with soft gray veins. A timeless choice for elegant surfaces.",
-    },
-    {
-      name: "Jaisalmer Yellow Marble",
-      desc: "Warm golden-yellow tones. Popular in Indian architecture and temples.",
-    },
-    {
-      name: "Calacatta Gold Marble",
-      desc: "White marble with bold gold and brown veins. Premium and eye-catching.",
-    },
-    {
-      name: "Udaipur Green Marble",
-      desc: "Bright green marble with natural white veining. Eco-inspired and unique.",
-    },
-  ];
-
+  
   const filterOptions = {
     marble: {
       size: ["8x4 ft", "10x5 ft", "12x6 ft"],
@@ -103,6 +50,19 @@ export default function Slabs() {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  
+  useEffect(() => {
+    const fetchMarbleProducts = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/products/marble");
+        const data = await response.json();
+        setMarbleProducts(data);
+      } catch (error) {
+        console.error("Error fetching marble products:", error);
+      }
+    };
+    fetchMarbleProducts();
   }, []);
 
   useEffect(() => {
@@ -487,36 +447,26 @@ export default function Slabs() {
                 </div>
               ))}
 
-              {activeTab === "marble" &&
-                marbleImages.map((img, i) => {
-                  return (
-                    <div
-                      key={i}
-                      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-                    >
-                      <div className="relative">
-                        <img
-                          src={img}
-                          alt={marbleData[i].name}
-                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="text-lg font-bold text-gray-800">
-                          {marbleData[i].name}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {marbleData[i].desc}
-                        </p>
-                        <Link to={`/product/marble/${i}`}>
-                          <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                            View Details
-                          </button>
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
+              {activeTab === "marble" && marbleProducts.map((product) => (
+                <div key={product._id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
+                  <div className="relative">
+                    <img
+                      src={product.Image}
+                      alt={product.Name}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-bold text-gray-800">{product.Name}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{product.Description}</p>
+                    <Link to={`/product/marble/${product._id}`}>
+                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                        View Details
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

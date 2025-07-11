@@ -13,15 +13,6 @@ import {
 } from "react-icons/fa";
 import slabBanner from "../images/slabs-banner.png";
 
-import sink1 from "../images/sink1.png";
-import sink2 from "../images/sink2.png";
-import sink3 from "../images/sink3.png";
-import sink4 from "../images/sink4.png";
-import sink5 from "../images/sink5.png";
-import sink6 from "../images/sink6.png";
-import sink7 from "../images/sink7.png";
-import sink8 from "../images/sink8.png";
-
 import bathtub1 from "../images/bathtub1.png";
 import bathtub2 from "../images/bathtub2.png";
 import bathtub3 from "../images/bathtub3.png";
@@ -31,19 +22,12 @@ import bathtub6 from "../images/bathtub6.png";
 import bathtub7 from "../images/bathtub7.png";
 import bathtub8 from "../images/bathtub8.png";
 
-import toilet1 from "../images/toilet1.png";
-import toilet2 from "../images/toilet2.png";
-import toilet3 from "../images/toilet3.png";
-import toilet4 from "../images/toilet4.png";
-import toilet5 from "../images/toilet5.png";
-import toilet6 from "../images/toilet6.png";
-import toilet7 from "../images/toilet7.png";
-import toilet8 from "../images/toilet8.png";
-
 export default function Ceramics() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("tiles");
   const [tiles, setTiles] = useState([]);
+  const [sinks, setSinks] = useState([]);
+  const [toilets, setToilets] = useState([]);
   const [filters, setFilters] = useState({ category: [], size: [], color: [] });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
@@ -51,43 +35,6 @@ export default function Ceramics() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
-
-  const sinkImages = [sink1, sink2, sink3, sink4, sink5, sink6, sink7, sink8];
-
-  const sinkData = [
-    {
-      name: "Classic Ceramic Sink",
-      desc: "Simple square ceramic sink with chrome faucet. Ideal for modern bathrooms.",
-    },
-    {
-      name: "Oval White Sink",
-      desc: "Smooth oval design with glossy finish. Perfect for contemporary washrooms.",
-    },
-    {
-      name: "Double Bowl Black Sink",
-      desc: "Matte black dual compartment kitchen sink with matching tap.",
-    },
-    {
-      name: "Stone Finish Vessel Sink",
-      desc: "Elegant stone-textured bowl sink. Adds natural charm to any vanity.",
-    },
-    {
-      name: "Stainless Steel Sink",
-      desc: "Durable steel construction, ideal for heavy kitchen use.",
-    },
-    {
-      name: "Blue Glass Bowl Sink",
-      desc: "Vibrant glass sink with waterfall faucet. A luxurious centerpiece.",
-    },
-    {
-      name: "Square Glass Sink",
-      desc: "Clear angular glass vessel for minimalist bathrooms.",
-    },
-    {
-      name: "Leaf Design Sink",
-      desc: "Artistic leaf-shaped glass sink. Great for designer bathrooms.",
-    },
-  ];
 
   const bathtubImages = [
     bathtub1,
@@ -132,51 +79,6 @@ export default function Ceramics() {
     {
       name: "Matte Black Freestanding Tub",
       desc: "Sleek matte black tub with modern black fixtures.",
-    },
-  ];
-
-  const toiletImages = [
-    toilet1,
-    toilet2,
-    toilet3,
-    toilet4,
-    toilet5,
-    toilet6,
-    toilet7,
-    toilet8,
-  ];
-  const toiletData = [
-    {
-      name: "Luxury Black Toilet",
-      desc: "Premium black finish with golden patterns and modern design.",
-    },
-    {
-      name: "Wall Hung White Toilet",
-      desc: "Compact wall-mounted toilet ideal for minimalist bathrooms.",
-    },
-    {
-      name: "One-Piece Brown Toilet",
-      desc: "Seamless ceramic toilet in earthy tones for modern homes.",
-    },
-    {
-      name: "Beige Round Toilet",
-      desc: "Soft beige color and rounded shape for a cozy look.",
-    },
-    {
-      name: "Indian Style Squat Toilet",
-      desc: "Traditional white ceramic squat pan for Indian households.",
-    },
-    {
-      name: "Extended Squat Toilet",
-      desc: "Wider squatting pan with maroon stopper. Elegant yet practical.",
-    },
-    {
-      name: "Elevated Indian Pan",
-      desc: "Ergonomic elevated pan for better comfort and support.",
-    },
-    {
-      name: "Basic Western Toilet",
-      desc: "Classic white western toilet with water-saving flush system.",
     },
   ];
 
@@ -260,7 +162,37 @@ export default function Ceramics() {
       console.error("Failed to fetch tiles:", error);
     }
   };
-  
+
+  useEffect(() => {
+  const fetchSinks = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/products/sinks");
+      setSinks(response.data);
+    } catch (error) {
+      console.error("Failed to fetch sinks:", error);
+    }
+  };
+
+  if (activeTab === "sinks") {
+    fetchSinks();
+  }
+}, [activeTab]);
+
+  useEffect(() => {
+  const fetchToilets = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/products/toilets");
+      setToilets(response.data);
+    } catch (error) {
+      console.error("Failed to fetch toilets:", error);
+    }
+  };
+
+  if (activeTab === "toilets") {
+    fetchToilets();
+  }
+}, [activeTab]);
+
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
@@ -590,31 +522,28 @@ export default function Ceramics() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {activeTab === "sinks" &&
-                sinkImages.map((img, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-                  >
-                    <div className="relative">
-                      <img
-                        src={img}
-                        alt={sinkData[i].name}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold text-gray-800">
-                        {sinkData[i].name}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {sinkData[i].desc}
-                      </p>
-                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
+  sinks.map((sink, i) => (
+    <div
+      key={sink._id || i}
+      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+    >
+      <div className="relative">
+        <img
+          src={sink.Image}
+          alt={sink.Name}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-bold text-gray-800">{sink.Name}</h3>
+        <p className="text-sm text-gray-500 mt-1">{sink.Description}</p>
+        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+          View Details
+        </button>
+      </div>
+    </div>
+  ))}
+
               {activeTab === "tiles" &&
   tiles.map((tile, i) => (
     <div
@@ -667,31 +596,28 @@ export default function Ceramics() {
                 ))}
 
               {activeTab === "toilets" &&
-                toiletImages.map((img, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-                  >
-                    <div className="relative">
-                      <img
-                        src={img}
-                        alt={toiletData[i].name}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold text-gray-800">
-                        {toiletData[i].name}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {toiletData[i].desc}
-                      </p>
-                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
+  toilets.map((toilet, i) => (
+    <div
+      key={toilet._id || i}
+      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+    >
+      <div className="relative">
+        <img
+          src={toilet.Image}
+          alt={toilet.Name}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-bold text-gray-800">{toilet.Name}</h3>
+        <p className="text-sm text-gray-500 mt-1">{toilet.Description}</p>
+        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+          View Details
+        </button>
+      </div>
+    </div>
+  ))}
+
             </div>
           </div>
         </div>
