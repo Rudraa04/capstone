@@ -639,7 +639,7 @@ export default function Ceramics() {
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold mb-4">What We Do</h4>
+            <h4 className="font-semibold mb-4">What We </h4>
             <ul className="space-y-2 text-gray-300">
               <li>Tile Manufacturing</li>
               <li>Custom Design</li>
