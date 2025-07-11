@@ -152,6 +152,9 @@ export default function BathtubInventory() {
   ]);
 
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [colorFilter, setColorFilter] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("");
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -269,6 +272,108 @@ export default function BathtubInventory() {
           <h2 className="text-xl font-semibold text-gray-700 mb-4">
             Product List
           </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {/* Search Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Search Product
+              </label>
+              <input
+                type="text"
+                placeholder="Search by Name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              />
+            </div>
+
+            {/* Color Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Color
+              </label>
+              <select
+                value={colorFilter}
+                onChange={(e) => setColorFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Colors</option>
+                <option value="Light Blue">Light Blue</option>
+                <option value="White">White</option>
+                <option value="White + Dark Pink">White + Dark Pink</option>
+                <option value="Blue">Blue</option>
+                <option value="Golden">Golden</option>
+              </select>
+            </div>
+
+            {/* Size Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Size
+              </label>
+              <select
+                value={sizeFilter}
+                onChange={(e) => setSizeFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Sizes</option>
+                <option value="48 x 30 H 15">48 x 30 H 15</option>
+                <option value="54 x 28 H 15">54 x 28 H 15</option>
+                <option value="60/66 x 35 H 15">60/66 x 35 H 15</option>
+                <option value="60 x 30 H 13">60 x 30 H 13</option>
+                <option value="66 x 30 H 14">66 x 30 H 14</option>
+                <option value="72 x 36 H 16">72 x 36 H 16</option>
+                <option value="58 x 48 H 21">58 x 48 H 21</option>
+                <option value="60/48 x 48 H 18">60/48 x 48 H 18</option>
+                <option value="66 x 30 H 21">66 x 30 H 21</option>
+                <option value="48 x 48 H 24 Round 78">
+                  48 x 48 H 24 Round 78
+                </option>
+                <option value="48 x 48 H 16 Round 78">
+                  48 x 48 H 16 Round 78
+                </option>
+                <option value="70 x 30 H 16">70 x 30 H 16</option>
+                <option value="66 x 30 - 36">66 x 30 - 36</option>
+                <option value="72 x 72 H 18">72 x 72 H 18</option>
+                <option value="66x 30 H 21">66x 30 H 21</option>
+                <option value="72 x 48 H 16">72 x 48 H 16</option>
+                <option value="72 x 48 H 21">72 x 48 H 21</option>
+                <option value="72 x 48 H 18">72 x 48 H 18</option>
+                <option value="33 x 21 H 9">33 x 21 H 9</option>
+                <option value="56 x 56 H 24 Round 88">
+                  56 x 56 H 24 Round 88
+                </option>
+              </select>
+            </div>
+
+            {/* Reset Button */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center p-2">
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setColorFilter("");
+                  setOriginFilter("");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582M20 20v-5h-.581M5 19A9 9 0 0119 5M5 5l14 14"
+                  />
+                </svg>
+                Reset Filters
+              </button>
+            </div>
+          </div>
           <div className="overflow-x-auto bg-white rounded-xl shadow">
             <table className="min-w-full text-sm text-left text-gray-600">
               <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
@@ -281,44 +386,54 @@ export default function BathtubInventory() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-6 py-4">{item.ProductName}</td>
-                    <td className="px-6 py-4">{item.Category}</td>
-                    <td className="px-6 py-4">${item.Price}</td>
-                    <td className="px-6 py-4">{item.Quantity}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setFormData({
-                              ProductName: item.ProductName,
-                              ProductDescription: item.ProductDescription,
-                              Color: item.Color,
-                              Price: item.Price,
-                              Category: item.Category,
-                              SubCategory: item.SubCategory,
-                              Quantity: item.Quantity,
-                              Manufacturer: item.Manufacturer,
-                              customBrand: "",
-                              length: item.Size?.split("x")[0] || "",
-                              width: item.Size?.split("x")[1] || "",
-                            });
-                            setImage(item.Image || null);
-                            setSelectedIndex(index);
-                            setShowModal(true);
-                          }}
-                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
-                        >
-                          Edit
-                        </button>
-                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {products
+                  .filter(
+                    (item) =>
+                      item.ProductName.toLowerCase().includes(
+                        searchTerm.toLowerCase()
+                      ) &&
+                      (colorFilter === "" || item.Color === colorFilter) &&
+                      (sizeFilter === "" || item.Size === sizeFilter)
+                  )
+                  .map((item, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Category}</td>
+                      <td className="px-6 py-4">${item.Price}</td>
+                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setFormData({
+                                ProductName: item.ProductName,
+                                ProductDescription: item.ProductDescription,
+                                Color: item.Color,
+                                Price: item.Price,
+                                Category: item.Category,
+                                Quantity: item.Quantity,
+                                Manufacturer: item.Manufacturer,
+                                SubCategory: item.SubCategory,
+                                length: item.Size?.split("x")[0] || "",
+                                width: item.Size?.split("x")[1] || "",
+                                customBrand: "",
+                              });
+                              setImage(item.Image || null);
+                              setSelectedIndex(index);
+                              setShowModal(true);
+                            }}
+                            className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                          >
+                            Edit
+                          </button>
+
+                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

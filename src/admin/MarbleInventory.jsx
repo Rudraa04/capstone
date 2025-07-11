@@ -153,7 +153,10 @@ export default function MarbleInventory() {
       Image: "",
     },
   ]);
-  const [selectedIndex, setSelectedIndex] = useState(null); // For Edit
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [colorFilter, setColorFilter] = useState("");
+  const [originFilter, setOriginFilter] = useState("");
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -241,8 +244,8 @@ export default function MarbleInventory() {
                   length: "",
                   width: "",
                 });
-                setSelectedIndex(null); // ✅ Reset the edit state
-                setImage(null); // ✅ Optional: Reset image
+                setSelectedIndex(null);
+                setImage(null);
                 setShowModal(true);
               }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -269,6 +272,85 @@ export default function MarbleInventory() {
           <h2 className="text-xl font-semibold text-gray-700 mb-4">
             Product List
           </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Search Product
+              </label>
+              <input
+                type="text"
+                placeholder="Search by Name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              />
+            </div>
+
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Filter by Color
+              </label>
+              <select
+                value={colorFilter}
+                onChange={(e) => setColorFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Colors</option>
+                <option value="Milky White ">Milky White</option>
+                <option value="Green">Green</option>
+                <option value="Gold">Gold</option>
+                <option value="Light Pink">Light Pink</option>
+                <option value="Dark green">Dark Green</option>
+                <option value="White">White</option>
+                <option value="Beige">Beige</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Filter by Origin
+              </label>
+              <select
+                value={originFilter}
+                onChange={(e) => setOriginFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Origins</option>
+                <option value="West India">West India</option>
+                <option value="South India">South India</option>
+                <option value="North India">North India</option>
+                <option value="East India">East India</option>
+              </select>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center p-2">
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setColorFilter("");
+                  setOriginFilter("");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582M20 20v-5h-.581M5 19A9 9 0 0119 5M5 5l14 14"
+                  />
+                </svg>
+                Reset Filters
+              </button>
+            </div>
+          </div>
+
           <div className="overflow-x-auto bg-white rounded-xl shadow">
             <table className="min-w-full text-sm text-left text-gray-600">
               <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
@@ -281,44 +363,53 @@ export default function MarbleInventory() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-6 py-4">{item.ProductName}</td>
-                    <td className="px-6 py-4">{item.Category}</td>
-                    <td className="px-6 py-4">${item.Price}</td>
-                    <td className="px-6 py-4">{item.Quantity}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setFormData({
-                              ProductName: item.ProductName,
-                              ProductDescription: item.ProductDescription,
-                              Color: item.Color,
-                              Price: item.Price,
-                              Category: item.Category,
-                              Quantity: item.Quantity,
-                              Manufacturer: item.Manufacturer,
-                              Origin: item.Origin,
-                              length: item.Size?.split("x")[0] || "",
-                              width: item.Size?.split("x")[1] || "",
-                              customBrand: "",
-                            });
-                            setSelectedIndex(index);
-                            setShowModal(true);
-                          }}
-                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
-                        >
-                          Edit
-                        </button>
+                {products
+                  .filter(
+                    (item) =>
+                      item.ProductName.toLowerCase().includes(
+                        searchTerm.toLowerCase()
+                      ) &&
+                      (colorFilter === "" || item.Color === colorFilter) &&
+                      (originFilter === "" || item.Origin === originFilter)
+                  )
+                  .map((item, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Category}</td>
+                      <td className="px-6 py-4">${item.Price}</td>
+                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setFormData({
+                                ProductName: item.ProductName,
+                                ProductDescription: item.ProductDescription,
+                                Color: item.Color,
+                                Price: item.Price,
+                                Category: item.Category,
+                                Quantity: item.Quantity,
+                                Manufacturer: item.Manufacturer,
+                                Origin: item.Origin,
+                                length: item.Size?.split("x")[0] || "",
+                                width: item.Size?.split("x")[1] || "",
+                                customBrand: "",
+                              });
+                              setSelectedIndex(index);
+                              setShowModal(true);
+                            }}
+                            className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                          >
+                            Edit
+                          </button>
 
-                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

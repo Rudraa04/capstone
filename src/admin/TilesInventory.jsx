@@ -160,6 +160,11 @@ export default function TilesInventory() {
 
   const [selectedIndex, setSelectedIndex] = useState(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [colorFilter, setColorFilter] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
+  const [usageTypeFilter, setUsageTypeFilter] = useState("");
+
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
       {/* Sidebar */}
@@ -273,6 +278,111 @@ export default function TilesInventory() {
           <h2 className="text-xl font-semibold text-gray-700 mb-4">
             Product List
           </h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            {/* Search Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Search Product
+              </label>
+              <input
+                type="text"
+                placeholder="Search by Name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              />
+            </div>
+
+            {/* Color Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Color
+              </label>
+              <select
+                value={colorFilter}
+                onChange={(e) => setColorFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Colors</option>
+                <option value="White">White</option>
+                <option value="Grey">Grey</option>
+                <option value="Beige">Beige</option>
+                <option value="Brown">Brown</option>
+                <option value="Black">Black</option>
+                <option value="Terracotta">Terracotta</option>
+                <option value="Wooden Brown">Wooden Brown</option>
+                <option value="Checker">Checker</option>
+              </select>
+            </div>
+
+            {/* Brand Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Brand
+              </label>
+              <select
+                value={brandFilter}
+                onChange={(e) => setBrandFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Brands</option>
+                <option value="Kajaria">Kajaria</option>
+                <option value="Somany">Somany</option>
+                <option value="Johnson">Johnson</option>
+                <option value="Asian Granito">Asian Granito</option>
+                <option value="Nitco">Nitco</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            {/* Usage Type Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Usage Type
+              </label>
+              <select
+                value={usageTypeFilter}
+                onChange={(e) => setUsageTypeFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Usage Types</option>
+                <option value="Interior">Interior</option>
+                <option value="Exterior">Exterior</option>
+                <option value="Sanitaryware">Sanitaryware</option>
+                <option value="Wall">Wall</option>
+                <option value="Floor">Floor</option>
+              </select>
+            </div>
+
+            {/* Reset Button */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center p-2">
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setColorFilter("");
+                  setOriginFilter("");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582M20 20v-5h-.581M5 19A9 9 0 0119 5M5 5l14 14"
+                  />
+                </svg>
+                Reset Filters
+              </button>
+            </div>
+          </div>
+
           <div className="overflow-x-auto bg-white rounded-xl shadow">
             <table className="min-w-full text-sm text-left text-gray-600">
               <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
@@ -285,46 +395,57 @@ export default function TilesInventory() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-6 py-4">{item.ProductName}</td>
-                    <td className="px-6 py-4">{item.Category}</td>
-                    <td className="px-6 py-4">${item.Price}</td>
-                    <td className="px-6 py-4">{item.Quantity}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setFormData({
-                              ProductName: item.ProductName,
-                              ProductDescription: item.ProductDescription,
-                              Color: item.Color,
-                              Price: item.Price,
-                              Category: item.Category,
-                              SubCategory: item.SubCategory,
-                              Quantity: item.Quantity,
-                              Manufacturer: item.Manufacturer,
-                              customBrand: "",
-                              Origin: item.Origin,
-                              length: item.Size?.split("x")[0] || "",
-                              width: item.Size?.split("x")[1] || "",
-                            });
-                            setImage(item.Image || null);
-                            setSelectedIndex(index);
-                            setShowModal(true);
-                          }}
-                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
-                        >
-                          Edit
-                        </button>
+                {products
+                  .filter(
+                    (item) =>
+                      item.ProductName.toLowerCase().includes(
+                        searchTerm.toLowerCase()
+                      ) &&
+                      (colorFilter === "" || item.Color === colorFilter) &&
+                      (brandFilter === "" ||
+                        item.Manufacturer === brandFilter) &&
+                      (usageTypeFilter === "" ||
+                        item.SubCategory === usageTypeFilter)
+                  )
+                  .map((item, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Category}</td>
+                      <td className="px-6 py-4">${item.Price}</td>
+                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setFormData({
+                                ProductName: item.ProductName,
+                                ProductDescription: item.ProductDescription,
+                                Color: item.Color,
+                                Price: item.Price,
+                                Category: item.Category,
+                                Quantity: item.Quantity,
+                                Manufacturer: item.Manufacturer,
+                                SubCategory: item.SubCategory,
+                                length: item.Size?.split("x")[0] || "",
+                                width: item.Size?.split("x")[1] || "",
+                                customBrand: "",
+                              });
+                              setImage(item.Image || null);
+                              setSelectedIndex(index);
+                              setShowModal(true);
+                            }}
+                            className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                          >
+                            Edit
+                          </button>
 
-                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

@@ -13,16 +13,17 @@ import {
   FaTwitter,
   FaWhatsapp,
   FaLink,
-  FaEye
+  FaEye,
 } from "react-icons/fa";
 import marbleImages from "../images/marble";
 import graniteImages from "../images/granite";
 import Footer from "../components/Footer";
+import axios from "axios";
 
 export default function ProductDetail() {
   const { type, id } = useParams();
   const navigate = useNavigate();
-  const index = parseInt(id);
+  const index = type === "tiles" ? null : parseInt(id);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const productURL = window.location.href;
   const [showCalculator, setShowCalculator] = useState(false);
@@ -35,6 +36,17 @@ export default function ProductDetail() {
   const [customSize, setCustomSize] = useState("12x12");
   const [quantity, setQuantity] = useState(1);
   const [pricePerTile, setPricePerTile] = useState(250);
+
+  const [tileData, setTileData] = useState(null);
+
+  useEffect(() => {
+    if (type === "tiles") {
+      axios
+        .get(`http://localhost:5000/api/products/tiles/${id}`)
+        .then((res) => setTileData(res.data))
+        .catch((err) => console.error("Failed to fetch tile:", err));
+    }
+  }, [type, id]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -111,19 +123,30 @@ export default function ProductDetail() {
       images: graniteImages,
     },
   };
+  let product;
 
-  const category = data[type];
-  if (!category || isNaN(index) || index >= category.names.length) {
-    return (
-      <div className="text-center p-10 text-red-500">Product Not Found</div>
-    );
+  if (type === "tiles" && tileData) {
+    product = {
+      name: tileData.Name,
+      image: tileData.Image,
+      description: tileData.Description,
+    };
+  } else if (
+    type !== "tiles" &&
+    category &&
+    !isNaN(index) &&
+    index < category.names.length
+  ) {
+    product = {
+      name: category.names[index],
+      image: category.images[index],
+      description: category.desc[index],
+    };
   }
 
-  const product = {
-    name: category.names[index],
-    image: category.images[index],
-    description: category.desc[index],
-  };
+  if (!product) {
+    return <div className="text-center p-10">Loading Product...</div>;
+  }
 
   const parseSize = (sizeStr) => {
     const [length, width] = sizeStr.split("x").map(Number);
@@ -148,6 +171,9 @@ export default function ProductDetail() {
     localStorage.setItem("cart", JSON.stringify([...existingCart, cartItem]));
     alert("✅ Added to cart!");
   };
+  if (type === "tiles" && !tileData) {
+    return <div className="text-center p-10">Loading Tile Product...</div>;
+  }
 
   return (
     <div className="bg-white text-gray-900 font-sans">

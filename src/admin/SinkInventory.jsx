@@ -161,6 +161,11 @@ export default function SinkInventory() {
 
   const [selectedIndex, setSelectedIndex] = useState(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [colorFilter, setColorFilter] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("");
+  const [usageTypeFilter, setUsageTypeFilter] = useState("");
+
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
       {/* Sidebar */}
@@ -274,6 +279,137 @@ export default function SinkInventory() {
           <h2 className="text-xl font-semibold text-gray-700 mb-4">
             Product List
           </h2>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            {/* Search Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Search Product
+              </label>
+              <input
+                type="text"
+                placeholder="Search by Name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              />
+            </div>
+
+            {/* Color Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Color
+              </label>
+              <select
+                value={colorFilter}
+                onChange={(e) => setColorFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Colors</option>
+                <option value="Matt Beige">Matt Beige</option>
+                <option value="White">White</option>
+                <option value="Matt Black">Matt Black</option>
+                <option value="Matt Coco">Matt Coco</option>
+                <option value="Glossy Black">Glossy Black</option>
+                <option value="Royal Blue">Royal Blue</option>
+                <option value="Matt Bianco">Matt Bianco</option>
+              </select>
+            </div>
+
+            {/* Size Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Size
+              </label>
+              <select
+                value={sizeFilter}
+                onChange={(e) => setSizeFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Sizes</option>
+                <option value="390 x 390 x 140mm">390 x 390 x 140mm</option>
+                <option value="420 x 320 x 175mm">420 x 320 x 175mm</option>
+                <option value="550 x 370 x 150mm">550 x 370 x 150mm</option>
+                <option value="465 x 310 x 140mm">465 x 310 x 140mm</option>
+                <option value="450 x 310 x 130mm">450 x 310 x 130mm</option>
+                <option value="560 x 385 x 215mm">560 x 385 x 215mm</option>
+                <option value="800 x 475 x 240mm">800 x 475 x 240mm</option>
+                <option value="500 x 365 x 145mm">500 x 365 x 145mm</option>
+                <option value="580 x 360 x 155mm">580 x 360 x 155mm</option>
+                <option value="600 x 410 x 130mm">600 x 410 x 130mm</option>
+                <option value="600 x 360 x 100mm">600 x 360 x 100mm</option>
+                <option value="410 x 335 x 145mm">410 x 335 x 145mm</option>
+                <option value="400 x 310 x 140mm">400 x 310 x 140mm</option>
+                <option value="450 x 350 x 135mm">450 x 350 x 135mm</option>
+                <option value="370 x 370 x 205mm">370 x 370 x 205mm</option>
+                <option value="545 x 385 x 200mm">545 x 385 x 200mm</option>
+                <option value="510 x 405 x 200mm">510 x 405 x 200mm</option>
+                <option value="590 x 410 x 250mm">590 x 410 x 250mm</option>
+                <option value="475 x 370 x 130mm">475 x 370 x 130mm</option>
+                <option value="395 x 395 x 145mm">395 x 395 x 145mm</option>
+                <option value="555 x 400 x 160mm">555 x 400 x 160mm</option>
+                <option value="540 x 385 x 175mm">540 x 385 x 175mm</option>
+                <option value="405 x 405 x 140mm">405 x 405 x 140mm</option>
+                <option value="420 x 350 x 190mm">420 x 350 x 190mm</option>
+              </select>
+            </div>
+
+            {/* Usage Type Filter */}
+            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+              <label className="text-sm font-semibold text-gray-600 mb-1">
+                Usage Type
+              </label>
+              <select
+                value={usageTypeFilter}
+                onChange={(e) => setUsageTypeFilter(e.target.value)}
+                className="px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="">All Usage Types</option>
+                <option value="Table Top Sink Matt">Table Top Sink Matt</option>
+                <option value="Art Table Top ">Art Table Top</option>
+                <option value="Table Top Sink">Table Top Sink</option>
+                <option value="Wall-hung Sink">Wall-hung Sink</option>
+                <option value="Sink under Counter">Sink under Counter</option>
+                <option value="Ceramic Sink">Ceramic Sink</option>
+                <option value="Sink Under Counter">Sink Under Counter</option>
+                <option value="Table Top Sink Glossy">
+                  Table Top Sink Glossy
+                </option>
+                <option value="Counter Top Sink">Counter Top Sink</option>
+                <option value="Platform Sink Glossy">
+                  Platform Sink Glossy
+                </option>
+              </select>
+            </div>
+
+            {/* Reset Button */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center p-2">
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setColorFilter("");
+                  setOriginFilter("");
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582M20 20v-5h-.581M5 19A9 9 0 0119 5M5 5l14 14"
+                  />
+                </svg>
+                Reset Filters
+              </button>
+            </div>
+          </div>
+
           <div className="overflow-x-auto bg-white rounded-xl shadow">
             <table className="min-w-full text-sm text-left text-gray-600">
               <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
@@ -286,45 +422,56 @@ export default function SinkInventory() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-6 py-4">{item.ProductName}</td>
-                    <td className="px-6 py-4">{item.Category}</td>
-                    <td className="px-6 py-4">${item.Price}</td>
-                    <td className="px-6 py-4">{item.Quantity}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setFormData({
-                              ProductName: item.ProductName,
-                              ProductDescription: item.ProductDescription,
-                              Color: item.Color,
-                              Price: item.Price,
-                              Category: item.Category,
-                              SubCategory: item.SubCategory,
-                              Quantity: item.Quantity,
-                              Manufacturer: item.Manufacturer,
-                              customBrand: "",
-                              length: item.Size?.split("x")[0] || "",
-                              width: item.Size?.split("x")[1] || "",
-                            });
-                            setImage(item.Image || null);
-                            setSelectedIndex(index);
-                            setShowModal(true);
-                          }}
-                          className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
-                        >
-                          Edit
-                        </button>
+                {products
+                  .filter(
+                    (item) =>
+                      item.ProductName.toLowerCase().includes(
+                        searchTerm.toLowerCase()
+                      ) &&
+                      (colorFilter === "" || item.Color === colorFilter) &&
+                      (sizeFilter === "" || item.Size === sizeFilter) &&
+                      (usageTypeFilter === "" ||
+                        item.SubCategory === usageTypeFilter)
+                  )
+                  .map((item, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Category}</td>
+                      <td className="px-6 py-4">${item.Price}</td>
+                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setFormData({
+                                ProductName: item.ProductName,
+                                ProductDescription: item.ProductDescription,
+                                Color: item.Color,
+                                Price: item.Price,
+                                Category: item.Category,
+                                SubCategory: item.SubCategory,
+                                Quantity: item.Quantity,
+                                Manufacturer: item.Manufacturer,
+                                customBrand: "",
+                                length: item.Size?.split("x")[0] || "",
+                                width: item.Size?.split("x")[1] || "",
+                              });
+                              setImage(item.Image || null);
+                              setSelectedIndex(index);
+                              setShowModal(true);
+                            }}
+                            className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                          >
+                            Edit
+                          </button>
 
-                        <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
