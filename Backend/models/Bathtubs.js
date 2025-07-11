@@ -13,7 +13,6 @@ const BathtubsSchema = new mongoose.Schema({
   Stock_admin: Number,
   Category: String,
   SubCategory: String,
-  Manufacturer: String,
   Size: String
 });
 
