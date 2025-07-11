@@ -251,6 +251,35 @@ const mapToiletManufacturer = (manufacturer) => {
       console.error("Failed to fetch tiles:", error);
     }
   };
+    useEffect(() => {
+  const fetchSinks = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/products/sinks");
+      setSinks(response.data);
+    } catch (error) {
+      console.error("Failed to fetch sinks:", error);
+    }
+  };
+
+  if (activeTab === "sinks") {
+    fetchSinks();
+  }
+}, [activeTab]);
+
+  useEffect(() => {
+  const fetchToilets = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/products/toilets");
+      setToilets(response.data);
+    } catch (error) {
+      console.error("Failed to fetch toilets:", error);
+    }
+  };
+
+  if (activeTab === "toilets") {
+    fetchToilets();
+  }
+}, [activeTab]);
   
   const handleLogout = async () => {
     await signOut(auth);
