@@ -28,14 +28,100 @@ export default function Ceramics() {
   const [tiles, setTiles] = useState([]);
   const [sinks, setSinks] = useState([]);
   const [toilets, setToilets] = useState([]);
-  const [filters, setFilters] = useState({ category: [], size: [], color: [] });
+  const [filters, setFilters] = useState({ category: [], size: [], color: [], finish: [], manufacturer: [], type: [], flush: [] });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  // for filter for tiles
+  const mapSize = (size) => {
+  if (!size) return "";
+  const formatted = size.toLowerCase().replace(/\s/g, "");
+  if (formatted.includes("12x18")) return "12x18";
+  if (formatted.includes("48x24")) return "48x24";
+  if (formatted.includes("32x32")) return "32x32";
+  return "";
+};
 
+const mapFinish = (desc) => {
+  if (!desc) return "";
+  const text = desc.toLowerCase();
+  if (text.includes("endless")) return "Endless Glossy";
+  if (text.includes("carving")) return "Carving";
+  if (text.includes("glossy")) return "Glossy";
+  if (text.includes("digital")) return "Digital";
+  return "";
+};
+
+const mapColor = (color) => {
+  if (!color) return "";
+  const c = color.toLowerCase();
+  if (c.includes("silver")) return "Silver";
+  if (c.includes("grey")) return "Grey";
+  if (c.includes("onyx")) return "Onyx";
+  if (c.includes("white")) return "White";
+  if (c.includes("golden")) return "Golden";
+  if (c.includes("pink")) return "Pink";
+  if (c.includes("multi")) return "Multi";
+  return "";
+};
+// mapping for sink
+const mapSinkType = (subcategory) => {
+  if (!subcategory) return "";
+  const value = subcategory.toLowerCase();
+  if (value.includes("art")) return "Art Table Top";
+  if (value.includes("wall")) return "Wall Hung";
+  if (value.includes("table")) return "Table Top";
+  return "";
+};
+
+const mapSinkColor = (color) => {
+  if (!color) return "";
+  const c = color.toLowerCase();
+  if (c.includes("beige")) return "Matt Beige";
+  if (c.includes("white")) return "White";
+  return "";
+};
+
+const mapSinkManufacturer = (manufacturer) => {
+  if (!manufacturer) return "";
+  const m = manufacturer.toLowerCase();
+  if (m.includes("soncera")) return "Soncera";
+  return "";
+};
+//mapping toilets
+const mapToiletType = (subcategory) => {
+  if (!subcategory) return "";
+  const value = subcategory.toLowerCase();
+  if (value.includes("one")) return "One Piece";
+  if (value.includes("wall")) return "Wall Hung";
+  return "";
+};
+
+const mapToiletFlush = (flushType) => {
+  if (!flushType) return "";
+  const value = flushType.toLowerCase();
+  if (value.includes("jet")) return "With/Without Jet";
+  if (value.includes("washdown")) return "Washdown Flushing";
+  return "";
+};
+
+const mapToiletColor = (color) => {
+  if (!color) return "";
+  const c = color.toLowerCase();
+  if (c.includes("white")) return "White";
+  if (c.includes("black")) return "Matt Black";
+  return "";
+};
+
+const mapToiletManufacturer = (manufacturer) => {
+  if (!manufacturer) return "";
+  const m = manufacturer.toLowerCase();
+  if (m.includes("soncera")) return "Soncera";
+  return "";
+};
   const bathtubImages = [
     bathtub1,
     bathtub2,
@@ -102,14 +188,14 @@ export default function Ceramics() {
 
   const filterOptions = {
     tiles: {
-      size: ["12x12", "24x24", "16x16"],
-      finish: ["Glossy", "Matte", "Textured"],
-      color: ["White", "Beige", "Grey", "Black"],
+      size: ["12x18", "48x24", "32x32"],
+      finish: ["Glossy", "Endless Glossy", "Carving", "Digital"],
+      color: ["Silver", "Grey", "Onyx", "White", "Golden", "Pink", "Multi"],
     },
     sinks: {
-      type: ["Wall Mount", "Pedestal", "Countertop"],
-      material: ["Ceramic", "Stone", "Glass"],
-      size: ["16 inch", "18 inch", "20 inch", "22 inch"],
+      type: ["Table Top", "Art Table Top", "Wall Hung"],
+      color: ["Matt Beige", "White"],
+      manufacturer: ["Soncera"],
     },
 
     bathtub: {
@@ -118,9 +204,10 @@ export default function Ceramics() {
       color: ["White", "Black", "Maroon"],
     },
     toilets: {
-      type: ["One Piece", "Two Piece", "Wall Hung"],
-      flush: ["Single", "Dual", "Touchless"],
-      color: ["White", "Ivory", "Grey"],
+      type: ["One Piece", "Wall Hung"],
+      flush: ["With/Without Jet", "Washdown Flushing"],
+      color: ["White", "Matt Black"],
+      manufacturer: ["Soncera"],
     },
   };
 
@@ -211,6 +298,45 @@ export default function Ceramics() {
         : [...prev[type], value],
     }));
   };
+//tiles filter
+  const filteredTiles = tiles.filter(tile => {
+  const sizeValue = mapSize(tile.Size || "");
+  const finishValue = mapFinish(tile.Description || "");
+  const colorValue = mapColor(tile.Color || "");
+
+  const sizeMatch = !filters.size || filters.size.length === 0 || filters.size.includes(sizeValue);
+  const finishMatch = !filters.finish || filters.finish.length === 0 || filters.finish.includes(finishValue);
+  const colorMatch = !filters.color || filters.color.length === 0 || filters.color.includes(colorValue);
+
+
+  return sizeMatch && finishMatch && colorMatch;
+});
+//sinks filter
+const filteredSinks = sinks.filter(sink => {
+  const typeValue = mapSinkType(sink["Sub Category"] || "");
+  const colorValue = mapSinkColor(sink.Color || "");
+  const manufacturerValue = mapSinkManufacturer(sink.Manufacturer || "");
+
+  const typeMatch = !filters.type || filters.type.length === 0 || filters.type.includes(typeValue);
+  const colorMatch = !filters.color || filters.color.length === 0 || filters.color.includes(colorValue);
+  const manufacturerMatch = !filters.manufacturer || filters.manufacturer.length === 0 || filters.manufacturer.includes(manufacturerValue);
+
+  return typeMatch && colorMatch && manufacturerMatch;
+});
+//toilets filter
+const filteredToilets = toilets.filter(toilet => {
+  const typeValue = mapToiletType(toilet["Sub Category"] || "");
+  const flushValue = mapToiletFlush(toilet["Flush Type"] || "");
+  const colorValue = mapToiletColor(toilet.Color || "");
+  const manufacturerValue = mapToiletManufacturer(toilet.Manufacturer || "");
+
+  const typeMatch = !filters.type || filters.type.length === 0 || filters.type.includes(typeValue);
+  const flushMatch = !filters.flush || filters.flush.length === 0 || filters.flush.includes(flushValue);
+  const colorMatch = !filters.color || filters.color.length === 0 || filters.color.includes(colorValue);
+  const manufacturerMatch = !filters.manufacturer || filters.manufacturer.length === 0 || filters.manufacturer.includes(manufacturerValue);
+
+  return typeMatch && flushMatch && colorMatch && manufacturerMatch;
+});
 
   return (
     <div className="bg-white text-gray-900">
@@ -521,12 +647,9 @@ export default function Ceramics() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {activeTab === "sinks" &&
-  sinks.map((sink, i) => (
-    <div
-      key={sink._id || i}
-      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-    >
+  {activeTab === "sinks" &&
+  filteredSinks.map((sink, i) => (
+    <div key={sink._id || i} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
       <div className="relative">
         <img
           src={sink.Image}
@@ -544,28 +667,20 @@ export default function Ceramics() {
     </div>
   ))}
 
-              {activeTab === "tiles" &&
-  tiles.map((tile, i) => (
-    <div
-      key={tile._id || i}
-      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-    >
+  {activeTab === "tiles" &&
+  filteredTiles.map((tile, i) => (
+    <div key={tile._id || i} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
       <div className="relative">
-        <img
-          src={tile.Image}
-          alt={tile.Name}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        <img src={tile.Image} alt={tile.Name} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
       </div>
       <div className="p-4">
         <h3 className="text-lg font-bold text-gray-800">{tile.Name}</h3>
         <p className="text-sm text-gray-500 mt-1">{tile.Description}</p>
-        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-          View Details
-        </button>
+        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">View Details</button>
       </div>
     </div>
   ))}
+
 
 
               {activeTab === "bathtub" &&
@@ -595,12 +710,9 @@ export default function Ceramics() {
                   </div>
                 ))}
 
-              {activeTab === "toilets" &&
-  toilets.map((toilet, i) => (
-    <div
-      key={toilet._id || i}
-      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-    >
+{activeTab === "toilets" &&
+  filteredToilets.map((toilet, i) => (
+    <div key={toilet._id || i} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
       <div className="relative">
         <img
           src={toilet.Image}
@@ -617,11 +729,10 @@ export default function Ceramics() {
       </div>
     </div>
   ))}
-
-            </div>
-          </div>
-        </div>
-      </section>
+ </div>
+</div>
+</div>
+</section>
 
       {/* FOOTER */}
       <footer className="bg-gray-900 text-white px-4 sm:px-10 py-12 mt-16 text-sm">
