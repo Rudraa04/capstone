@@ -20,10 +20,10 @@ const router = express.Router();
 // GET routes
 router.get("/api/products/tiles", getTiles);
 router.get("/bathtubs", getBathtubs);
-router.get("/granite", getGranite);
-router.get("/marble", getMarble);
-router.get("/sinks", getSinks);
-router.get("/toilets", getToilets);
+router.get("/api/products/granite", getGranite);
+router.get("/api/products/marble", getMarble);
+router.get("/api/products/sinks", getSinks);
+router.get("/api/products/toilets", getToilets);
 
 // POST routes
 router.post("/marble", async (req, res) => {
