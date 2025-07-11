@@ -639,28 +639,21 @@ const filteredToilets = toilets.filter(toilet => {
     </div>
   ))}
 
-              {activeTab === "tiles" &&
-  tiles.map((tile, i) => (
-    <div
-      key={tile._id || i}
-      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-    >
+
+  {activeTab === "tiles" &&
+  filteredTiles.map((tile, i) => (
+    <div key={tile._id || i} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
       <div className="relative">
-        <img
-          src={tile.Image}
-          alt={tile.Name}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        <img src={tile.Image} alt={tile.Name} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
       </div>
       <div className="p-4">
         <h3 className="text-lg font-bold text-gray-800">{tile.Name}</h3>
         <p className="text-sm text-gray-500 mt-1">{tile.Description}</p>
-        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-          View Details
-        </button>
+        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">View Details</button>
       </div>
     </div>
   ))}
+
 
 
               {activeTab === "bathtub" &&
