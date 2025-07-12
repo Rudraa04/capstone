@@ -29,52 +29,44 @@ export default function Cart() {
     return () => unsub();
   }, []);
 
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: "White Marble Wall Tile",
-      price: 25,
-      discount: 0,
-      quantity: 2,
-      stock: 10,
-      image: [Tiles2],
-    },
-    {
-      id: 2,
-      name: "Stainless Steel Sink",
-      price: 1099,
-      discount: 199,
-      quantity: 1,
-      stock: 2,
-      image: [sink5],
-    },
-  ]);
+  const [cartItems, setCartItems] = useState(() => {
+  const storedCart = localStorage.getItem("cart");
+  return storedCart ? JSON.parse(storedCart) : [];
+});
+
 
   const [discount, setDiscount] = useState(0);
 
   const handleQuantityChange = (id, newQuantity) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
+  const updated = cartItems.map((item) =>
+    item.name === id ? { ...item, quantity: newQuantity } : item
+  );
+  setCartItems(updated);
+  localStorage.setItem("cart", JSON.stringify(updated));
+};
+
 
   const handleRemoveItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
-  };
+  const filtered = cartItems.filter((item) => item.name !== id);
+  setCartItems(filtered);
+  localStorage.setItem("cart", JSON.stringify(filtered));
+};
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
 
-  const totalItemDiscount = cartItems.reduce(
-    (sum, item) => sum + item.discount * item.quantity,
-    0
-  );
+  const subtotal = cartItems.reduce((sum, item) => {
+  const price = parseFloat(item.price) || 0;
+  const quantity = parseInt(item.quantity) || 0;
+  return sum + price * quantity;
+}, 0);
 
-  const total = subtotal - totalItemDiscount - discount;
+const totalItemDiscount = cartItems.reduce((sum, item) => {
+  const discount = parseFloat(item.discount) || 0;
+  const quantity = parseInt(item.quantity) || 0;
+  return sum + discount * quantity;
+}, 0);
+
+const total = subtotal - totalItemDiscount - (parseFloat(discount) || 0);
+
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900 font-sans">
@@ -155,13 +147,19 @@ export default function Cart() {
                             </p>
                           )}
                           <p className="text-lg font-bold text-gray-900">
-                            ₹{(item.price - item.discount) * item.quantity}
-                          </p>
+  ₹
+  {(
+    (parseFloat(item.price || 0) - parseFloat(item.discount || 0)) *
+    parseInt(item.quantity || 0)
+  ).toFixed(2)}
+</p>
+
                           {item.discount > 0 && (
-                            <p className="text-xs text-green-600 font-medium">
-                              You save ₹{item.discount * item.quantity}
-                            </p>
-                          )}
+  <p className="text-xs text-green-600 font-medium">
+    You save ₹{(parseFloat(item.discount || 0) * parseInt(item.quantity || 0)).toFixed(2)}
+  </p>
+)}
+
                         </div>
                       </div>
 
@@ -169,7 +167,7 @@ export default function Cart() {
                         <button
                           onClick={() =>
                             item.quantity > 1 &&
-                            handleQuantityChange(item.id, item.quantity - 1)
+                            handleQuantityChange(item.name, item.quantity - 1)
                           }
                           className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 text-lg font-bold"
                           disabled={item.quantity <= 1}
@@ -182,7 +180,7 @@ export default function Cart() {
                         <button
                           onClick={() =>
                             item.quantity < item.stock &&
-                            handleQuantityChange(item.id, item.quantity + 1)
+                            handleQuantityChange(item.name, item.quantity + 1)
                           }
                           className={`px-3 py-1 border border-gray-300 rounded-lg text-lg font-bold ${
                             item.quantity >= item.stock
@@ -194,7 +192,7 @@ export default function Cart() {
                           +
                         </button>
                         <button
-                          onClick={() => handleRemoveItem(item.id)}
+                          onClick={() => handleRemoveItem(item.name)}
                           className="text-red-600 hover:underline text-sm ml-auto font-bold"
                         >
                           Remove

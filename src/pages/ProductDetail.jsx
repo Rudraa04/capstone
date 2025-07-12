@@ -275,15 +275,29 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     const cartItem = {
-      ...product,
-      size: customSize,
-      quantity,
-      totalTiles,
-      totalPrice,
-    };
+  id: Date.now(), // or a UUID
+  ...product,
+  size: customSize,
+  quantity,
+  totalTiles,
+  totalPrice,
+};
+
     const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
-    localStorage.setItem("cart", JSON.stringify([...existingCart, cartItem]));
-    alert("✅ Added to cart!");
+    const existingItemIndex = existingCart.findIndex(
+  (item) => item.name === cartItem.name && item.size === cartItem.size
+);
+
+if (existingItemIndex !== -1) {
+  existingCart[existingItemIndex].quantity += cartItem.quantity;
+  existingCart[existingItemIndex].totalTiles += cartItem.totalTiles;
+  existingCart[existingItemIndex].totalPrice += cartItem.totalPrice;
+} else {
+  existingCart.push(cartItem);
+}
+
+localStorage.setItem("cart", JSON.stringify(existingCart));
+alert("✅ Added to cart!");
   };
   if (
     (type === "tiles" && !tileData) ||

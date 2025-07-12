@@ -12,6 +12,7 @@ export default function Header() {
   const [allProducts, setAllProducts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [cartCount, setCartCount] = useState(0);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
@@ -64,6 +65,12 @@ export default function Header() {
 
   fetchAllCategories();
 }, []);
+useEffect(() => {
+  const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+  const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
+  setCartCount(totalCount);
+}, []);
+
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -273,12 +280,15 @@ export default function Header() {
 
           {user ? (
             <>
-              <Link
-                to="/cart"
-                className={`uppercase ${underlineHover} flex items-center gap-1`}
-              >
-                <FaShoppingCart /> Cart
-              </Link>
+              <Link to="/cart" className={`uppercase ${underlineHover} flex items-center gap-1`}>
+  <FaShoppingCart />
+  Cart
+  {cartCount > 0 && (
+    <span className="ml-1 font-bold text-blue-600">({cartCount})</span>
+  )}
+</Link>
+
+
               <Link
                 to="/profile"
                 state={
