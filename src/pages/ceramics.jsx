@@ -735,6 +735,7 @@ export default function Ceramics() {
                       </p>
                       <Link
                         to={`/product/sinks/${sink._id}`}
+                        state={{ fromTab: "sinks" }}
                         className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
                       >
                         View Details
@@ -765,6 +766,7 @@ export default function Ceramics() {
                       </p>
                       <Link
                         to={`/product/tiles/${tile._id}`}
+                        state={{ fromTab: "tiles" }}
                         className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
                       >
                         View Details
@@ -821,11 +823,12 @@ export default function Ceramics() {
                         {toilet.Description}
                       </p>
                       <Link
-          to={`/product/toilets/${toilet._id}`}
-          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
-        >
-          View Details
-        </Link>
+                        to={`/product/toilets/${toilet._id}`}
+                        state={{ fromTab: "toilets" }}
+                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+                      >
+                        View Details
+                      </Link>
                     </div>
                   </div>
                 ))}

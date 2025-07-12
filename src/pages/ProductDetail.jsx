@@ -19,6 +19,7 @@ import marbleImages from "../images/marble";
 import graniteImages from "../images/granite";
 import Footer from "../components/Footer";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 
 export default function ProductDetail() {
   const { type, id } = useParams();
@@ -40,6 +41,9 @@ export default function ProductDetail() {
   const [tileData, setTileData] = useState(null);
   const [sinkData, setSinkData] = useState(null);
   const [toiletData, setToiletData] = useState(null);
+
+  const location = useLocation();
+  const fromTab = location.state?.fromTab || "tiles";
 
   useEffect(() => {
     if (type === "tiles") {
@@ -245,7 +249,7 @@ export default function ProductDetail() {
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(`/ceramics?type=${fromTab}`)}
               className="text-blue-700 hover:text-blue-900"
             >
               <FaArrowLeft size={18} />
