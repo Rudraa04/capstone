@@ -30,6 +30,7 @@ export default function Ceramics() {
   const [toilets, setToilets] = useState([]);
   const [filters, setFilters] = useState({
     category: [],
+    subcategory: [],
     size: [],
     color: [],
     finish: [],
@@ -75,6 +76,18 @@ export default function Ceramics() {
     if (c.includes("multi")) return "Multi";
     return "";
   };
+  const mapTileSubCategory = (subcategory) => {
+  if (!subcategory) return "";
+  const s = subcategory.toLowerCase();
+  if (s.includes("interior")) return "Interior Floor Tiles";
+  if (s.includes("exterior floor")) return "Exterior Floor Tiles";
+  if (s.includes("exterior wall")) return "Exterior Wall Tiles";
+  if (s.includes("bathroom")) return "Bathroom Wall Tiles";
+  if (s.includes("kitchen")) return "Kitchen Wall Tiles";
+  return "";
+};
+
+
   // mapping for sink
   const mapSinkType = (subcategory) => {
     if (!subcategory) return "";
@@ -199,6 +212,7 @@ export default function Ceramics() {
       size: ["12x18", "48x24", "32x32"],
       finish: ["Glossy", "Endless Glossy", "Carving", "Digital"],
       color: ["Silver", "Grey", "Onyx", "White", "Golden", "Pink", "Multi"],
+      subcategory: ["Interior Floor Tiles","Exterior Floor Tiles","Exterior Wall Tiles","Bathroom Wall Tiles","Kitchen Wall Tiles",],
     },
     sinks: {
       type: ["Table Top", "Art Table Top", "Wall Hung"],
@@ -316,6 +330,7 @@ export default function Ceramics() {
     const sizeValue = mapSize(tile.Size || "");
     const finishValue = mapFinish(tile.Description || "");
     const colorValue = mapColor(tile.Color || "");
+    const subCategoryValue = mapTileSubCategory(tile.SubCategory || "");
 
     const sizeMatch =
       !filters.size ||
@@ -329,8 +344,9 @@ export default function Ceramics() {
       !filters.color ||
       filters.color.length === 0 ||
       filters.color.includes(colorValue);
+      const subCategoryMatch = !filters.subcategory || filters.subcategory.length === 0 || filters.subcategory.includes(subCategoryValue);
 
-    return sizeMatch && finishMatch && colorMatch;
+    return sizeMatch && finishMatch && colorMatch && subCategoryMatch;
   });
   //sinks filter
   const filteredSinks = sinks.filter((sink) => {
