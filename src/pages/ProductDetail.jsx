@@ -65,6 +65,12 @@ export default function ProductDetail() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (tileData && tileData.Price) {
+      setPricePerTile(tileData.Price);
+    }
+  }, [tileData]);
+
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
@@ -130,6 +136,8 @@ export default function ProductDetail() {
       name: tileData.Name,
       image: tileData.Image,
       description: tileData.Description,
+      size: tileData.Size,
+      price: tileData.Price || 0,
     };
   } else if (
     type !== "tiles" &&
