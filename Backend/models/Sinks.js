@@ -13,7 +13,9 @@ const SinksSchema = new mongoose.Schema({
   SubCategory: String,
   Stock_admin: Number,
   Manufacturer: String,
-  Size: String
+  Size: String,
+  Description: String       // ✅ Add this line
 });
+
 
 export default ceramicsConnection.model('Sinks_Model', SinksSchema, 'Sinks_Collection');

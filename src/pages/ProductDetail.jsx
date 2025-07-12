@@ -42,17 +42,16 @@ export default function ProductDetail() {
   const [toiletData, setToiletData] = useState(null);
 
   useEffect(() => {
-  if (type === "tiles") {
-    axios
-      .get(`http://localhost:5000/api/products/tiles/${id}`)
-      .then((res) => {
-        setTileData(res.data);
-        setPricePerTile(res.data.Price || 0);  
-      })
-      .catch((err) => console.error("Failed to fetch tile:", err));
-  }
-}, [type, id]);
-
+    if (type === "tiles") {
+      axios
+        .get(`http://localhost:5000/api/products/tiles/${id}`)
+        .then((res) => {
+          setTileData(res.data);
+          setPricePerTile(res.data.Price || 0);
+        })
+        .catch((err) => console.error("Failed to fetch tile:", err));
+    }
+  }, [type, id]);
 
   useEffect(() => {
     if (type === "sinks") {
@@ -169,14 +168,23 @@ export default function ProductDetail() {
       description: tileData.Description,
       size: tileData.Size,
       price: tileData.Price || 0,
+      manufacturer: tileData.Manufacturer || "N/A",
+      subcategory: tileData.SubCategory || "N/A",
+      stock: tileData.Stock || "N/A",
+      color: tileData.Color || "N/A",
+      stock: tileData.Stock_admin ?? "N/A",
     };
   } else if (type === "sinks" && sinkData) {
     product = {
       name: sinkData.Name,
       image: sinkData.Image,
-      description: sinkData.Description,
-      size: sinkData.Size,
+      description: sinkData.Description || "N/A",
+      size: sinkData.Size || "N/A",
       price: sinkData.Price || 0,
+      color: sinkData.Color || "N/A",
+      manufacturer: sinkData.Manufacturer || "N/A",
+      stock: sinkData.Stock_admin ?? "N/A",
+      subcategory: sinkData.SubCategory || "N/A",
     };
   } else if (type === "toilets" && toiletData) {
     product = {
@@ -549,86 +557,133 @@ export default function ProductDetail() {
                 )}
               </div>
             </div>
-
             <p className="text-base text-gray-600">{product.description}</p>
             {type === "tiles" && (
-  <ul className="text-sm text-gray-700 mt-2 space-y-1">
-    <li><strong>Size:</strong> {product.size || "N/A"}</li>
-    <li><strong>Price:</strong> ₹{product.price}</li>
-  </ul>
-)}
+              <ul className="text-sm text-gray-700 mt-2 space-y-1">
+                <li>
+                  <strong>Size:</strong> {product.size || "N/A"}
+                </li>
+                <li>
+                  <strong>Sub Category:</strong> {product.subcategory || "N/A"}
+                </li>
+                <li>
+                  <strong>Manufacturer:</strong> {product.manufacturer || "N/A"}
+                </li>
+                <li>
+                  <strong>Color:</strong> {product.color || "N/A"}
+                </li>
+                <li>
+                  <strong>Stock:</strong> {product.stock || "N/A"}
+                </li>
+                <li>
+                  <strong>Price:</strong> ₹{product.price}
+                </li>
+              </ul>
+            )}
 
-{type === "sinks" && (
-  <ul className="text-sm text-gray-700 mt-2 space-y-1">
-    <li><strong>Size:</strong> {product.size || "N/A"}</li>
-    <li><strong>Color:</strong> {product.color || "N/A"}</li>
-    <li><strong>Manufacturer:</strong> {product.manufacturer || "N/A"}</li>
-    <li><strong>Price:</strong> ₹{product.price}</li>
-  </ul>
-)}
+            {type === "sinks" && (
+              <ul className="text-sm text-gray-700 mt-2 space-y-1">
+                <li>
+                  <strong>Size:</strong> {product.size}
+                </li>
+                <li>
+                  <strong>Sub Category:</strong> {product.subcategory}
+                </li>
+                <li>
+                  <strong>Color:</strong> {product.color}
+                </li>
+                <li>
+                  <strong>Manufacturer:</strong> {product.manufacturer}
+                </li>
+                <li>
+                  <strong>Stock:</strong> {product.stock}
+                </li>
+                <li>
+                  <strong>Price:</strong> ₹{product.price}
+                </li>
+              </ul>
+            )}
 
-{type === "toilets" && (
-  <ul className="text-sm text-gray-700 mt-2 space-y-1">
-    <li><strong>Size:</strong> {product.size || "N/A"}</li>
-    <li><strong>Type:</strong> {product.type || "N/A"}</li>
-    <li><strong>Color:</strong> {product.color || "N/A"}</li>
-    <li><strong>Manufacturer:</strong> {product.manufacturer || "N/A"}</li>
-    <li><strong>Flush Type:</strong> {product.flush || "N/A"}</li>
-    <li><strong>Origin:</strong> {product.origin || "N/A"}</li>
-    <li><strong>Price:</strong> ₹{product.price}</li>
-  </ul>
-)}
+            {type === "toilets" && (
+              <ul className="text-sm text-gray-700 mt-2 space-y-1">
+                <li>
+                  <strong>Size:</strong> {product.size || "N/A"}
+                </li>
+                <li>
+                  <strong>Type:</strong> {product.type || "N/A"}
+                </li>
+                <li>
+                  <strong>Color:</strong> {product.color || "N/A"}
+                </li>
+                <li>
+                  <strong>Manufacturer:</strong> {product.manufacturer || "N/A"}
+                </li>
+                <li>
+                  <strong>Flush Type:</strong> {product.flush || "N/A"}
+                </li>
+                <li>
+                  <strong>Origin:</strong> {product.origin || "N/A"}
+                </li>
+                <li>
+                  <strong>Price:</strong> ₹{product.price}
+                </li>
+              </ul>
+            )}
 
+            {(type === "tiles" || type === "sinks" || type === "toilets") && (
+              <>
+                <div className="space-y-2 mt-4">
+                  <label className="block text-sm font-semibold text-gray-800">
+                    Enter Custom Size (in inches, e.g., 24x36)
+                  </label>
+                  <input
+                    type="text"
+                    value={customSize}
+                    onChange={(e) => setCustomSize(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-800">
-                Enter Custom Granite Size (in inches, e.g., 24x36)
-              </label>
-              <input
-                type="text"
-                value={customSize}
-                onChange={(e) => setCustomSize(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-800">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    className="w-32 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-800">
-                Quantity
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value))}
-                className="w-32 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+                <div className="flex justify-between text-sm text-gray-700 pt-2">
+                  <span>Total Units:</span>
+                  <span className="font-semibold text-green-700">
+                    {totalTiles}
+                  </span>
+                </div>
 
-            <div className="flex justify-between items-center pt-2 text-sm text-gray-700">
-              <span>Total Granite Needed:</span>
-              <span className="font-semibold text-green-700">{totalTiles}</span>
-            </div>
+                <div className="flex justify-between text-sm text-gray-700 pt-2">
+                  <span>Price Per Item:</span>
+                  <span className="font-semibold text-green-700">
+                    ₹{product.price || pricePerTile}
+                  </span>
+                </div>
 
-            <div className="flex justify-between text-sm text-gray-700 pt-2">
-              <span>Price Per Item:</span>
-              <span className="font-semibold text-green-700">
-                {" "}
-                ₹{product.price || pricePerTile}{" "}
-              </span>
-            </div>
+                <div className="flex justify-between text-lg font-semibold mt-2">
+                  <span>Total Price:</span>
+                  <span className="text-blue-700">₹{totalPrice}</span>
+                </div>
 
-            <div className="flex justify-between text-lg font-semibold mt-2">
-              <span>Total Price:</span>
-              <span className="text-blue-700">₹{totalPrice}</span>
-            </div>
-
-            <button
-              onClick={handleAddToCart}
-              className="w-full py-3 px-6 bg-blue-600 text-white text-base rounded-lg font-semibold shadow hover:bg-blue-700 transition"
-            >
-              Add to Cart
-            </button>
+                <button
+                  onClick={handleAddToCart}
+                  className="w-full py-3 px-6 bg-blue-600 text-white text-base rounded-lg font-semibold shadow hover:bg-blue-700 transition"
+                >
+                  Add to Cart
+                </button>
+              </>
+            )}
           </div>
         </div>
       </main>
