@@ -42,8 +42,36 @@ export default function ProductDetail() {
   const [sinkData, setSinkData] = useState(null);
   const [toiletData, setToiletData] = useState(null);
 
+  const [marbleData, setMarbleData] = useState(null);
+
+  const [graniteData, setGraniteData] = useState(null);
+
   const location = useLocation();
-  const fromTab = location.state?.fromTab || "tiles";
+  const fromTab = location.state?.fromTab;
+
+  useEffect(() => {
+    if (type === "granite") {
+      axios
+        .get(`http://localhost:5000/api/products/granite/${id}`)
+        .then((res) => {
+          setGraniteData(res.data);
+          setPricePerTile(res.data.Price || 0);
+        })
+        .catch((err) => console.error("Failed to fetch marble:", err));
+    }
+  }, [type, id]);
+
+  useEffect(() => {
+    if (type === "marble") {
+      axios
+        .get(`http://localhost:5000/api/products/marble/${id}`)
+        .then((res) => {
+          setMarbleData(res.data);
+          setPricePerTile(res.data.Price || 0);
+        })
+        .catch((err) => console.error("Failed to fetch marble:", err));
+    }
+  }, [type, id]);
 
   useEffect(() => {
     if (type === "tiles") {
@@ -203,6 +231,29 @@ export default function ProductDetail() {
       flush: toiletData["Flush Type"] || "",
       origin: toiletData.Origin || "",
     };
+  } else if (type === "marble" && marbleData) {
+    product = {
+      name: marbleData.Name,
+      image: marbleData.Image,
+      description: marbleData.Description,
+      size: marbleData.Size,
+      price: marbleData.Price || 0,
+      color: marbleData.Color || "N/A",
+      origin: marbleData.Origin || "N/A",
+      stock: marbleData.Stock_admin ?? "N/A",
+    };
+  } else if (type === "granite" && graniteData) {
+    product = {
+      name: graniteData.Name,
+      image: graniteData.Image,
+      description: graniteData.Description,
+      size: graniteData.Size || "N/A",
+      price: graniteData.Price || 0,
+      color: graniteData.Color || "N/A",
+      manufacturer: graniteData.Manufacturer || "N/A",
+      origin: graniteData.Origin || "N/A",
+      stock: graniteData.Stock_admin ?? "N/A",
+    };
   } else {
     product = null;
   }
@@ -237,7 +288,9 @@ export default function ProductDetail() {
   if (
     (type === "tiles" && !tileData) ||
     (type === "sinks" && !sinkData) ||
-    (type === "toilets" && !toiletData)
+    (type === "toilets" && !toiletData) ||
+    (type === "marble" && !marbleData) ||
+    (type === "granite" && !graniteData)
   ) {
     return <div className="text-center p-10">Loading Product...</div>;
   }
@@ -634,7 +687,56 @@ export default function ProductDetail() {
               </ul>
             )}
 
-            {(type === "tiles" || type === "sinks" || type === "toilets") && (
+            {type === "marble" && (
+              <ul className="text-sm text-gray-700 mt-2 space-y-1">
+                {" "}
+                <li>
+                  <strong>Size:</strong> {product.size}
+                </li>{" "}
+                <li>
+                  <strong>Color:</strong> {product.color}
+                </li>{" "}
+                <li>
+                  <strong>Origin:</strong> {product.origin}
+                </li>{" "}
+                <li>
+                  <strong>Stock:</strong> {product.stock}
+                </li>{" "}
+                <li>
+                  <strong>Price:</strong> ₹{product.price}
+                </li>{" "}
+              </ul>
+            )}
+
+            {type === "granite" && (
+              <ul className="text-sm text-gray-700 mt-2 space-y-1">
+                {" "}
+                <li>
+                  <strong>Size:</strong> {product.size}
+                </li>{" "}
+                <li>
+                  <strong>Color:</strong> {product.color}
+                </li>{" "}
+                <li>
+                  <strong>Manufacturer:</strong> {product.manufacturer}
+                </li>{" "}
+                <li>
+                  <strong>Origin:</strong> {product.origin}
+                </li>{" "}
+                <li>
+                  <strong>Stock:</strong> {product.stock}
+                </li>{" "}
+                <li>
+                  <strong>Price:</strong> ₹{product.price}
+                </li>{" "}
+              </ul>
+            )}
+
+            {(type === "tiles" ||
+              type === "sinks" ||
+              type === "toilets" ||
+              type === "marble" ||
+              type === "granite") && (
               <>
                 <div className="space-y-2 mt-4">
                   <label className="block text-sm font-semibold text-gray-800">

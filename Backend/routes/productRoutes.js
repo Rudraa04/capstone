@@ -111,23 +111,18 @@ router.post("/toilets", async (req, res) => {
 });
 
 // PUT (Edit) routes
-router.put("/marble/:id", async (req, res) => {
-  try {
-    const updated = await Marble_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json({ message: "Product updated successfully", product: updated });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to update product", error: err.message });
-  }
+router.get("/api/products/marble/:id", async (req, res) => {
+try {
+const marble = await Marble_Model.findById(req.params.id);
+if (!marble) {
+return res.status(404).json({ message: "Marble not found" });
+}
+res.json(marble);
+} catch (err) {
+res.status(500).json({ message: "Failed to fetch marble", error: err.message });
+}
 });
 
-router.put("/granite/:id", async (req, res) => {
-  try {
-    const updated = await Granite_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json({ message: "Product updated successfully", product: updated });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to update product", error: err.message });
-  }
-});
 
 router.get("/api/products/tiles/:id", async (req, res) => {
   try {
@@ -174,6 +169,19 @@ router.get("/api/products/toilets/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch toilet", error: err.message });
   }
 });
+
+router.get("/api/products/granite/:id", async (req, res) => {
+  try {
+    const granite = await Granite_Model.findById(req.params.id);
+    if (!granite) {
+      return res.status(404).json({ message: "Granite not found" });
+    }
+    res.json(granite);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch granite", error: err.message });
+  }
+});
+
 
 
 // DELETE routes

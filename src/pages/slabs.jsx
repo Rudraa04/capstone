@@ -17,13 +17,19 @@ export default function Slabs() {
   const [activeTab, setActiveTab] = useState("marble");
   const [graniteProducts, setGraniteProducts] = useState([]);
   const [marbleProducts, setMarbleProducts] = useState([]);
-  const [filters, setFilters] = useState({ category: [], size: [], color: [], origin: [] });
+  const [filters, setFilters] = useState({
+    category: [],
+    size: [],
+    color: [],
+    origin: [],
+  });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
-  
+  const [granite, setGranite] = useState([]);
+
   const filterOptions = {
     marble: {
       size: ["75 x 38", "72 x 36", "80 x 38", "75 x 36"],
@@ -31,71 +37,81 @@ export default function Slabs() {
       origin: ["West India", "South India", "North India"],
     },
     granite: {
-      size: ["102x38", "104x38", "104x40", "108x40", "108x42", "110x40", "110x42", "110x43", "110x44"],
+      size: [
+        "102x38",
+        "104x38",
+        "104x40",
+        "108x40",
+        "108x42",
+        "110x40",
+        "110x42",
+        "110x43",
+        "110x44",
+      ],
       color: ["Black", "Red", "Grey", "White"],
       origin: ["South India", "North India", "West India"],
     },
   };
   //mapping for granite
-const mapGraniteColor = (color) => {
-  if (!color) return "";
-  const c = color.toLowerCase();
-  if (c.includes("black")) return "Black";
-  if (c.includes("red")) return "Red";
-  if (c.includes("grey") || c.includes("gray")) return "Grey";
-  if (c.includes("white")) return "White";
-  return "";
-};
+  const mapGraniteColor = (color) => {
+    if (!color) return "";
+    const c = color.toLowerCase();
+    if (c.includes("black")) return "Black";
+    if (c.includes("red")) return "Red";
+    if (c.includes("grey") || c.includes("gray")) return "Grey";
+    if (c.includes("white")) return "White";
+    return "";
+  };
 
-const mapGraniteOrigin = (origin) => {
-  if (!origin) return "";
-  const o = origin.toLowerCase();
-  if (o.includes("south")) return "South India";
-  if (o.includes("north")) return "North India";
-  if (o.includes("west")) return "West India";
-  return "";
-};
-const mapGraniteSize = (size) => {
-  if (!size) return "";
-  const s = size.toLowerCase().replace(/\s/g, "");
-  if (s.includes("104x38")) return "104x38";
-  if (s.includes("108x40")) return "108x40";
-  if (s.includes("108x42")) return "108x42";
-  if (s.includes("110x42")) return "110x42";
-  if (s.includes("110x44")) return "110x44";
-  return "";
-};
+  const mapGraniteOrigin = (origin) => {
+    if (!origin) return "";
+    const o = origin.toLowerCase();
+    if (o.includes("south")) return "South India";
+    if (o.includes("north")) return "North India";
+    if (o.includes("west")) return "West India";
+    return "";
+  };
+  const mapGraniteSize = (size) => {
+    if (!size) return "";
+    const s = size.toLowerCase().replace(/\s/g, "");
+    if (s.includes("104x38")) return "104x38";
+    if (s.includes("108x40")) return "108x40";
+    if (s.includes("108x42")) return "108x42";
+    if (s.includes("110x42")) return "110x42";
+    if (s.includes("110x44")) return "110x44";
+    return "";
+  };
 
-//mapping for marble
-const mapMarbleSize = (size) => {
-  if (!size) return "";
-  const s = size.toLowerCase().replace(/\s/g, "");
-  if (s.includes("75x38")) return "75 x 38";
-  if (s.includes("72x36")) return "72 x 36";
-  if (s.includes("80x38")) return "80 x 38";
-  if (s.includes("75x36")) return "75 x 36";
-  return "";
-};
+  //mapping for marble
+  const mapMarbleSize = (size) => {
+    if (!size) return "";
+    const s = size.toLowerCase().replace(/\s/g, "");
+    if (s.includes("75x38")) return "75 x 38";
+    if (s.includes("72x36")) return "72 x 36";
+    if (s.includes("80x38")) return "80 x 38";
+    if (s.includes("75x36")) return "75 x 36";
+    return "";
+  };
 
-const mapMarbleColor = (color) => {
-  if (!color) return "";
-  const c = color.toLowerCase();
-  if (c.includes("milky")) return "Milky White";
-  if (c.includes("green")) return "Green";
-  if (c.includes("gold")) return "Gold";
-  if (c.includes("pink")) return "Light Pink";
-  if (c.includes("beige")) return "Beige";
-  return "";
-};
+  const mapMarbleColor = (color) => {
+    if (!color) return "";
+    const c = color.toLowerCase();
+    if (c.includes("milky")) return "Milky White";
+    if (c.includes("green")) return "Green";
+    if (c.includes("gold")) return "Gold";
+    if (c.includes("pink")) return "Light Pink";
+    if (c.includes("beige")) return "Beige";
+    return "";
+  };
 
-const mapMarbleOrigin = (origin) => {
-  if (!origin) return "";
-  const o = origin.toLowerCase();
-  if (o.includes("west")) return "West India";
-  if (o.includes("south")) return "South India";
-  if (o.includes("north")) return "North India";
-  return "";
-};
+  const mapMarbleOrigin = (origin) => {
+    if (!origin) return "";
+    const o = origin.toLowerCase();
+    if (o.includes("west")) return "West India";
+    if (o.includes("south")) return "South India";
+    if (o.includes("north")) return "North India";
+    return "";
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -113,11 +129,13 @@ const mapMarbleOrigin = (origin) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
   useEffect(() => {
     const fetchMarbleProducts = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/products/marble");
+        const response = await fetch(
+          "http://localhost:5000/api/products/marble"
+        );
         const data = await response.json();
         setMarbleProducts(data);
       } catch (error) {
@@ -130,7 +148,9 @@ const mapMarbleOrigin = (origin) => {
   useEffect(() => {
     const fetchGraniteProducts = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/products/granite");
+        const response = await fetch(
+          "http://localhost:5000/api/products/granite"
+        );
         const data = await response.json();
         setGraniteProducts(data);
       } catch (error) {
@@ -159,33 +179,50 @@ const mapMarbleOrigin = (origin) => {
     }));
   };
   //filter granite products based on selected filters
-const filteredGranite = graniteProducts.filter(product => {
-  const sizeValue = mapGraniteSize(product.Size || "");
-  const colorValue = mapGraniteColor(product.Color || "");
-  const originValue = mapGraniteOrigin(product.Origin || "");
+  const filteredGranite = graniteProducts.filter((product) => {
+    const sizeValue = mapGraniteSize(product.Size || "");
+    const colorValue = mapGraniteColor(product.Color || "");
+    const originValue = mapGraniteOrigin(product.Origin || "");
 
-  const sizeMatch = !filters.size || filters.size.length === 0 || filters.size.includes(sizeValue);
-  const colorMatch = !filters.color || filters.color.length === 0 || filters.color.includes(colorValue);
-  const originMatch = !filters.origin || filters.origin.length === 0 || filters.origin.includes(originValue);
+    const sizeMatch =
+      !filters.size ||
+      filters.size.length === 0 ||
+      filters.size.includes(sizeValue);
+    const colorMatch =
+      !filters.color ||
+      filters.color.length === 0 ||
+      filters.color.includes(colorValue);
+    const originMatch =
+      !filters.origin ||
+      filters.origin.length === 0 ||
+      filters.origin.includes(originValue);
 
-  return sizeMatch && colorMatch && originMatch;
-});
-//filter marble products based on selected filters
-const filteredMarble = marbleProducts.filter(product => {
-  const sizeValue = mapMarbleSize(product.Size || "");
-  const colorValue = mapMarbleColor(product.Color || "");
-  const originValue = mapMarbleOrigin(product.Origin || "");
+    return sizeMatch && colorMatch && originMatch;
+  });
+  //filter marble products based on selected filters
+  const filteredMarble = marbleProducts.filter((product) => {
+    const sizeValue = mapMarbleSize(product.Size || "");
+    const colorValue = mapMarbleColor(product.Color || "");
+    const originValue = mapMarbleOrigin(product.Origin || "");
 
-  const sizeMatch = !filters.size || filters.size.length === 0 || filters.size.includes(sizeValue);
-  const colorMatch = !filters.color || filters.color.length === 0 || filters.color.includes(colorValue);
-  const originMatch = !filters.origin || filters.origin.length === 0 || filters.origin.includes(originValue);
+    const sizeMatch =
+      !filters.size ||
+      filters.size.length === 0 ||
+      filters.size.includes(sizeValue);
+    const colorMatch =
+      !filters.color ||
+      filters.color.length === 0 ||
+      filters.color.includes(colorValue);
+    const originMatch =
+      !filters.origin ||
+      filters.origin.length === 0 ||
+      filters.origin.includes(originValue);
 
-  return sizeMatch && colorMatch && originMatch;
-});
+    return sizeMatch && colorMatch && originMatch;
+  });
 
   return (
     <div className="bg-white text-gray-900">
-      
       {/* === HEADER === */}
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -490,24 +527,24 @@ const filteredMarble = marbleProducts.filter(product => {
                   ))}
                 </div>
                 <div>
-                 <h4 className="text-gray-800 font-semibold mb-2">Place of Origin</h4>
-                 {(filterOptions[activeTab]?.origin || []).map((item) => (
-                  <label key={item} className="block text-sm text-gray-700">
-                   <input
-                    type="checkbox"
-                    checked={filters.origin.includes(item)}
-                    onChange={() => toggleFilter("origin", item)}
-                    className="mr-2"
-                  />
-                  {item}
-                 </label>
-                ))}
+                  <h4 className="text-gray-800 font-semibold mb-2">
+                    Place of Origin
+                  </h4>
+                  {(filterOptions[activeTab]?.origin || []).map((item) => (
+                    <label key={item} className="block text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={filters.origin.includes(item)}
+                        onChange={() => toggleFilter("origin", item)}
+                        className="mr-2"
+                      />
+                      {item}
+                    </label>
+                  ))}
                 </div>
-
               </div>
             </div>
           </aside>
-          
 
           {/* Product Grid */}
           <div className="flex-1">
@@ -528,46 +565,66 @@ const filteredMarble = marbleProducts.filter(product => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {activeTab === "granite" && filteredGranite.map((product) => (
-               <div key={product._id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
-                <div className="relative">
-                  <img src={product.Image} alt={product.Name}
-                   className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                     />
-            </div>
-    <div className="p-4">
-      <h3 className="text-lg font-bold text-gray-800">{product.Name}</h3>
-      <p className="text-sm text-gray-500 mt-1">{product.Description}</p>
-      <Link to={`/product/granite/${product._id}`}>
-        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-          View Details
-        </button>
-      </Link>
-    </div>
-  </div>
-))}
-
-
-              {activeTab === "marble" && filteredMarble.map((product) => (
-                <div key={product._id} className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group">
-                  <div className="relative">
-                    <img
-                      src={product.Image}
-                      alt={product.Name}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+              {activeTab === "granite" &&
+                filteredGranite.map((product) => (
+                  <div
+                    key={product._id}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={product.Image}
+                        alt={product.Name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-800">
+                        {product.Name}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {product.Description}
+                      </p>
+                      <Link to={`/product/granite/${product._id}`}>
+                        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                          View Details
+                        </button>
+                      </Link>
+                    </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="text-lg font-bold text-gray-800">{product.Name}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{product.Description}</p>
-                    <Link to={`/product/marble/${product._id}`}>
-                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                        View Details
-                      </button>
-                    </Link>
+                ))}
+
+              {activeTab === "marble" &&
+                filteredMarble.map((product) => (
+                  <div
+                    key={product._id}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={product.Image}
+                        alt={product.Name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-800">
+                        {product.Name}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {product.Description}
+                      </p>
+                      <Link
+                        to={`/product/marble/${product._id}`}
+                        state={{ fromTab: "marble" }}
+                      >
+                        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                          View Details
+                        </button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
