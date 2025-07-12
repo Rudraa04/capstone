@@ -24,6 +24,30 @@ router.get("/api/products/granite", getGranite);
 router.get("/api/products/marble", getMarble);
 router.get("/api/products/sinks", getSinks);
 router.get("/api/products/toilets", getToilets);
+router.get("/api/products/all", async (req, res) => {
+  try {
+    const marble = await Marble_Model.find();
+    const granite = await Granite_Model.find();
+    const tiles = await Tiles_Model.find();
+    const sinks = await Sinks_Model.find();
+    const bathtubs = await Bathtubs_Model.find();
+    const toilets = await Toilets_Model.find();
+
+    const allProducts = [
+      ...marble.map(item => ({ ...item._doc, category: 'Marble' })),
+      ...granite.map(item => ({ ...item._doc, category: 'Granite' })),
+      ...tiles.map(item => ({ ...item._doc, category: 'Tiles' })),
+      ...sinks.map(item => ({ ...item._doc, category: 'Sinks' })),
+      ...bathtubs.map(item => ({ ...item._doc, category: 'Bathtubs' })),
+      ...toilets.map(item => ({ ...item._doc, category: 'Toilets' })),
+    ];
+
+    res.status(200).json(allProducts);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch all products", error: error.message });
+  }
+});
+
 
 // POST routes
 router.post("/marble", async (req, res) => {

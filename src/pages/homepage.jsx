@@ -138,13 +138,17 @@ export default function Home() {
                     ? "Experience premium ceramic solutions by Patel Ceramics."
                     : "Choose from a premium range of marble, floor & wall tiles."}
                 </p>
-                <button className="bg-white text-black px-6 sm:px-8 py-2 sm:py-4 rounded shadow hover:bg-gray-100 text-sm sm:text-lg font-semibold">
-                  {i === 0
-                    ? "Shop Now"
-                    : i === 1
-                    ? "Explore Collection"
-                    : "Browse Now"}
-                </button>
+                <button
+  onClick={() => navigate('/products')}
+  className="bg-white text-black px-6 sm:px-8 py-2 sm:py-4 rounded shadow hover:bg-gray-100 text-sm sm:text-lg font-semibold"
+>
+  {i === 0
+    ? "Shop Now"
+    : i === 1
+    ? "Explore Collection"
+    : "Browse Now"}
+</button>
+
               </div>
             </div>
           </div>

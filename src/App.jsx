@@ -24,6 +24,7 @@ import AddTiles from "./admin/AddTiles";
 import AddBathtub from "./admin/AddBathtub";
 import AddSink from "./admin/AddSink";
 import AddToilet from "./admin/AddToilet";
+import AllProducts from './pages/allProduct.jsx';
 
 import SlabsInventory from "./admin/SlabsInventory.jsx";
 import CeramicsInventory from "./admin/CeramicsInventory.jsx";
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} /> {/* ✅ Added */}
         <Route path="/product/:type/:id" element={<ProductDetail />} />
+        <Route path="/products" element={<AllProducts/>} />
 
         {/* Admin routes */}
         <Route path="/adminLogin" element={<AdminLogin />} />
