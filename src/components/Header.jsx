@@ -280,7 +280,7 @@ useEffect(() => {
 
           {user ? (
             <>
-              <Link to="/cart" className="flex items-center gap-1">
+              <Link to="/cart" className={`uppercase ${underlineHover} flex items-center gap-1`}>
   <FaShoppingCart />
   Cart
   {cartCount > 0 && (
