@@ -411,11 +411,12 @@ export default function Ceramics() {
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
               className="text-blue-700 hover:text-blue-900"
             >
               <FaArrowLeft size={18} />
             </button>
+
             <Link
               to="/"
               className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
