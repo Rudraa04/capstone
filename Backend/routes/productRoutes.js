@@ -139,14 +139,18 @@ router.put("/bathtubs/:id", async (req, res) => {
   }
 });
 
-router.put("/toilets/:id", async (req, res) => {
+router.get("/api/products/toilets/:id", async (req, res) => {
   try {
-    const updated = await Toilets_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json({ message: "Product updated successfully", product: updated });
+    const toilet = await Toilets_Model.findById(req.params.id);
+    if (!toilet) {
+      return res.status(404).json({ message: "Toilet not found" });
+    }
+    res.json(toilet);
   } catch (err) {
-    res.status(500).json({ message: "Failed to update product", error: err.message });
+    res.status(500).json({ message: "Failed to fetch toilet", error: err.message });
   }
 });
+
 
 // DELETE routes
 router.delete("/marble/:id", async (req, res) => {

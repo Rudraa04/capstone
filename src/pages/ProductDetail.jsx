@@ -35,20 +35,24 @@ export default function ProductDetail() {
 
   const [customSize, setCustomSize] = useState("12x12");
   const [quantity, setQuantity] = useState(1);
-  const [pricePerTile, setPricePerTile] = useState(250);
+  const [pricePerTile, setPricePerTile] = useState(0);
 
   const [tileData, setTileData] = useState(null);
   const [sinkData, setSinkData] = useState(null);
-
+  const [toiletData, setToiletData] = useState(null);
 
   useEffect(() => {
-    if (type === "tiles") {
-      axios
-        .get(`http://localhost:5000/api/products/tiles/${id}`)
-        .then((res) => setTileData(res.data))
-        .catch((err) => console.error("Failed to fetch tile:", err));
-    }
-  }, [type, id]);
+  if (type === "tiles") {
+    axios
+      .get(`http://localhost:5000/api/products/tiles/${id}`)
+      .then((res) => {
+        setTileData(res.data);
+        setPricePerTile(res.data.Price || 0);  
+      })
+      .catch((err) => console.error("Failed to fetch tile:", err));
+  }
+}, [type, id]);
+
 
   useEffect(() => {
     if (type === "sinks") {
@@ -59,6 +63,18 @@ export default function ProductDetail() {
           setPricePerTile(res.data.Price || 0);
         })
         .catch((err) => console.error("Failed to fetch sink:", err));
+    }
+  }, [type, id]);
+
+  useEffect(() => {
+    if (type === "toilets") {
+      axios
+        .get(`http://localhost:5000/api/products/toilets/${id}`)
+        .then((res) => {
+          setToiletData(res.data);
+          setPricePerTile(res.data.Price || 0);
+        })
+        .catch((err) => console.error("Failed to fetch toilet:", err));
     }
   }, [type, id]);
 
@@ -162,6 +178,19 @@ export default function ProductDetail() {
       size: sinkData.Size,
       price: sinkData.Price || 0,
     };
+  } else if (type === "toilets" && toiletData) {
+    product = {
+      name: toiletData.Name,
+      image: toiletData.Image,
+      description: toiletData.Description,
+      size: toiletData.Size,
+      price: toiletData.Price || 0,
+      type: toiletData["Sub Category"] || "",
+      color: toiletData.Color || "",
+      manufacturer: toiletData.Manufacturer || "",
+      flush: toiletData["Flush Type"] || "",
+      origin: toiletData.Origin || "",
+    };
   } else {
     product = null;
   }
@@ -179,7 +208,7 @@ export default function ProductDetail() {
   };
 
   const totalTiles = parseSize(customSize);
-  const totalPrice = totalTiles * pricePerTile;
+  const totalPrice = totalTiles * (product.price || pricePerTile || 0);
 
   const handleAddToCart = () => {
     const cartItem = {
@@ -193,7 +222,11 @@ export default function ProductDetail() {
     localStorage.setItem("cart", JSON.stringify([...existingCart, cartItem]));
     alert("✅ Added to cart!");
   };
-  if ((type === "tiles" && !tileData) || (type === "sinks" && !sinkData)) {
+  if (
+    (type === "tiles" && !tileData) ||
+    (type === "sinks" && !sinkData) ||
+    (type === "toilets" && !toiletData)
+  ) {
     return <div className="text-center p-10">Loading Product...</div>;
   }
 
@@ -518,6 +551,34 @@ export default function ProductDetail() {
             </div>
 
             <p className="text-base text-gray-600">{product.description}</p>
+            {type === "tiles" && (
+  <ul className="text-sm text-gray-700 mt-2 space-y-1">
+    <li><strong>Size:</strong> {product.size || "N/A"}</li>
+    <li><strong>Price:</strong> ₹{product.price}</li>
+  </ul>
+)}
+
+{type === "sinks" && (
+  <ul className="text-sm text-gray-700 mt-2 space-y-1">
+    <li><strong>Size:</strong> {product.size || "N/A"}</li>
+    <li><strong>Color:</strong> {product.color || "N/A"}</li>
+    <li><strong>Manufacturer:</strong> {product.manufacturer || "N/A"}</li>
+    <li><strong>Price:</strong> ₹{product.price}</li>
+  </ul>
+)}
+
+{type === "toilets" && (
+  <ul className="text-sm text-gray-700 mt-2 space-y-1">
+    <li><strong>Size:</strong> {product.size || "N/A"}</li>
+    <li><strong>Type:</strong> {product.type || "N/A"}</li>
+    <li><strong>Color:</strong> {product.color || "N/A"}</li>
+    <li><strong>Manufacturer:</strong> {product.manufacturer || "N/A"}</li>
+    <li><strong>Flush Type:</strong> {product.flush || "N/A"}</li>
+    <li><strong>Origin:</strong> {product.origin || "N/A"}</li>
+    <li><strong>Price:</strong> ₹{product.price}</li>
+  </ul>
+)}
+
 
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-800">
@@ -549,7 +610,15 @@ export default function ProductDetail() {
               <span className="font-semibold text-green-700">{totalTiles}</span>
             </div>
 
-            <div className="flex justify-between items-center text-lg font-semibold text-gray-800">
+            <div className="flex justify-between text-sm text-gray-700 pt-2">
+              <span>Price Per Item:</span>
+              <span className="font-semibold text-green-700">
+                {" "}
+                ₹{product.price || pricePerTile}{" "}
+              </span>
+            </div>
+
+            <div className="flex justify-between text-lg font-semibold mt-2">
               <span>Total Price:</span>
               <span className="text-blue-700">₹{totalPrice}</span>
             </div>

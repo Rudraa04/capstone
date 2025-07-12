@@ -820,9 +820,12 @@ export default function Ceramics() {
                       <p className="text-sm text-gray-500 mt-1">
                         {toilet.Description}
                       </p>
-                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                        View Details
-                      </button>
+                      <Link
+          to={`/product/toilets/${toilet._id}`}
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+        >
+          View Details
+        </Link>
                     </div>
                   </div>
                 ))}
