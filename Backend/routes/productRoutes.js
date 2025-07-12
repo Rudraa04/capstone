@@ -117,14 +117,18 @@ router.get("/api/products/tiles/:id", async (req, res) => {
   }
 });
 
-router.put("/sinks/:id", async (req, res) => {
+router.get("/api/products/sinks/:id", async (req, res) => {
   try {
-    const updated = await Sinks_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json({ message: "Product updated successfully", product: updated });
+    const sink = await Sinks_Model.findById(req.params.id);
+    if (!sink) {
+      return res.status(404).json({ message: "Sink not found" });
+    }
+    res.json(sink);
   } catch (err) {
-    res.status(500).json({ message: "Failed to update product", error: err.message });
+    res.status(500).json({ message: "Failed to fetch sink", error: err.message });
   }
 });
+
 
 router.put("/bathtubs/:id", async (req, res) => {
   try {

@@ -38,6 +38,8 @@ export default function ProductDetail() {
   const [pricePerTile, setPricePerTile] = useState(250);
 
   const [tileData, setTileData] = useState(null);
+  const [sinkData, setSinkData] = useState(null);
+
 
   useEffect(() => {
     if (type === "tiles") {
@@ -45,6 +47,18 @@ export default function ProductDetail() {
         .get(`http://localhost:5000/api/products/tiles/${id}`)
         .then((res) => setTileData(res.data))
         .catch((err) => console.error("Failed to fetch tile:", err));
+    }
+  }, [type, id]);
+
+  useEffect(() => {
+    if (type === "sinks") {
+      axios
+        .get(`http://localhost:5000/api/products/sinks/${id}`)
+        .then((res) => {
+          setSinkData(res.data);
+          setPricePerTile(res.data.Price || 0);
+        })
+        .catch((err) => console.error("Failed to fetch sink:", err));
     }
   }, [type, id]);
 
@@ -129,6 +143,7 @@ export default function ProductDetail() {
       images: graniteImages,
     },
   };
+
   let product;
 
   if (type === "tiles" && tileData) {
@@ -139,17 +154,16 @@ export default function ProductDetail() {
       size: tileData.Size,
       price: tileData.Price || 0,
     };
-  } else if (
-    type !== "tiles" &&
-    category &&
-    !isNaN(index) &&
-    index < category.names.length
-  ) {
+  } else if (type === "sinks" && sinkData) {
     product = {
-      name: category.names[index],
-      image: category.images[index],
-      description: category.desc[index],
+      name: sinkData.Name,
+      image: sinkData.Image,
+      description: sinkData.Description,
+      size: sinkData.Size,
+      price: sinkData.Price || 0,
     };
+  } else {
+    product = null;
   }
 
   if (!product) {
@@ -179,8 +193,8 @@ export default function ProductDetail() {
     localStorage.setItem("cart", JSON.stringify([...existingCart, cartItem]));
     alert("✅ Added to cart!");
   };
-  if (type === "tiles" && !tileData) {
-    return <div className="text-center p-10">Loading Tile Product...</div>;
+  if ((type === "tiles" && !tileData) || (type === "sinks" && !sinkData)) {
+    return <div className="text-center p-10">Loading Product...</div>;
   }
 
   return (

@@ -77,16 +77,15 @@ export default function Ceramics() {
     return "";
   };
   const mapTileSubCategory = (subcategory) => {
-  if (!subcategory) return "";
-  const s = subcategory.toLowerCase();
-  if (s.includes("interior")) return "Interior Floor Tiles";
-  if (s.includes("exterior floor")) return "Exterior Floor Tiles";
-  if (s.includes("exterior wall")) return "Exterior Wall Tiles";
-  if (s.includes("bathroom")) return "Bathroom Wall Tiles";
-  if (s.includes("kitchen")) return "Kitchen Wall Tiles";
-  return "";
-};
-
+    if (!subcategory) return "";
+    const s = subcategory.toLowerCase();
+    if (s.includes("interior")) return "Interior Floor Tiles";
+    if (s.includes("exterior floor")) return "Exterior Floor Tiles";
+    if (s.includes("exterior wall")) return "Exterior Wall Tiles";
+    if (s.includes("bathroom")) return "Bathroom Wall Tiles";
+    if (s.includes("kitchen")) return "Kitchen Wall Tiles";
+    return "";
+  };
 
   // mapping for sink
   const mapSinkType = (subcategory) => {
@@ -212,7 +211,13 @@ export default function Ceramics() {
       size: ["12x18", "48x24", "32x32"],
       finish: ["Glossy", "Endless Glossy", "Carving", "Digital"],
       color: ["Silver", "Grey", "Onyx", "White", "Golden", "Pink", "Multi"],
-      subcategory: ["Interior Floor Tiles","Exterior Floor Tiles","Exterior Wall Tiles","Bathroom Wall Tiles","Kitchen Wall Tiles",],
+      subcategory: [
+        "Interior Floor Tiles",
+        "Exterior Floor Tiles",
+        "Exterior Wall Tiles",
+        "Bathroom Wall Tiles",
+        "Kitchen Wall Tiles",
+      ],
     },
     sinks: {
       type: ["Table Top", "Art Table Top", "Wall Hung"],
@@ -344,7 +349,10 @@ export default function Ceramics() {
       !filters.color ||
       filters.color.length === 0 ||
       filters.color.includes(colorValue);
-      const subCategoryMatch = !filters.subcategory || filters.subcategory.length === 0 || filters.subcategory.includes(subCategoryValue);
+    const subCategoryMatch =
+      !filters.subcategory ||
+      filters.subcategory.length === 0 ||
+      filters.subcategory.includes(subCategoryValue);
 
     return sizeMatch && finishMatch && colorMatch && subCategoryMatch;
   });
@@ -725,9 +733,12 @@ export default function Ceramics() {
                       <p className="text-sm text-gray-500 mt-1">
                         {sink.Description}
                       </p>
-                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                      <Link
+                        to={`/product/sinks/${sink._id}`}
+                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+                      >
                         View Details
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 ))}
