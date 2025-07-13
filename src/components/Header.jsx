@@ -17,12 +17,48 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
 
-  const handleSearch = () => {
-    const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return;
+ const handleSearch = () => {
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed) return;
 
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
-  };
+  // 🔹 Direct Category Matching
+  if (trimmed.includes("marble")) {
+    navigate("/slabs?type=marble");
+  } else if (trimmed.includes("granite")) {
+    navigate("/slabs?type=granite");
+  } else if (trimmed.includes("tile") || trimmed.includes("tiles")) {
+    navigate("/ceramics?type=tiles");
+  } else if (trimmed.includes("bathtub")) {
+    navigate("/ceramics?type=bathtub");
+  } else if (trimmed.includes("sink")) {
+    navigate("/ceramics?type=sinks");
+  } else if (trimmed.includes("toilet")) {
+    navigate("/ceramics?type=toilets");
+
+  // 🔹 SubCategory Handling
+  } else if (trimmed.includes("interior floor")) {
+    navigate("/interior?sub=Interior Floor Tiles");
+  } else if (trimmed.includes("interior wall")) {
+    navigate("/interior?sub=Interior Wall Tiles");
+  } else if (trimmed.includes("bathroom")) {
+    navigate("/interior?sub=Bathroom Wall Tiles");
+  } else if (trimmed.includes("kitchen")) {
+    navigate("/interior?sub=Kitchen Wall Tiles");
+  } else if (trimmed.includes("exterior wall")) {
+    navigate("/exterior?sub=Exterior Wall Tiles");
+  } else if (trimmed.includes("exterior floor")) {
+    navigate("/exterior?sub=Exterior Floor Tiles");
+
+  // 🔹 Fallback
+  } else {
+    alert("No matching category found.");
+    
+  }
+
+  setSuggestions([]);
+};
+
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -211,11 +247,11 @@ export default function Header() {
                   {[
                     {
                       name: "Exterior Floor Tiles",
-                      to: "/exterior?sub=exterior floor tiles",
+                      to: "/exterior?sub=Exterior Floor Tiles",
                     },
                     {
                       name: "Exterior Wall Tiles",
-                      to: "/exterior?sub=exterior wall tiles",
+                      to: "/exterior?sub=Exterior Wall Tiles",
                     },
                     {
                       name: "Kitchen Wall Tiles",

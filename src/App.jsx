@@ -23,7 +23,7 @@ import BedroomWall from "./pages/BedroomWall";
 import BedroomFloor from "./pages/BedroomFloor";
 import ProductDetail from "./pages/ProductDetail";
 import AllProducts from "./pages/allProduct.jsx";
-import SearchResults from "./pages/searchResults";
+
 
 // Admin pages
 import AdminLogin from "./pages/adminLogin.jsx";
@@ -92,7 +92,7 @@ export default function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product/:type/:id" element={<ProductDetail />} />
         <Route path="/products" element={<AllProducts />} />
-        <Route path="/search" element={<SearchResults />} />
+        
 
         {/* Admin login (not protected) */}
         <Route path="/adminLogin" element={<AdminLogin />} />
