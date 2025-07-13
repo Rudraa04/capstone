@@ -17,7 +17,9 @@ const AllProducts = () => {
   const [user, setUser] = useState(null);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [cartCount, setCartCount] = useState(0);
+  const [suggestions, setSuggestions] = useState([]);
 
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -42,7 +44,7 @@ const AllProducts = () => {
   useEffect(() => {
     const fetchAllProducts = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/products/all"); // your new backend route
+        const res = await axios.get("http://localhost:5000/api/products/all");
         setProducts(res.data);
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -52,12 +54,10 @@ const AllProducts = () => {
   }, []);
 
   useEffect(() => {
-  const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-  const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-  setCartCount(totalCount);
-}, []);
-
-
+    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalCount);
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -68,8 +68,6 @@ const AllProducts = () => {
 
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
-
-  const [suggestions, setSuggestions] = useState([]);
 
   const handleSearch = () => {
     if (query.length > 1) {
@@ -82,9 +80,18 @@ const AllProducts = () => {
     }
   };
 
+  const filteredProducts =
+    selectedCategory === "all"
+      ? products
+      : products.filter(
+          (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase()
+        );
+
   return (
     <div className="bg-white text-gray-900">
       {/* HEADER */}
+      {/* ... [Header code remains unchanged] ... */}
+
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -94,7 +101,6 @@ const AllProducts = () => {
             >
               <FaArrowLeft size={18} />
             </button>
-
             <Link
               to="/"
               className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
@@ -112,7 +118,6 @@ const AllProducts = () => {
                 onChange={(e) => {
                   const value = e.target.value;
                   setQuery(value);
-
                   if (value.length > 1) {
                     const filtered = products.filter((product) =>
                       product.Name?.toLowerCase().includes(value.toLowerCase())
@@ -127,7 +132,6 @@ const AllProducts = () => {
                 }}
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
-
               <button
                 onClick={handleSearch}
                 className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
@@ -136,7 +140,6 @@ const AllProducts = () => {
               </button>
             </div>
 
-            {/* 🔍 Search Suggestions with Image */}
             {suggestions.length > 0 && (
               <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
                 {suggestions.map((product, index) => (
@@ -353,55 +356,83 @@ const AllProducts = () => {
         )}
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {products.map((product, index) => (
-          <div
-            key={index}
-            className="border rounded p-4 shadow hover:shadow-lg flex flex-col justify-between"
+      {/* CATEGORY FILTER BUTTONS */}
+      <div className="flex flex-wrap gap-4 justify-center mt-8 mb-6">
+        {[
+          "All",
+          "Marble",
+          "Granite",
+          "Tiles",
+          "Toilets",
+          "Sinks",
+          "Bathtubs",
+        ].map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat.toLowerCase())}
+            className={`px-6 py-2 rounded-full text-sm font-semibold border ${
+              selectedCategory === cat.toLowerCase()
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
           >
-            <div>
-              <img
-                src={
-                  product.Image ||
-                  "https://via.placeholder.com/300x200?text=No+Image"
-                }
-                alt={product.Name || "No Name"}
-                className="h-40 w-full object-cover mb-3"
-              />
-              <h2 className="text-lg font-semibold">
-                {product.Name || "No Name"}
-              </h2>
-              <p className="text-gray-600 text-sm mb-2">
-                {product.Description || "No description available"}
-              </p>
-              <p className="font-bold mb-4">₹{product.Price ?? "N/A"}</p>
-            </div>
-
-            <button
-              onClick={() => {
-                const validTypes = [
-                  "tiles",
-                  "sinks",
-                  "toilets",
-                  "marble",
-                  "granite",
-                ];
-                const type = product.category?.toLowerCase(); // ✅ FIXED HERE
-
-                if (!type || !validTypes.includes(type)) {
-                  alert("❌ Invalid product type. Cannot navigate to details.");
-                  return;
-                }
-
-                navigate(`/product/${type}/${product._id}`);
-              }}
-              className="mt-auto bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
-            >
-              View Details
-            </button>
-          </div>
+            {cat}
+          </button>
         ))}
       </div>
+
+      <section className="max-w-[92rem] mx-auto px-4 md:px-6 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {filteredProducts.map((product, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+            >
+              <div className="relative">
+                <img
+                  src={
+                    product.Image ||
+                    "https://via.placeholder.com/300x200?text=No+Image"
+                  }
+                  alt={product.Name || "No Name"}
+                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="text-lg font-bold text-gray-800">
+                  {product.Name || "No Name"}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {product.Description || "No description available"}
+                </p>
+                <button
+                  onClick={() => {
+                    const validTypes = [
+                      "tiles",
+                      "sinks",
+                      "toilets",
+                      "marble",
+                      "granite",
+                      "bathtubs",
+                    ];
+                    const type = product.category?.toLowerCase();
+                    if (!type || !validTypes.includes(type)) {
+                      alert(
+                        "❌ Invalid product type. Cannot navigate to details."
+                      );
+                      return;
+                    }
+                    navigate(`/product/${type}/${product._id}`);
+                  }}
+                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* FOOTER */}
       <footer className="bg-gray-900 text-white px-4 sm:px-10 py-12 mt-16 text-sm">

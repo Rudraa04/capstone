@@ -90,7 +90,7 @@ router.post("/sinks", async (req, res) => {
   }
 });
 
-router.post("/bathtubs", async (req, res) => {
+router.post("api/products/bathtubs", async (req, res) => {
   try {
     const newBathtub = new Bathtubs_Model(req.body);
     const saved = await newBathtub.save();
