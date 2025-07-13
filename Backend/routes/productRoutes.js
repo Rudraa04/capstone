@@ -19,7 +19,7 @@ const router = express.Router();
 
 // GET routes
 router.get("/api/products/tiles", getTiles);
-router.get("/bathtubs", getBathtubs);
+router.get("/api/products/bathtubs", getBathtubs);
 router.get("/api/products/granite", getGranite);
 router.get("/api/products/marble", getMarble);
 router.get("/api/products/sinks", getSinks);
@@ -50,7 +50,7 @@ router.get("/api/products/all", async (req, res) => {
 
 
 // POST routes
-router.post("/marble", async (req, res) => {
+router.post("/api/products/marble", async (req, res) => {
   try {
     const newMarble = new Marble_Model(req.body);
     const saved = await newMarble.save();
@@ -185,7 +185,7 @@ router.get("/api/products/granite/:id", async (req, res) => {
 
 
 // DELETE routes
-router.delete("/marble/:id", async (req, res) => {
+router.delete("/api/products/marble/:id", async (req, res) => {
   try {
     await Marble_Model.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Product deleted successfully" });
@@ -236,6 +236,15 @@ router.delete("/toilets/:id", async (req, res) => {
     res.status(200).json({ message: "Product deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Failed to delete product", error: err.message });
+  }
+});
+
+router.put("/api/products/marble/:id", async (req, res) => {
+  try {
+    const updated = await Marble_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Product updated", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update marble", error: err.message });
   }
 });
 

@@ -13,19 +13,11 @@ import {
 } from "react-icons/fa";
 import slabBanner from "../images/slabs-banner.png";
 
-import bathtub1 from "../images/bathtub1.png";
-import bathtub2 from "../images/bathtub2.png";
-import bathtub3 from "../images/bathtub3.png";
-import bathtub4 from "../images/bathtub4.png";
-import bathtub5 from "../images/bathtub5.png";
-import bathtub6 from "../images/bathtub6.png";
-import bathtub7 from "../images/bathtub7.png";
-import bathtub8 from "../images/bathtub8.png";
-
 export default function Ceramics() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("tiles");
   const [tiles, setTiles] = useState([]);
+  const [bathtubs, setBathtubs] = useState([]);
   const [sinks, setSinks] = useState([]);
   const [toilets, setToilets] = useState([]);
   const [filters, setFilters] = useState({
@@ -142,52 +134,7 @@ export default function Ceramics() {
     if (m.includes("soncera")) return "Soncera";
     return "";
   };
-  const bathtubImages = [
-    bathtub1,
-    bathtub2,
-    bathtub3,
-    bathtub4,
-    bathtub5,
-    bathtub6,
-    bathtub7,
-    bathtub8,
-  ];
-
-  const bathtubData = [
-    {
-      name: "Elegant White Tub",
-      desc: "Classic white standalone bathtub with chrome fixtures.",
-    },
-    {
-      name: "Blue Panel Tub",
-      desc: "Vintage style blue bathtub with elegant feet.",
-    },
-    {
-      name: "Maroon Glossy Tub",
-      desc: "Luxurious maroon tub with golden tap for a bold look.",
-    },
-    {
-      name: "Black Gloss Finish Tub",
-      desc: "High-gloss black bathtub for contemporary interiors.",
-    },
-    {
-      name: "Vintage White Tub",
-      desc: "Retro white tub with decorative claw feet.",
-    },
-    {
-      name: "Built-in White Tub",
-      desc: "Minimalistic rectangular tub built into bathroom nook.",
-    },
-    {
-      name: "Hydrotherapy Spa Tub",
-      desc: "Modern tub with built-in water jets and chrome controls.",
-    },
-    {
-      name: "Matte Black Freestanding Tub",
-      desc: "Sleek matte black tub with modern black fixtures.",
-    },
-  ];
-
+  
   const otherCategories = [
     {
       type: "tiles",
@@ -278,6 +225,21 @@ export default function Ceramics() {
       console.error("Failed to fetch tiles:", error);
     }
   };
+
+  useEffect(() => {
+  const fetchBathtubs = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/products/bathtubs");
+      setBathtubs(response.data);
+    } catch (error) {
+      console.error("Failed to fetch bathtubs:", error);
+    }
+  };
+
+  if (activeTab === "bathtub") {
+    fetchBathtubs();
+  }
+}, [activeTab]);
   useEffect(() => {
     const fetchSinks = async () => {
       try {
@@ -777,31 +739,32 @@ export default function Ceramics() {
                 ))}
 
               {activeTab === "bathtub" &&
-                bathtubImages.map((img, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-                  >
-                    <div className="relative">
-                      <img
-                        src={img}
-                        alt={bathtubData[i].name}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold text-gray-800">
-                        {bathtubData[i].name}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {bathtubData[i].desc}
-                      </p>
-                      <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                ))}
+  bathtubs.map((tub, i) => (
+    <div
+      key={tub._id || i}
+      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+    >
+      <div className="relative">
+        <img
+          src={tub.Image}
+          alt={tub.Name}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-bold text-gray-800">{tub.Name}</h3>
+        <p className="text-sm text-gray-500 mt-1">{tub.Description}</p>
+        <Link
+          to={`/product/bathtubs/${tub._id}`}
+          state={{ fromTab: "bathtub" }}
+          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+        >
+          View Details
+        </Link>
+      </div>
+    </div>
+  ))}
+
 
               {activeTab === "toilets" &&
                 filteredToilets.map((toilet, i) => (

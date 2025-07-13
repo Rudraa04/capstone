@@ -13,7 +13,7 @@
     "aos": "^2.3.4",
     "axios": "^1.10.0",
     "chart.js": "^4.4.9",
-    "firebase": "^11.9.1",
+    "firebase": "^11.10.0",
     "firestone": "^0.1.0",
     "framer-motion": "^12.15.0",
     "jspdf": "^3.0.1",

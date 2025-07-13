@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   FiBox,
   FiPackage,
@@ -42,7 +43,8 @@ export default function AddMarble() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(URL.createObjectURL(file));
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -51,13 +53,44 @@ export default function AddMarble() {
     navigate("/login");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const size = `${formData.length}x${formData.width}`;
-    const marbleData = { ...formData, size };
-    console.log("Submitted:", marbleData);
-    alert("Marble product added successfully!");
-    navigate(-1);
+    const size = `${formData.length.trim()}x${formData.width.trim()}`;
+    
+    let imageUrl = "";
+    if (imageFile) {
+      try {
+        const storageRef = ref(storage, `Inventory/Marble/${Date.now()}_${imageFile.name}`);
+        const snapshot = await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        alert("Failed to upload image.");
+        return;
+      }
+    }
+
+    const marbleData = {
+      Name: formData.name,
+      Description: formData.description,
+      Color: formData.color,
+      Price: parseFloat(formData.price),
+      Image: imageUrl,
+      Category: "Marble",
+      Stock_admin: parseInt(formData.quantity),
+      Origin: formData.brand,
+      Size: size,
+      UsageType: formData.usageType,
+    };
+
+  try {
+      await axios.post("http://localhost:5000/marble", marbleData);
+      alert("Marble product added successfully!");
+      navigate(-1);
+    } catch (error) {
+      console.error(error);
+      alert("Error adding marble product.");
+    }
   };
 
   return (

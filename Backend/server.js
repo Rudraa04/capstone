@@ -2,26 +2,42 @@ import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import productRoutes from './routes/productRoutes.js';  // Keep this here (route import)
 
+// Load environment variables
 dotenv.config();
+
+// Initialize Express app
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Routes
-import productRoutes from './routes/productRoutes.js';
+// API Routes (all product APIs will be prefixed with /api/products)
 app.use("/", productRoutes);
 
+// MongoDB Connection
+const MONGO_URI = process.env.MONGO_URI;
 
-// DB & Server
+if (!MONGO_URI) {
+  console.error("❌ Missing MONGO_URI in .env file");
+  process.exit(1);
+}
+
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
-    console.log('MongoDB connected');
-    app.listen(process.env.PORT, () => {
-      console.log(`Server running on port ${process.env.PORT}`);
+    console.log('✅ MongoDB connected successfully');
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
   })
-  .catch((err) => console.error(err));
+  .catch((err) => {
+    console.error("❌ Failed to connect to MongoDB:", err);
+    process.exit(1);
+  });

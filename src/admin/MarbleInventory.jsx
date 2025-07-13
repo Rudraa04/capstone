@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaChessBoard, FaPlus } from "react-icons/fa";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../firebase/firebase";
+import { deleteObject, ref as storageRef } from "firebase/storage";
+import axios from "axios";
 import {
   FiBox,
   FiPackage,
@@ -51,7 +55,7 @@ export default function MarbleInventory() {
   };
 
   const [showModal, setShowModal] = useState(false);
-
+  const [products, setProducts] = useState([]);
   const [formData, setFormData] = useState({
     ProductName: "",
     ProductDescription: "",
@@ -70,7 +74,9 @@ export default function MarbleInventory() {
   const [image, setImage] = useState(null);
 
   const [selectedProduct, setSelectedProduct] = useState(null);
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const [colorFilter, setColorFilter] = useState("");
+  const [originFilter, setOriginFilter] = useState("");
   const brands = [
     "Bhandari",
     "Classic Marble",
@@ -80,83 +86,158 @@ export default function MarbleInventory() {
   ];
   const usageTypes = ["Interior", "Exterior"];
 
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  // ✅ FETCH Marble Products from MongoDB
+  useEffect(() => {
+    const fetchMarble = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/products/marble");
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Failed to fetch marble products:", err);
+      }
+    };
+    fetchMarble();
+  }, []);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) setImage(URL.createObjectURL(file));
-  };
+  const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  // ✅ Add OR Edit Product (POST or PUT)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const Size = `${formData.length}x${formData.width}`;
-    const finalBrand =
-      formData.Manufacturer === "Other"
-        ? formData.customBrand
-        : formData.Manufacturer;
-
+    const finalBrand = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
     const marbleData = {
-      ProductName: formData.ProductName,
-      ProductDescription: formData.ProductDescription,
+      Name: formData.ProductName,
+      Description: formData.ProductDescription,
       Color: formData.Color,
-      Price: formData.Price,
-      Image: image || "",
+      Price: parseFloat(formData.Price),
+      Image: image || formData.Image || "",
       Category: formData.Category,
-      Quantity: formData.Quantity,
-      Manufacturer: finalBrand,
+      Stock_admin: parseInt(formData.Quantity),
       Origin: formData.Origin,
       Size: Size,
     };
 
-    if (selectedIndex !== null) {
-      // It's an Edit
-      const updatedProducts = [...products];
-      updatedProducts[selectedIndex] = marbleData;
-      setProducts(updatedProducts);
-      alert("Product updated successfully!");
-    } else {
-      // It's a New Add
-      setProducts([...products, marbleData]);
-      alert("Marble product added successfully!");
+    try {
+      if (selectedProduct) {
+        await axios.put(`http://localhost:5000/api/products/marble/${selectedProduct._id}`, marbleData);
+        alert("Product updated successfully!");
+      } else {
+        await axios.post("http://localhost:5000/api/products/marble", marbleData);
+        alert("Product added successfully!");
+      }
+      const res = await axios.get("http://localhost:5000/api/products/marble");
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Save Error:", err.response?.data || err.message);
+      alert("Error while saving product.");
+    } finally {
+      setFormData({ ProductName: "", ProductDescription: "", Color: "", Price: "", Image: "", Category: "Marble", Quantity: "", Manufacturer: "", customBrand: "", Origin: "", length: "", width: "" });
+      setSelectedProduct(null);
+      setShowModal(false);
+      setImage(null);
     }
-
-    setFormData({}); // Clear form
-    setSelectedIndex(null);
-    setShowModal(false);
-    setImage(null);
+    let uploadedImageURL = formData.Image || "";
+    if (image instanceof File) {
+      const fileRef = ref(storage, `Inventory/Marble/${image.name}-${Date.now()}`);
+      try {
+        const snapshot = await uploadBytes(fileRef, image);
+        uploadedImageURL = await getDownloadURL(snapshot.ref);
+      } catch (err) {
+        console.error("Firebase upload failed:", err);
+        alert("Image upload failed. Try again.");
+        return;
+      }
+    }
   };
 
-  const [products, setProducts] = useState([
-    {
-      ProductName: "White Italian Marble",
-      ProductDescription: "Premium white marble",
-      Color: "White",
-      Price: 980,
-      Quantity: 18,
-      Manufacturer: "Bhandari",
-      Category: "Marble",
-      Origin: "Italy",
-      Size: "12x12",
+
+  // ✅ Delete Product
+
+  const handleDelete = async (id) => {
+    const productToDelete = products.find(p => p._id === id);
+    if (!productToDelete) return;
+
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+
+    try {
+      // Delete from Firebase Storage if image URL exists
+      if (productToDelete.Image && productToDelete.Image.includes("firebasestorage.googleapis.com")) {
+        const imagePath = decodeURIComponent(
+          productToDelete.Image
+            .split("/o/")[1]
+            .split("?")[0]
+            .replace("%2F", "/")
+        );
+        const imgRef = storageRef(storage, imagePath);
+        await deleteObject(imgRef);
+      }
+
+      // Delete from MongoDB
+      await axios.delete(`http://localhost:5000/api/products/marble/${id}`);
+      setProducts((prev) => prev.filter((p) => p._id !== id));
+      alert("Product deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete product:", err);
+      alert("Error while deleting product.");
+    }
+  };
+
+  const handleEditClick = (product) => {
+    const [length, width] = (product.Size || "").split("x");
+    setFormData({
+      ProductName: product.Name || "",
+      ProductDescription: product.Description || "",
+      Color: product.Color || "",
+      Price: product.Price || "",
+      Image: product.Image || "",
+      Category: product.Category || "Marble",
+      Quantity: product.Stock_admin || "",
+      Manufacturer: product.Manufacturer || "",
+      customBrand: "",
+      Origin: product.Origin || "",
+      length: product.Size?.split("x")[0].trim() || "",
+      width: product.Size?.split("x")[1].trim() || "",
+    });
+    setSelectedProduct(product);
+    setShowModal(true);
+  };
+
+  const handleAddNew = () => {
+    setFormData({
+      ProductName: "",
+      ProductDescription: "",
+      Color: "",
+      Price: "",
       Image: "",
-    },
-    {
-      ProductName: "Makrana Classic",
-      ProductDescription: "Classic marble from Makrana",
-      Color: "Cream",
-      Price: 920,
-      Quantity: 10,
-      Manufacturer: "Classic Marble",
       Category: "Marble",
-      Origin: "India",
-      Size: "12x12",
-      Image: "",
-    },
-  ]);
-  const [selectedIndex, setSelectedIndex] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [colorFilter, setColorFilter] = useState("");
-  const [originFilter, setOriginFilter] = useState("");
+      Quantity: "",
+      Manufacturer: "",
+      customBrand: "",
+      Origin: "",
+      length: "",
+      width: "",
+    });
+    setSelectedProduct(null);
+    setImage(null);
+    setShowModal(true);
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const fileRef = ref(storage, `Inventory/Marble/${file.name}-${Date.now()}`);
+      try {
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        setFormData((prev) => ({ ...prev, Image: url }));
+        setImage(url); // this replaces blob with Firebase URL
+      } catch (err) {
+        console.error("Firebase upload failed:", err);
+        alert("Image upload failed. Try again.");
+      }
+    }
+  };
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -229,25 +310,7 @@ export default function MarbleInventory() {
               ← Back
             </button>
             <button
-              onClick={() => {
-                setFormData({
-                  ProductName: "",
-                  ProductDescription: "",
-                  Color: "",
-                  Price: "",
-                  Image: "",
-                  Category: "Marble",
-                  Quantity: "",
-                  Manufacturer: "",
-                  customBrand: "",
-                  Origin: "",
-                  length: "",
-                  width: "",
-                });
-                setSelectedIndex(null);
-                setImage(null);
-                setShowModal(true);
-              }}
+              onClick={handleAddNew}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               <FaPlus /> Add New
@@ -366,36 +429,38 @@ export default function MarbleInventory() {
                 {products
                   .filter(
                     (item) =>
-                      item.ProductName.toLowerCase().includes(
-                        searchTerm.toLowerCase()
-                      ) &&
+                      ((item.Name || "").toLowerCase().includes(searchTerm.toLowerCase())) &&
                       (colorFilter === "" || item.Color === colorFilter) &&
                       (originFilter === "" || item.Origin === originFilter)
                   )
                   .map((item, index) => (
                     <tr key={index} className="border-b">
-                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.ProductName || item.Name}</td>
                       <td className="px-6 py-4">{item.Category}</td>
                       <td className="px-6 py-4">${item.Price}</td>
-                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">{item.Quantity || item.Stock_admin}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
+                              const [length = "", width = ""] = (item.Size || "")
+                                .split("x")
+                                .map(s => s.trim());
                               setFormData({
-                                ProductName: item.ProductName,
-                                ProductDescription: item.ProductDescription,
+                                ProductName: item.Name,
+                                ProductDescription: item.Description,
                                 Color: item.Color,
                                 Price: item.Price,
-                                Category: item.Category,
-                                Quantity: item.Quantity,
+                                Category: item.Category || "Marble",
+                                Quantity: item.Stock_admin,
                                 Manufacturer: item.Manufacturer,
                                 Origin: item.Origin,
-                                length: item.Size?.split("x")[0] || "",
-                                width: item.Size?.split("x")[1] || "",
+                                length: length,
+                                width: width,
                                 customBrand: "",
                               });
-                              setSelectedIndex(index);
+                              setSelectedProduct(item);
+                              setImage(item.Image || null);
                               setShowModal(true);
                             }}
                             className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
@@ -403,7 +468,8 @@ export default function MarbleInventory() {
                             Edit
                           </button>
 
-                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          <button onClick={() => handleDelete(item._id)}
+                            className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
                             Delete
                           </button>
                         </div>
@@ -416,9 +482,7 @@ export default function MarbleInventory() {
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            {selectedIndex !== null
-              ? "Edit Marble Product"
-              : "Add Marble Product"}
+            {selectedProduct ? "Edit Marble Product" : "Add Marble Product"}
           </h2>
 
           <form
@@ -557,10 +621,10 @@ export default function MarbleInventory() {
                 onChange={handleImageChange}
                 className="block"
               />
-              {image && (
+              {(image || formData.Image) && (
                 <div className="w-32 h-32 border rounded overflow-hidden">
                   <img
-                    src={image}
+                    src={image || formData.Image}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
@@ -573,7 +637,7 @@ export default function MarbleInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                {selectedIndex !== null ? "Update Product" : "Save Product"}
+                {selectedProduct ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>
