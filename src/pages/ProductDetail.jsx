@@ -46,10 +46,24 @@ export default function ProductDetail() {
 
   const [graniteData, setGraniteData] = useState(null);
 
+  const [bathtubData, setBathtubData] = useState(null);
+
   const location = useLocation();
   const fromTab = location.state?.fromTab;
 
   const [stockError, setStockError] = useState("");
+
+  useEffect(() => {
+    if (type === "bathtubs") {
+      axios
+        .get(`http://localhost:5000/api/products/bathtubs/${id}`)
+        .then((res) => {
+          setBathtubData(res.data);
+          setPricePerTile(res.data.Price || 0);
+        })
+        .catch((err) => console.error("Failed to fetch bathtub:", err));
+    }
+  }, [type, id]);
 
   useEffect(() => {
     if (type === "granite") {
@@ -220,6 +234,18 @@ export default function ProductDetail() {
       stock: sinkData.Stock_admin ?? "N/A",
       subcategory: sinkData.SubCategory || "N/A",
     };
+  } else if (type === "bathtubs" && bathtubData) {
+    product = {
+      name: bathtubData.Name,
+      image: bathtubData.Image,
+      description: bathtubData.Description,
+      size: bathtubData.Size || "N/A",
+      price: bathtubData.Price || 0,
+      color: bathtubData.Color || "N/A",
+      manufacturer: bathtubData.Manufacturer || "N/A",
+      origin: bathtubData.Origin || "N/A",
+      stock: bathtubData.Stock_admin ?? "N/A",
+    };
   } else if (type === "toilets" && toiletData) {
     product = {
       name: toiletData.Name,
@@ -306,7 +332,8 @@ export default function ProductDetail() {
     (type === "sinks" && !sinkData) ||
     (type === "toilets" && !toiletData) ||
     (type === "marble" && !marbleData) ||
-    (type === "granite" && !graniteData)
+    (type === "granite" && !graniteData) ||
+    (type === "bathtubs" && !bathtubData) 
   ) {
     return <div className="text-center p-10">Loading Product...</div>;
   }
@@ -681,6 +708,48 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {type === "bathtubs" && (
+              <div
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                style={{ animationDuration: "0.8s" }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-red-100 text-red-800 px-3 py-1 rounded-full font-semibold">
+                    Elegant Bathtub
+                  </span>
+                  <span className="text-xs text-gray-500">(Sanitary Ware)</span>
+                </div>
+                <ul className="text-base text-gray-800 leading-relaxed space-y-2">
+                  <li>
+                    <strong>📏 Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>🎨 Color:</strong> {product.color}
+                  </li>
+                  <li>
+                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
+                  </li>
+                  <li>
+                    <strong>🌍 Origin:</strong> {product.origin}
+                  </li>
+                  <li>
+                    <strong>📦 In Stock:</strong>{" "}
+                    {product.stock !== "N/A" && parseInt(product.stock) > 10
+                      ? "In Stock"
+                      : product.stock !== "N/A"
+                      ? `Only ${product.stock} in stock`
+                      : "N/A"}
+                  </li>
+                  <li>
+                    <strong>💰 Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            )}
+
             {type === "toilets" && (
               <div
                 className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
@@ -803,7 +872,8 @@ export default function ProductDetail() {
               type === "sinks" ||
               type === "toilets" ||
               type === "marble" ||
-              type === "granite") && (
+              type === "granite" ||
+              type === "bathtubs")  && (
               <>
                 {/* Input Quantity */}
                 <div className="mt-6 space-y-2">
