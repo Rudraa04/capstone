@@ -221,20 +221,21 @@ export default function Header() {
                     WALL / FLOOR TILES
                   </h3>
                   {[
-                    { name: "Exterior Floor Tiles", to: "/exteriorfloor" },
-                    { name: "Exterior Wall Tiles", to: "/exteriorwall" },
-                    { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
-                    { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
-                    { name: "Interior Floor Tiles", to: "/interiorfloor" },
-                  ].map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.to}
-                      className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+  { name: "Exterior Floor Tiles", to: "/exterior?sub=Exterior Floor Tiles" },
+  { name: "Exterior Wall Tiles", to: "/exterior?sub=Exterior Wall Tiles" },
+  { name: "Kitchen Wall Tiles", to: "/interior?sub=Kitchen Wall Tiles" },
+  { name: "Bathroom Wall Tiles", to: "/interior?sub=Bathroom Wall Tiles" },
+  { name: "Interior Floor Tiles", to: "/interior?sub=Interior Floor Tiles" },
+].map((item) => (
+  <Link
+    key={item.name}
+    to={item.to}
+    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+  >
+    {item.name}
+  </Link>
+))}
+
                 </div>
               </div>
             )}

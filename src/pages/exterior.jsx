@@ -10,8 +10,6 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 
-import slideImage from "../images/slide.png";
-import slide2Image from "../images/slide2.png"; 
 import Footer from "../components/Footer";
 
 export default function Exterior() {
@@ -23,6 +21,9 @@ export default function Exterior() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
   const [tiles, setTiles] = useState([]);
+  const queryParams = new URLSearchParams(location.search);
+  const selectedSubCategory = queryParams.get("sub");
+
 
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
@@ -56,11 +57,13 @@ export default function Exterior() {
     .then((res) => res.json())
     .then((data) => {
       const filtered = data.filter((tile) => {
-        const sub = tile.SubCategory?.toLowerCase() || "";
-        return (
-          sub.includes("exterior") || sub.includes("outdoor")
-        );
-      });
+  const sub = tile.SubCategory?.toLowerCase() || "";
+
+  return selectedSubCategory
+    ? sub === selectedSubCategory.toLowerCase()
+    : sub.includes("exterior") || sub.includes("outdoor");
+});
+
       setTiles(filtered);
     })
     .catch((err) => console.error("Error fetching exterior tiles:", err));

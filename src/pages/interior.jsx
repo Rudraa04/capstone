@@ -9,8 +9,6 @@ import {
   FaTimes,
   FaArrowLeft,
 } from "react-icons/fa";
-import slideImage from "../images/slide.png";
-import slide2Image from "../images/slide2.png";
 import Footer from "../components/Footer";
 
 export default function Interior() {
@@ -21,6 +19,9 @@ export default function Interior() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
+  const queryParams = new URLSearchParams(location.search);
+  const selectedSubCategory = queryParams.get("sub");
+
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
@@ -55,15 +56,12 @@ useEffect(() => {
     .then((res) => res.json())
     .then((data) => {
       const filtered = data.filter((tile) => {
-        const sub = tile.SubCategory?.toLowerCase() || "";
-        return (
-          sub.includes("interior") ||
-          sub.includes("bathroom") ||
-          sub.includes("kitchen") ||
-          sub.includes("living") ||
-          sub.includes("bedroom")
-        );
-      });
+  const sub = tile.SubCategory?.toLowerCase() || "";
+  return selectedSubCategory
+    ? sub === selectedSubCategory.toLowerCase()
+    : sub.includes("interior") || sub.includes("bathroom") || sub.includes("kitchen");
+});
+
       setTiles(filtered);
     })
     .catch((err) => console.error("Error fetching tiles:", err));
