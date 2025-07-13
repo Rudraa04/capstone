@@ -22,6 +22,8 @@ export default function Exterior() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
+  const [tiles, setTiles] = useState([]);
+
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
@@ -49,17 +51,21 @@ export default function Exterior() {
     navigate("/login");
   };
 
-  const exteriorImages = [slideImage, slide2Image]; 
-  const exteriorData = [
-    {
-      name: "Modern Stone Finish",
-      desc: "Perfect blend of elegance and durability for outdoors.",
-    },
-    {
-      name: "Rustic Garden Look",
-      desc: "Natural tones that complement any landscape design.",
-    },
-  ];
+  useEffect(() => {
+  fetch("http://localhost:5000/api/products/tiles")
+    .then((res) => res.json())
+    .then((data) => {
+      const filtered = data.filter((tile) => {
+        const sub = tile.SubCategory?.toLowerCase() || "";
+        return (
+          sub.includes("exterior") || sub.includes("outdoor")
+        );
+      });
+      setTiles(filtered);
+    })
+    .catch((err) => console.error("Error fetching exterior tiles:", err));
+}, []);
+
 
   return (
     <div className="bg-white text-gray-900 font-sans">
@@ -312,35 +318,36 @@ export default function Exterior() {
       </section>
 
       {/* Product Grid */}
-      <section className="px-4 sm:px-10 pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-          {exteriorImages.map((img, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-            >
-              <div className="relative">
-                <img
-                  src={img}
-                  alt={exteriorData[i].name}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-bold text-gray-800">
-                  {exteriorData[i].name}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {exteriorData[i].desc}
-                </p>
-                <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                  View Details
-                </button>
-              </div>
-            </div>
-          ))}
+      <section className="max-w-[92rem] mx-auto px-4 md:px-6 py-12">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+    {tiles.map((tile) => (
+      <div
+        key={tile._id}
+        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+      >
+        <div className="relative">
+          <img
+            src={tile.Image}
+            alt={tile.Name}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
         </div>
-      </section>
+        <div className="p-4">
+          <h3 className="text-lg font-bold text-gray-800">{tile.Name}</h3>
+          <p className="text-sm text-gray-500 mt-1">{tile.Description}</p>
+          <Link
+            to={`/product/tiles/${tile._id}`}
+            state={{ fromTab: "tiles" }}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+          >
+            View Details
+          </Link>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
 
       <Footer />
     </div>

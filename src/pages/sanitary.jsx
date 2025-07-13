@@ -21,21 +21,13 @@ export default function Sanitary() {
   const [query, setQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [products, setProducts] = useState([]);
+
   const dropdownRef = useRef();
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
-  const sanitaryImages = [slideImage, slide2Image];
-  const sanitaryData = [
-    {
-      name: "Premium Basin Set",
-      desc: "Stylish and sturdy basins for modern bathrooms.",
-    },
-    {
-      name: "Wall-Hung Toilet",
-      desc: "Elegant sanitary ware that saves space.",
-    },
-  ];
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -53,6 +45,30 @@ export default function Sanitary() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  useEffect(() => {
+  const fetchSanitaryProducts = async () => {
+    try {
+      const [sinksRes, bathtubsRes, toiletsRes] = await Promise.all([
+        fetch("http://localhost:5000/api/products/sinks"),
+        fetch("http://localhost:5000/api/products/bathtubs"),
+        fetch("http://localhost:5000/api/products/toilets"),
+      ]);
+
+      const [sinks, bathtubs, toilets] = await Promise.all([
+        sinksRes.json(),
+        bathtubsRes.json(),
+        toiletsRes.json(),
+      ]);
+
+      setProducts([...sinks, ...bathtubs, ...toilets]);
+    } catch (error) {
+      console.error("Error fetching sanitary products:", error);
+    }
+  };
+
+  fetchSanitaryProducts();
+}, []);
+
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -60,6 +76,19 @@ export default function Sanitary() {
     alert("Logged out!");
     navigate("/login");
   };
+const getCategory = (item) => {
+  const category = item?.Category?.toLowerCase() || "";
+  if (category.includes("accessory")) return "toilets";
+  if (category.includes("toilet")) return "toilets";
+  if (category.includes("urinal")) return "toilets";;
+  if (category.includes("bathtub")) return "bathtubs";
+  if (category.includes("sink")) return "sinks";
+  if (item?.FlushType) return "toilets";
+  if (item?.Length && item?.Width) return "bathtubs";
+  if (item?.Brand && item?.Size) return "sinks";
+
+  return "toilets";
+};
 
   return (
     <div className="bg-white text-gray-900 font-sans">
@@ -312,35 +341,36 @@ export default function Sanitary() {
       </section>
 
       {/* Product Grid */}
-      <section className="px-4 sm:px-10 pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-          {sanitaryImages.map((img, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-            >
-              <div className="relative">
-                <img
-                  src={img}
-                  alt={sanitaryData[i].name}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-bold text-gray-800">
-                  {sanitaryData[i].name}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {sanitaryData[i].desc}
-                </p>
-                <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                  View Details
-                </button>
-              </div>
-            </div>
-          ))}
+      <section className="max-w-[92rem] mx-auto px-4 md:px-6 py-12">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+    {products.map((item) => (
+      <div
+        key={item._id}
+        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+      >
+        <div className="relative">
+          <img
+            src={item.Image}
+            alt={item.Name}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
         </div>
-      </section>
+        <div className="p-4">
+          <h3 className="text-lg font-bold text-gray-800">{item.Name}</h3>
+          <p className="text-sm text-gray-500 mt-1">{item.Description}</p>
+          <Link
+            to={`/product/${getCategory(item)}/${item._id}`}
+  state={{ fromTab: getCategory(item) }}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+          >
+            View Details
+          </Link>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
 
       <Footer />
     </div>
