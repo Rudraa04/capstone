@@ -29,18 +29,16 @@ export default function Exterior() {
 
   const [cartCount, setCartCount] = useState(0);
 
-
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
- useEffect(() => {
-  const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-  const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-  setCartCount(totalCount);
-}, []);
+  useEffect(() => {
+    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalCount);
+  }, []);
 
- 
-    useEffect(() => {
+  useEffect(() => {
     const fetchAllProducts = async () => {
       try {
         const endpoints = ["tiles", "sinks", "granite", "marble", "toilets"];
@@ -96,7 +94,6 @@ export default function Exterior() {
       .then((data) => {
         const filtered = data.filter((tile) => {
           const sub = tile.SubCategory?.toLowerCase() || "";
-
           return selectedSubCategory
             ? sub === selectedSubCategory.toLowerCase()
             : sub.includes("exterior") || sub.includes("outdoor");
@@ -105,7 +102,8 @@ export default function Exterior() {
         setTiles(filtered);
       })
       .catch((err) => console.error("Error fetching exterior tiles:", err));
-  }, []);
+  }, [selectedSubCategory]);
+
 
   const handleSearch = () => {
     if (query.length > 1) {
@@ -125,11 +123,11 @@ export default function Exterior() {
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
-              className="text-blue-700 hover:text-blue-900"
-            >
-              <FaArrowLeft size={18} />
-            </button>
+                          onClick={() => navigate("/")}
+                          className="text-blue-700 hover:text-blue-900"
+                        >
+                          <FaArrowLeft size={18} />
+                        </button>
             <Link
               to="/"
               className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
@@ -242,40 +240,40 @@ export default function Exterior() {
                     ))}
                   </div>
                   <div>
-                                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                                      WALL / FLOOR TILES
-                                    </h3>
-                                    {[
-                                      {
-                                        name: "Exterior Floor Tiles",
-                                        to: "/exterior?sub=Exterior Floor Tiles",
-                                      },
-                                      {
-                                        name: "Exterior Wall Tiles",
-                                        to: "/exterior?sub=Exterior Wall Tiles",
-                                      },
-                                      {
-                                        name: "Kitchen Wall Tiles",
-                                        to: "/interior?sub=Kitchen Wall Tiles",
-                                      },
-                                      {
-                                        name: "Bathroom Wall Tiles",
-                                        to: "/interior?sub=Bathroom Wall Tiles",
-                                      },
-                                      {
-                                        name: "Interior Floor Tiles",
-                                        to: "/interior?sub=Interior Floor Tiles",
-                                      },
-                                    ].map((item) => (
-                                      <Link
-                                        key={item.name}
-                                        to={item.to}
-                                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                                      >
-                                        {item.name}
-                                      </Link>
-                                    ))}
-                                  </div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      WALL / FLOOR TILES
+                    </h3>
+                    {[
+                      {
+                        name: "Exterior Floor Tiles",
+                        to: "/exterior?sub=Exterior Floor Tiles",
+                      },
+                      {
+                        name: "Exterior Wall Tiles",
+                        to: "/exterior?sub=Exterior Wall Tiles",
+                      },
+                      {
+                        name: "Kitchen Wall Tiles",
+                        to: "/interior?sub=Kitchen Wall Tiles",
+                      },
+                      {
+                        name: "Bathroom Wall Tiles",
+                        to: "/interior?sub=Bathroom Wall Tiles",
+                      },
+                      {
+                        name: "Interior Floor Tiles",
+                        to: "/interior?sub=Interior Floor Tiles",
+                      },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -283,15 +281,17 @@ export default function Exterior() {
             {user ? (
               <>
                 <Link
-  to="/cart"
-  className={`uppercase ${underlineHover} flex items-center gap-1`}
->
-  <FaShoppingCart />
-  Cart
-  {cartCount > 0 && (
-    <span className="ml-1 font-bold text-blue-600">({cartCount})</span>
-  )}
-</Link>
+                  to="/cart"
+                  className={`uppercase ${underlineHover} flex items-center gap-1`}
+                >
+                  <FaShoppingCart />
+                  Cart
+                  {cartCount > 0 && (
+                    <span className="ml-1 font-bold text-blue-600">
+                      ({cartCount})
+                    </span>
+                  )}
+                </Link>
 
                 <Link
                   to="/profile"

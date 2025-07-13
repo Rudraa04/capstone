@@ -191,10 +191,10 @@ router.get("/api/products/granite/:id", async (req, res) => {
 // DELETE routes
 router.delete("/api/products/marble/:id", async (req, res) => {
   try {
-    await Marble_Model.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Product deleted successfully" });
+   await Marble_Model.findByIdAndDelete(req.params.id);
+   res.status(200).json({ message: "Product deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to delete product", error: err.message });
+   res.status(500).json({ message: "Failed to delete product", error: err.message });
   }
 });
 

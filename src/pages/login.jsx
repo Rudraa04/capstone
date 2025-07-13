@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
@@ -12,85 +12,89 @@ import ReCAPTCHA from "react-google-recaptcha";
 export default function Login() {
   const navigate = useNavigate();
 
-  // Store form input values
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  // Message for feedback (success or error)
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
-  // Captcha value and failed attempts count
   const [captchaValue, setCaptchaValue] = useState(null);
   const [failedAttempts, setFailedAttempts] = useState(() => {
     return parseInt(localStorage.getItem("failedAttempts") || "0", 10);
   });
-
-  // Show captcha only after 5 failed attempts
   const [showCaptcha, setShowCaptcha] = useState(failedAttempts >= 5);
 
-  // Update captcha value on change
   const handleCaptchaChange = (value) => {
     setCaptchaValue(value);
   };
 
-  // Main login handler
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setMessage(""); // Clear any previous message
+  // ✅ Forgot Password Function
+  const handleForgotPassword = async () => {
+    if (!email || !email.includes("@")) {
+      alert("⚠️ Please enter a valid email address first.");
+      return;
+    }
 
     try {
-      // ✅ Try logging in with Firebase Authentication
+      await sendPasswordResetEmail(auth, email);
+      alert("📧 Password reset email sent! Check your inbox.");
+    } catch (error) {
+      console.error("Reset error:", error.message);
+
+      if (error.code === "auth/user-not-found") {
+        alert("❌ No account found with this email.");
+      } else if (error.code === "auth/invalid-email") {
+        alert("❌ Invalid email format.");
+      } else {
+        alert("❌ Something went wrong. Please try again.");
+      }
+    }
+  };
+
+  // ✅ Login Handler
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setMessage("");
+
+    try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 🚫 If email is not verified yet
       if (!user.emailVerified) {
         setMessage("Please verify your email before logging in.");
         setMessageType("error");
         return;
       }
 
-      // ✅ Fetch the user's Firestore document to get their role
       const userDocRef = doc(db, "users", user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
         const role = userDocSnap.data().role;
 
-        // ✅ Successful login flow
         setMessage("Login successful!");
         setMessageType("success");
 
-        // Reset captcha and failed attempts
         localStorage.removeItem("failedAttempts");
         setFailedAttempts(0);
         setShowCaptcha(false);
         setCaptchaValue(null);
 
-        // 🚀 Navigate user based on role
         setTimeout(() => {
           if (role === "admin") navigate("/admin");
           else navigate("/");
         }, 1000);
       } else {
-        // 🚫 User doesn't have a role set in database
         setMessage("No role found. Contact support.");
         setMessageType("error");
       }
     } catch (error) {
-      // 🚫 Login failed — handle custom errors here
       const newFailed = failedAttempts + 1;
       setFailedAttempts(newFailed);
       localStorage.setItem("failedAttempts", newFailed.toString());
 
-      // Show captcha if failed 5+ times
-      if (newFailed >= 5) {
-        setShowCaptcha(true);
-      }
+      if (newFailed >= 5) setShowCaptcha(true);
 
-      // Custom user-friendly error messages
       if (
         error.code === "auth/user-not-found" ||
         error.code === "auth/invalid-credential" ||
@@ -100,7 +104,6 @@ export default function Login() {
       } else if (error.code === "auth/too-many-requests") {
         setMessage("Too many attempts. Please try again later.");
       } else {
-        // Fallback error message for unexpected errors
         setMessage("Something went wrong. Please try again.");
       }
 
@@ -110,7 +113,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-50 flex flex-col relative">
-      {/* Back button */}
       <button
         onClick={() => navigate(-1)}
         className="absolute top-5 left-5 text-gray-700 hover:text-black flex items-center gap-2 text-sm"
@@ -120,19 +122,14 @@ export default function Login() {
 
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
-          {/* App logo/title */}
           <h1 className="text-4xl font-bold text-center text-blue-800 mb-3">
             Patel Ceramics
           </h1>
-
-          {/* Login title */}
           <h2 className="text-3xl font-extrabold text-center text-blue-600 mb-6">
             Log In
           </h2>
 
-          {/* Login form */}
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* Email input */}
             <div>
               <label className="block text-lg font-semibold text-gray-800 mb-1">
                 Email Address
@@ -150,7 +147,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Password input */}
             <div>
               <label className="block text-lg font-semibold text-gray-800 mb-1">
                 Password
@@ -173,14 +169,17 @@ export default function Login() {
                   {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                 </button>
               </div>
+
               <div className="text-right mt-1">
-                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                <span
+                  onClick={handleForgotPassword}
+                  className="text-sm text-blue-600 hover:underline cursor-pointer"
+                >
                   Forgot Password?
-                </Link>
+                </span>
               </div>
             </div>
 
-            {/* reCAPTCHA (after 5 failed attempts) */}
             {showCaptcha && (
               <div className="mt-4 flex justify-center">
                 <ReCAPTCHA
@@ -190,7 +189,6 @@ export default function Login() {
               </div>
             )}
 
-            {/* Submit button */}
             <button
               type="submit"
               disabled={showCaptcha && !captchaValue}
@@ -199,7 +197,6 @@ export default function Login() {
               Login
             </button>
 
-            {/* Success/Error message */}
             {message && (
               <p
                 className={`text-sm text-center font-medium mt-2 ${
@@ -211,7 +208,6 @@ export default function Login() {
             )}
           </form>
 
-          {/* Sign-up link */}
           <p className="mt-4 text-sm text-center text-gray-600">
             Don’t have an account?{" "}
             <Link to="/signup" className="text-blue-700 font-semibold hover:underline">

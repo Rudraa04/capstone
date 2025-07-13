@@ -211,11 +211,11 @@ export default function Header() {
                   {[
                     {
                       name: "Exterior Floor Tiles",
-                      to: "/exterior?sub=Exterior Floor Tiles",
+                      to: "/exterior?sub=exterior floor tiles",
                     },
                     {
                       name: "Exterior Wall Tiles",
-                      to: "/exterior?sub=Exterior Wall Tiles",
+                      to: "/exterior?sub=exterior wall tiles",
                     },
                     {
                       name: "Kitchen Wall Tiles",
