@@ -49,6 +49,8 @@ export default function ProductDetail() {
   const location = useLocation();
   const fromTab = location.state?.fromTab;
 
+  const [stockError, setStockError] = useState("");
+
   useEffect(() => {
     if (type === "granite") {
       axios
@@ -667,7 +669,7 @@ export default function ProductDetail() {
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>📦 Stock:</strong> {product.stock}
+                    <strong>📦 In Stock:</strong> {product.stock}
                   </li>
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -704,7 +706,7 @@ export default function ProductDetail() {
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>📦 Stock:</strong> {product.stock}
+                    <strong>📦 In Stock:</strong> {product.stock}
                   </li>
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -779,7 +781,7 @@ export default function ProductDetail() {
                     <strong>🌍 Origin:</strong> {product.origin}
                   </li>
                   <li>
-                    <strong>📦 Stock:</strong> {product.stock}
+                    <strong>📦 In Stock:</strong> {product.stock}
                   </li>
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -816,7 +818,7 @@ export default function ProductDetail() {
                     <strong>🌍 Origin:</strong> {product.origin}
                   </li>
                   <li>
-                    <strong>📦 Stock:</strong> {product.stock}
+                    <strong>📦 In Stock:</strong> {product.stock}
                   </li>
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -842,11 +844,35 @@ export default function ProductDetail() {
                   <input
                     type="number"
                     min="1"
+                    max={
+                      product.stock !== "N/A"
+                        ? parseInt(product.stock)
+                        : undefined
+                    }
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      const stock = parseInt(product.stock);
+
+                      if (isNaN(val) || val < 1) {
+                        setQuantity(1);
+                        setStockError("");
+                      } else if (product.stock !== "N/A" && val > stock) {
+                        setQuantity(stock);
+                        setStockError(
+                          `Only ${stock} units available in stock.`
+                        );
+                      } else {
+                        setQuantity(val);
+                        setStockError("");
+                      }
+                    }}
                     className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g. 2"
                   />
+                  {stockError && (
+                    <p className="text-red-600 text-sm mt-1">{stockError}</p>
+                  )}
                 </div>
 
                 {/* Pricing Summary Section */}
