@@ -112,15 +112,15 @@ router.post("/toilets", async (req, res) => {
 
 // PUT (Edit) routes
 router.get("/api/products/marble/:id", async (req, res) => {
-try {
-const marble = await Marble_Model.findById(req.params.id);
-if (!marble) {
-return res.status(404).json({ message: "Marble not found" });
-}
-res.json(marble);
-} catch (err) {
-res.status(500).json({ message: "Failed to fetch marble", error: err.message });
-}
+  try {
+    const marble = await Marble_Model.findById(req.params.id);
+    if (!marble) {
+      return res.status(404).json({ message: "Marble not found" });
+    }
+    res.json(marble);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch marble", error: err.message });
+  }
 });
 
 
@@ -149,14 +149,18 @@ router.get("/api/products/sinks/:id", async (req, res) => {
 });
 
 
-router.put("/bathtubs/:id", async (req, res) => {
+router.get("/api/products/bathtubs/:id", async (req, res) => {
   try {
-    const updated = await Bathtubs_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json({ message: "Product updated successfully", product: updated });
+    const bathtub = await Bathtubs_Model.findById(req.params.id);
+    if (!bathtub) {
+      return res.status(404).json({ message: "Bathtub not found" });
+    }
+    res.json(bathtub);
   } catch (err) {
-    res.status(500).json({ message: "Failed to update product", error: err.message });
+    res.status(500).json({ message: "Failed to fetch bathtub", error: err.message });
   }
 });
+
 
 router.get("/api/products/toilets/:id", async (req, res) => {
   try {

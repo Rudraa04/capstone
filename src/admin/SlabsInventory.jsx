@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaGem, FaMountain } from "react-icons/fa";
 import {
@@ -12,9 +12,26 @@ import {
   FiHome,
   FiGlobe,
 } from "react-icons/fi";
+import axios from "axios";
 
 export default function SlabsInventory() {
   const navigate = useNavigate();
+  const [marbleCount, setMarbleCount] = useState(0);
+  const [graniteCount, setGraniteCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const marbleRes = await axios.get("http://localhost:5000/api/products/marble");
+        const graniteRes = await axios.get("http://localhost:5000/api/products/granite");
+        setMarbleCount(marbleRes.data.length);
+        setGraniteCount(graniteRes.data.length);
+      } catch (error) {
+        console.error("Error fetching product counts:", error);
+      }
+    };
+    fetchCounts();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("isAdminLoggedIn");
@@ -27,14 +44,14 @@ export default function SlabsInventory() {
       description: "Manage all marble slabs",
       path: "/admin/inventory/marble",
       icon: <FaGem size={20} className="text-blue-600" />,
-      count: 2,
+      count: marbleCount,
     },
     {
       label: "Granite Inventory",
       description: "Manage all granite slabs",
       path: "/admin/inventory/granite",
       icon: <FaMountain size={20} className="text-blue-600" />,
-      count: 2,
+      count: graniteCount,
     },
   ];
 
