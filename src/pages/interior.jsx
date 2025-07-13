@@ -9,8 +9,6 @@ import {
   FaTimes,
   FaArrowLeft,
 } from "react-icons/fa";
-import slideImage from "../images/slide.png";
-import slide2Image from "../images/slide2.png";
 import Footer from "../components/Footer";
 
 export default function Interior() {
@@ -21,6 +19,9 @@ export default function Interior() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
+  const queryParams = new URLSearchParams(location.search);
+  const selectedSubCategory = queryParams.get("sub");
+
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
@@ -48,17 +49,24 @@ export default function Interior() {
     navigate("/login");
   };
 
-  const interiorImages = [slideImage, slide2Image];
-  const interiorData = [
-    {
-      name: "Elegant Living Space",
-      desc: "Modern ceramic finishes ideal for contemporary homes.",
-    },
-    {
-      name: "Warm Wooden Aesthetic",
-      desc: "Create cozy vibes with our rustic interior range.",
-    },
-  ];
+  const [tiles, setTiles] = useState([]);
+
+useEffect(() => {
+  fetch("http://localhost:5000/api/products/tiles")
+    .then((res) => res.json())
+    .then((data) => {
+      const filtered = data.filter((tile) => {
+  const sub = tile.SubCategory?.toLowerCase() || "";
+  return selectedSubCategory
+    ? sub === selectedSubCategory.toLowerCase()
+    : sub.includes("interior") || sub.includes("bathroom") || sub.includes("kitchen");
+});
+
+      setTiles(filtered);
+    })
+    .catch((err) => console.error("Error fetching tiles:", err));
+}, []);
+
 
   return (
     <div className="bg-white text-gray-900 font-sans">
@@ -109,91 +117,51 @@ export default function Interior() {
                 Products
               </button>
               {showProductDropdown && (
-                <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-4 gap-10 w-[1200px] max-w-screen-xl z-50 text-base font-sans transform translate-x-[100px]">
-                  {/* CATEGORY */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      CATEGORY
-                    </h3>
-                    {[
-                      { name: "Marble", to: "/slabs?type=marble" },
-                      { name: "Granite", to: "/slabs?type=granite" },
-                      { name: "Tiles", to: "/ceramics?type=tiles" },
-                      { name: "Sinks", to: "/ceramics?type=sinks" },
-                      { name: "Bathtubs", to: "/ceramics?type=bathtub" },
-                      { name: "Toilets", to: "/ceramics?type=toilets" },
-                    ].map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.to}
-                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* WALL TILES */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      WALL TILES
-                    </h3>
-                    {[
-                      "Bathroom Wall Tiles",
-                      "Kitchen Wall Tiles",
-                      "Outdoor Wall Tiles",
-                      "Living Room Wall Tiles",
-                      "Bedroom Wall Tiles",
-                      "Wall Tiles for Commercial Spaces",
-                    ].map((item) => (
-                      <span key={item} className="block text-gray-700 mb-3">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* FLOOR TILES */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      FLOOR TILES
-                    </h3>
-                    {[
-                      "Living Room Floor Tiles",
-                      "Outdoor Floor Tiles",
-                      "Bedroom Floor Tiles",
-                      "Kitchen Floor Tiles",
-                      "Bathroom Floor tiles",
-                      "Floor Tiles for Commercial Spaces",
-                    ].map((item) => (
-                      <span key={item} className="block text-gray-700 mb-3">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* TILE FINDER */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      TILE FINDER
-                    </h3>
-                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
-                      <option>Select Size</option>
-                      <option>12x12</option>
-                      <option>16x16</option>
-                      <option>24x24</option>
-                    </select>
-                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
-                      <option>Select Finish</option>
-                      <option>Glossy</option>
-                      <option>Matte</option>
-                      <option>Textured</option>
-                    </select>
-                    <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-                      Search
-                    </button>
-                  </div>
-                </div>
-              )}
+                            <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-2 gap-8 w-[600px] z-50 text-base font-sans translate-x-[100px]">
+                              {" "}
+                              <div>
+                                <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                                  CATEGORY
+                                </h3>
+                                {[
+                                  { name: "Marble", to: "/slabs?type=marble" },
+                                  { name: "Granite", to: "/slabs?type=granite" },
+                                  { name: "Tiles", to: "/ceramics?type=tiles" },
+                                  { name: "Sinks", to: "/ceramics?type=sinks" },
+                                  { name: "Bathtubs", to: "/ceramics?type=bathtub" },
+                                  { name: "Toilets", to: "/ceramics?type=toilets" },
+                                ].map((item) => (
+                                  <Link
+                                    key={item.name}
+                                    to={item.to}
+                                    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                                  >
+                                    {item.name}
+                                  </Link>
+                                ))}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                                  WALL / FLOOR TILES
+                                </h3>
+                                {[
+                                  { name: "Exterior Floor Tiles", to: "/exteriorfloor" },
+                                  { name: "Exterior Wall Tiles", to: "/exteriorwall" },
+                                  { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
+                                  { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
+                                  { name: "Interior Floor Tiles", to: "/interiorfloor" },
+                                ].map((item) => (
+                                  <Link
+                                    key={item.name}
+                                    to={item.to}
+                                    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                                  >
+                                    {item.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          )}
             </div>
 
             {user ? (
@@ -311,35 +279,38 @@ export default function Interior() {
       </section>
 
       {/* Product Grid */}
-      <section className="px-4 sm:px-10 pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-          {interiorImages.map((img, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-            >
-              <div className="relative">
-                <img
-                  src={img}
-                  alt={interiorData[i].name}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-bold text-gray-800">
-                  {interiorData[i].name}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {interiorData[i].desc}
-                </p>
-                <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                  View Details
-                </button>
-              </div>
-            </div>
-          ))}
+      <section className="max-w-[92rem] mx-auto px-6 md:px-6 py-12">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+    {tiles.map((tile) => (
+      <div
+        key={tile._id}
+        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+      >
+        <div className="relative">
+          <img
+            src={tile.Image}
+            alt={tile.Name}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
         </div>
-      </section>
+        <div className="p-4">
+          <h3 className="text-lg font-bold text-gray-800">{tile.Name}</h3>
+          <p className="text-sm text-gray-500 mt-1">{tile.Description}</p>
+          <Link
+            to={`/product/tiles/${tile._id}`}
+            state={{ fromTab: "tiles" }}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+          >
+            View Details
+          </Link>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
+
+
 
       <Footer />
     </div>

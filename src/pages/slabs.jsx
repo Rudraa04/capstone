@@ -30,9 +30,6 @@ export default function Slabs() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
-  
-  
-
 
   const filterOptions = {
     marble: {
@@ -274,11 +271,8 @@ export default function Slabs() {
                 Products
               </button>
               {showProductDropdown && (
-                <div
-                  className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-4 gap-10
-    w-[1200px] max-w-screen-xl z-50 text-base font-sans transform translate-x-[100px]"
-                >
-                  {/* CATEGORY */}
+                <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-2 gap-8 w-[600px] z-50 text-base font-sans translate-x-[100px]">
+                  {" "}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
                       CATEGORY
@@ -300,65 +294,25 @@ export default function Slabs() {
                       </Link>
                     ))}
                   </div>
-
-                  {/* WALL TILES */}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      WALL TILES
+                      WALL / FLOOR TILES
                     </h3>
                     {[
-                      "Bathroom Wall Tiles",
-                      "Kitchen Wall Tiles",
-                      "Outdoor Wall Tiles",
-                      "Living Room Wall Tiles",
-                      "Bedroom Wall Tiles",
-                      "Wall Tiles for Commercial Spaces",
+                      { name: "Exterior Floor Tiles", to: "/exteriorfloor" },
+                      { name: "Exterior Wall Tiles", to: "/exteriorwall" },
+                      { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
+                      { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
+                      { name: "Interior Floor Tiles", to: "/interiorfloor" },
                     ].map((item) => (
-                      <span key={item} className="block text-gray-700 mb-3">
-                        {item}
-                      </span>
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
                     ))}
-                  </div>
-
-                  {/* FLOOR TILES */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      FLOOR TILES
-                    </h3>
-                    {[
-                      "Living Room Floor Tiles",
-                      "Outdoor Floor Tiles",
-                      "Bedroom Floor Tiles",
-                      "Kitchen Floor Tiles",
-                      "Bathroom Floor tiles",
-                      "Floor Tiles for Commercial Spaces",
-                    ].map((item) => (
-                      <span key={item} className="block text-gray-700 mb-3">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* TILE FINDER */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      TILE FINDER
-                    </h3>
-                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
-                      <option>Select Size</option>
-                      <option>12x12</option>
-                      <option>16x16</option>
-                      <option>24x24</option>
-                    </select>
-                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
-                      <option>Select Finish</option>
-                      <option>Glossy</option>
-                      <option>Matte</option>
-                      <option>Textured</option>
-                    </select>
-                    <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-                      Search
-                    </button>
                   </div>
                 </div>
               )}

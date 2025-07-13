@@ -21,21 +21,13 @@ export default function Sanitary() {
   const [query, setQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [products, setProducts] = useState([]);
+
   const dropdownRef = useRef();
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
-  const sanitaryImages = [slideImage, slide2Image];
-  const sanitaryData = [
-    {
-      name: "Premium Basin Set",
-      desc: "Stylish and sturdy basins for modern bathrooms.",
-    },
-    {
-      name: "Wall-Hung Toilet",
-      desc: "Elegant sanitary ware that saves space.",
-    },
-  ];
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -53,6 +45,30 @@ export default function Sanitary() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  useEffect(() => {
+  const fetchSanitaryProducts = async () => {
+    try {
+      const [sinksRes, bathtubsRes, toiletsRes] = await Promise.all([
+        fetch("http://localhost:5000/api/products/sinks"),
+        fetch("http://localhost:5000/api/products/bathtubs"),
+        fetch("http://localhost:5000/api/products/toilets"),
+      ]);
+
+      const [sinks, bathtubs, toilets] = await Promise.all([
+        sinksRes.json(),
+        bathtubsRes.json(),
+        toiletsRes.json(),
+      ]);
+
+      setProducts([...sinks, ...bathtubs, ...toilets]);
+    } catch (error) {
+      console.error("Error fetching sanitary products:", error);
+    }
+  };
+
+  fetchSanitaryProducts();
+}, []);
+
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -60,6 +76,19 @@ export default function Sanitary() {
     alert("Logged out!");
     navigate("/login");
   };
+const getCategory = (item) => {
+  const category = item?.Category?.toLowerCase() || "";
+  if (category.includes("accessory")) return "toilets";
+  if (category.includes("toilet")) return "toilets";
+  if (category.includes("urinal")) return "toilets";;
+  if (category.includes("bathtub")) return "bathtubs";
+  if (category.includes("sink")) return "sinks";
+  if (item?.FlushType) return "toilets";
+  if (item?.Length && item?.Width) return "bathtubs";
+  if (item?.Brand && item?.Size) return "sinks";
+
+  return "toilets";
+};
 
   return (
     <div className="bg-white text-gray-900 font-sans">
@@ -110,91 +139,51 @@ export default function Sanitary() {
                 Products
               </button>
               {showProductDropdown && (
-                <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-4 gap-10 w-[1200px] max-w-screen-xl z-50 text-base font-sans transform translate-x-[100px]">
-                  {/* CATEGORY */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      CATEGORY
-                    </h3>
-                    {[
-                      { name: "Marble", to: "/slabs?type=marble" },
-                      { name: "Granite", to: "/slabs?type=granite" },
-                      { name: "Tiles", to: "/ceramics?type=tiles" },
-                      { name: "Sinks", to: "/ceramics?type=sinks" },
-                      { name: "Bathtubs", to: "/ceramics?type=bathtub" },
-                      { name: "Toilets", to: "/ceramics?type=toilets" },
-                    ].map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.to}
-                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* WALL TILES */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      WALL TILES
-                    </h3>
-                    {[
-                      "Bathroom Wall Tiles",
-                      "Kitchen Wall Tiles",
-                      "Outdoor Wall Tiles",
-                      "Living Room Wall Tiles",
-                      "Bedroom Wall Tiles",
-                      "Wall Tiles for Commercial Spaces",
-                    ].map((item) => (
-                      <span key={item} className="block text-gray-700 mb-3">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* FLOOR TILES */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      FLOOR TILES
-                    </h3>
-                    {[
-                      "Living Room Floor Tiles",
-                      "Outdoor Floor Tiles",
-                      "Bedroom Floor Tiles",
-                      "Kitchen Floor Tiles",
-                      "Bathroom Floor tiles",
-                      "Floor Tiles for Commercial Spaces",
-                    ].map((item) => (
-                      <span key={item} className="block text-gray-700 mb-3">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* TILE FINDER */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                      TILE FINDER
-                    </h3>
-                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
-                      <option>Select Size</option>
-                      <option>12x12</option>
-                      <option>16x16</option>
-                      <option>24x24</option>
-                    </select>
-                    <select className="w-full mb-4 p-3 border border-gray-300 rounded text-gray-700 hover:border-blue-500 transition-colors">
-                      <option>Select Finish</option>
-                      <option>Glossy</option>
-                      <option>Matte</option>
-                      <option>Textured</option>
-                    </select>
-                    <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
-                      Search
-                    </button>
-                  </div>
-                </div>
-              )}
+                            <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-2 gap-8 w-[600px] z-50 text-base font-sans translate-x-[100px]">
+                              {" "}
+                              <div>
+                                <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                                  CATEGORY
+                                </h3>
+                                {[
+                                  { name: "Marble", to: "/slabs?type=marble" },
+                                  { name: "Granite", to: "/slabs?type=granite" },
+                                  { name: "Tiles", to: "/ceramics?type=tiles" },
+                                  { name: "Sinks", to: "/ceramics?type=sinks" },
+                                  { name: "Bathtubs", to: "/ceramics?type=bathtub" },
+                                  { name: "Toilets", to: "/ceramics?type=toilets" },
+                                ].map((item) => (
+                                  <Link
+                                    key={item.name}
+                                    to={item.to}
+                                    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                                  >
+                                    {item.name}
+                                  </Link>
+                                ))}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                                  WALL / FLOOR TILES
+                                </h3>
+                                {[
+                                  { name: "Exterior Floor Tiles", to: "/exteriorfloor" },
+                                  { name: "Exterior Wall Tiles", to: "/exteriorwall" },
+                                  { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
+                                  { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
+                                  { name: "Interior Floor Tiles", to: "/interiorfloor" },
+                                ].map((item) => (
+                                  <Link
+                                    key={item.name}
+                                    to={item.to}
+                                    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                                  >
+                                    {item.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          )}
             </div>
 
             {user ? (
@@ -312,35 +301,36 @@ export default function Sanitary() {
       </section>
 
       {/* Product Grid */}
-      <section className="px-4 sm:px-10 pb-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-          {sanitaryImages.map((img, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-            >
-              <div className="relative">
-                <img
-                  src={img}
-                  alt={sanitaryData[i].name}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-bold text-gray-800">
-                  {sanitaryData[i].name}
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {sanitaryData[i].desc}
-                </p>
-                <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
-                  View Details
-                </button>
-              </div>
-            </div>
-          ))}
+      <section className="max-w-[92rem] mx-auto px-4 md:px-6 py-12">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+    {products.map((item) => (
+      <div
+        key={item._id}
+        className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+      >
+        <div className="relative">
+          <img
+            src={item.Image}
+            alt={item.Name}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
         </div>
-      </section>
+        <div className="p-4">
+          <h3 className="text-lg font-bold text-gray-800">{item.Name}</h3>
+          <p className="text-sm text-gray-500 mt-1">{item.Description}</p>
+          <Link
+            to={`/product/${getCategory(item)}/${item._id}`}
+  state={{ fromTab: getCategory(item) }}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+          >
+            View Details
+          </Link>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
 
       <Footer />
     </div>
