@@ -1,6 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaMountain, FaPlus } from "react-icons/fa";
+import axios from "axios";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../firebase/firebase"
+import { deleteObject, ref as storageRef } from "firebase/storage";
+
 import {
   FiBox,
   FiPackage,
@@ -44,13 +49,8 @@ function Modal({ isOpen, onClose, children }) {
 
 export default function GraniteInventory() {
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("isAdminLoggedIn");
-    navigate("/login");
-  };
-
   const [showModal, setShowModal] = useState(false);
+  const [products, setProducts] = useState([]);
   const [formData, setFormData] = useState({
     ProductName: "",
     ProductDescription: "",
@@ -66,6 +66,11 @@ export default function GraniteInventory() {
     width: "",
   });
   const [image, setImage] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [colorFilter, setColorFilter] = useState("");
+  const [originFilter, setOriginFilter] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("");
 
   const brands = [
     "Regatta",
@@ -76,72 +81,160 @@ export default function GraniteInventory() {
   ];
   const usageTypes = ["Interior", "Exterior"];
 
+  // ✅ FETCH GRANITE PRODUCTS
+  useEffect(() => {
+    const fetchGranite = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/products/granite");
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Failed to fetch granite products:", err);
+      }
+    };
+    fetchGranite();
+  }, []);
+
   const handleChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) setImage(URL.createObjectURL(file));
+  const handleAddNew = () => {
+    setFormData({
+      ProductName: "",
+      ProductDescription: "",
+      Color: "",
+      Price: "",
+      Image: "",
+      Category: "Granite",
+      Quantity: "",
+      Manufacturer: "",
+      customBrand: "",
+      Origin: "",
+      length: "",
+      width: "",
+    });
+    setSelectedProduct(null);
+    setImage(null);
+    setShowModal(true);
   };
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [colorFilter, setColorFilter] = useState("");
-  const [originFilter, setOriginFilter] = useState("");
-  const [sizeFilter, setSizeFilter] = useState("");
-
-  const handleSubmit = (e) => {
+  // ✅ SUBMIT (ADD OR UPDATE)
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const Size = `${formData.length}x${formData.width}`;
-    const finalBrand =
-      formData.Manufacturer === "Other"
-        ? formData.customBrand
-        : formData.Manufacturer;
-
+    const finalBrand = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
     const graniteData = {
-      ProductName: formData.ProductName,
-      ProductDescription: formData.ProductDescription,
+      Name: formData.ProductName,
+      Description: formData.ProductDescription,
       Color: formData.Color,
-      Price: formData.Price,
-      Image: image || "",
+      Price: parseFloat(formData.Price),
+      Image: image || formData.Image || "",
       Category: formData.Category,
-      Quantity: formData.Quantity,
-      Manufacturer: finalBrand,
+      Stock_admin: parseInt(formData.Quantity),
       Origin: formData.Origin,
       Size: Size,
+      Manufacturer: finalBrand,
     };
 
-    if (selectedIndex !== null) {
-      const updated = [...products];
-      updated[selectedIndex] = graniteData;
-      setProducts(updated);
-      alert("Granite product updated successfully!");
-    } else {
-      setProducts([...products, graniteData]);
-      alert("Granite product added successfully!");
+    try {
+      if (selectedProduct) {
+        await axios.put(`http://localhost:5000/api/products/granite/${selectedProduct._id}`, graniteData);
+        alert("Product updated successfully!");
+      } else {
+        await axios.post("http://localhost:5000/api/products/granite", graniteData);
+        alert("Product added successfully!");
+      }
+      const res = await axios.get("http://localhost:5000/api/products/granite");
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Save Error:", err.response?.data || err.message);
+      alert("Error while saving product.");
+    } finally {
+      setFormData({ ProductName: "", ProductDescription: "", Color: "", Price: "", Image: "", Category: "Granite", Quantity: "", Manufacturer: "", customBrand: "", Origin: "", length: "", width: "" });
+      setSelectedProduct(null);
+      setShowModal(false);
+      setImage(null);
     }
-
-    setFormData({});
-    setImage(null);
-    setSelectedIndex(null);
-    setShowModal(false);
   };
 
-  const [products, setProducts] = useState([
-    {
-      ProductName: "Polished Black Granite",
-      ProductDescription: "High-quality black granite slab.",
-      Color: "Black",
-      Price: 900,
-      Category: "Granite",
-      Quantity: 20,
-      Manufacturer: "Regatta",
-      Origin: "India",
-      Size: "12x12",
-      Image: "",
-    },
-  ]);
+  // ✅ DELETE
+  const handleDelete = async (id) => {
+    const productToDelete = products.find(p => p._id === id);
+    if (!productToDelete) return;
 
-  const [selectedIndex, setSelectedIndex] = useState(null);
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+
+    try {
+      // Delete from Firebase Storage if image URL exists
+      if (
+        productToDelete.Image &&
+        productToDelete.Image.includes("firebasestorage.googleapis.com")
+      )
+      {
+  try {
+    const fullEncodedPath = productToDelete.Image.split("/o/")[1].split("?")[0];
+    const decodedPath = decodeURIComponent(fullEncodedPath);
+    const imgRef = storageRef(storage, decodedPath);
+    await deleteObject(imgRef);
+    console.log("Image deleted from Firebase Storage");
+  } catch (error) {
+    console.error("Failed to delete image from Firebase:", error);
+  }
+}
+
+      // Delete from MongoDB
+      await axios.delete(`http://localhost:5000/api/products/granite/${id}`);
+      setProducts((prev) => prev.filter((p) => p._id !== id));
+      alert("Product deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete product:", err);
+      alert("Error while deleting product.");
+    }
+  };
+
+
+   // ✅ IMAGE UPLOAD TO FIREBASE
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const fileRef = ref(storage, `Inventory/Granite/${file.name}-${Date.now()}`);
+      try {
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        setFormData((prev) => ({ ...prev, Image: url }));
+        setImage(url);
+      } catch (err) {
+        console.error("Firebase upload failed:", err);
+        alert("Image upload failed. Try again.");
+      }
+    }
+  };
+
+  const handleEditClick = (product) => {
+    const [length, width] = (product.Size || "").split("x");
+    setFormData({
+      ProductName: product.Name,
+      ProductDescription: product.Description,
+      Color: product.Color,
+      Price: product.Price,
+      Image: product.Image,
+      Category: product.Category,
+      Quantity: product.Stock_admin,
+      Manufacturer: product.Manufacturer,
+      customBrand: "",
+      Origin: product.Origin,
+      length: length?.trim() || "",
+      width: width?.trim() || "",
+    });
+    setSelectedProduct(product);
+    setImage(product.Image || null);
+    setShowModal(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAdminLoggedIn");
+    navigate("/login");
+  };
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -327,15 +420,15 @@ export default function GraniteInventory() {
                 className="px-3 py-2 border rounded-md text-sm"
               >
                 <option value="">All Sizes</option>
-                <option value='108"x42"'>108"x42"</option>
-                <option value='110"x43"'>110"x43"</option>
-                <option value='104"X40"'>104"X40"</option>
-                <option value='102"x38"'>102"x38"</option>
-                <option value='110"x44"'>110"x44"</option>
-                <option value='110"x42"'>110"x42"</option>
-                <option value='108"x40"'>108"x40"</option>
-                <option value='104"x38"'>104"x38"</option>
-                <option value='110"x40"'>110"x40"</option>
+                <option value='108x42'>108"x42"</option>
+                <option value='110x43'>110"x43"</option>
+                <option value='104X40'>104"X40"</option>
+                <option value='102x38'>102"x38"</option>
+                <option value='110x44'>110"x44"</option>
+                <option value='110x42'>110"x42"</option>
+                <option value='108x40'>108"x40"</option>
+                <option value='104x38'>104"x38"</option>
+                <option value='110x40'>110"x40"</option>
               </select>
             </div>
 
@@ -346,6 +439,7 @@ export default function GraniteInventory() {
                   setSearchTerm("");
                   setColorFilter("");
                   setOriginFilter("");
+                  setSizeFilter("");
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
               >
@@ -382,39 +476,39 @@ export default function GraniteInventory() {
               <tbody>
                 {products
                   .filter(
-                    (item) =>
-                      item.ProductName.toLowerCase().includes(
-                        searchTerm.toLowerCase()
-                      ) &&
-                      (colorFilter === "" || item.Color === colorFilter) &&
-                      (originFilter === "" || item.Origin === originFilter) &&
-                      (sizeFilter === "" || item.Size === sizeFilter)
-                  )
+                    (item) =>{
+                      const nameMatch = (item?.Name?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+                      const colorMatch = colorFilter === "" || item.Color === colorFilter;
+                      const originMatch = originFilter === "" || item.Origin === originFilter;
+                      const sizeMatch = sizeFilter === "" || item.Size?.trim() === sizeFilter?.trim();
+                      return nameMatch && colorMatch && originMatch && sizeMatch;
+                    })
+
                   .map((item, index) => (
                     <tr key={index} className="border-b">
-                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Name}</td>
                       <td className="px-6 py-4">{item.Category}</td>
                       <td className="px-6 py-4">${item.Price}</td>
-                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">{item.Stock_admin}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
                               setFormData({
-                                ProductName: item.ProductName,
-                                ProductDescription: item.ProductDescription,
+                                ProductName: item.Name,
+                                ProductDescription: item.Description,
                                 Color: item.Color,
                                 Price: item.Price,
-                                Category: item.Category,
-                                Quantity: item.Quantity,
+                                Category: item.Category || "Granite",
+                                Quantity: item.Stock_admin,
                                 Manufacturer: item.Manufacturer,
                                 Origin: item.Origin,
-                                length: item.Size?.split("x")[0] || "",
-                                width: item.Size?.split("x")[1] || "",
+                                length: length,
+                                width: width,
                                 customBrand: "",
                               });
                               setImage(item.Image || null);
-                              setSelectedIndex(index);
+                              setSelectedProduct(item);
                               setShowModal(true);
                             }}
                             className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
@@ -422,7 +516,9 @@ export default function GraniteInventory() {
                             Edit
                           </button>
 
-                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          <button 
+                          onClick={() => handleDelete(item._id)}
+                          className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
                             Delete
                           </button>
                         </div>
@@ -593,7 +689,7 @@ export default function GraniteInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                {selectedIndex !== null ? "Update Product" : "Save Product"}
+                {selectedProduct ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>

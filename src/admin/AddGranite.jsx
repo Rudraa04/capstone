@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../firebase/firebase";
 import {
   FiBox,
   FiPackage,
@@ -27,7 +30,8 @@ export default function AddGranite() {
     usageType: "",
   });
 
-  const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const brands = ["Regatta", "Classic Stone", "Granite India", "Imported"];
   const usageTypes = ["Interior", "Exterior"];
@@ -42,7 +46,8 @@ export default function AddGranite() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(URL.createObjectURL(file));
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -51,14 +56,49 @@ export default function AddGranite() {
     navigate("/login");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const size = `${formData.length}x${formData.width}`;
-    const graniteData = { ...formData, size };
-    console.log("Submitted:", graniteData);
-    alert("Granite product added successfully!");
-    navigate(-1);
+    const size = `${formData.length.trim()}x${formData.width.trim()}`;
+
+    let imageUrl = "";
+    if (imageFile) {
+      try {
+        const storageRef = ref(
+          storage,
+          `Inventory/Granite/${Date.now()}_${imageFile.name}`
+        );
+        const snapshot = await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        alert("Failed to upload image.");
+        return;
+      }
+    }
+
+    const graniteData = {
+      Name: formData.name,
+      Description: formData.description,
+      Color: formData.color,
+      Price: parseFloat(formData.price),
+      Image: imageUrl,
+      Category: "Granite",
+      Stock_admin: parseInt(formData.quantity),
+      Origin: formData.brand,
+      Size: size,
+      UsageType: formData.usageType,
+    };
+
+    try {
+      await axios.post("http://localhost:5000/granite", graniteData);
+      alert("Granite product added successfully!");
+      navigate(-1);
+    } catch (error) {
+      console.error(error);
+      alert("Error adding granite product.");
+    }
   };
+
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -158,10 +198,10 @@ export default function AddGranite() {
           <div>
             <label className="block font-semibold mb-1">Upload Image</label>
             <input type="file" accept="image/*" onChange={handleImageChange} className="block" />
-            {image && (
-              <div className="mt-4 w-32 h-32 border rounded overflow-hidden">
-                <img src={image} alt="Preview" className="w-full h-full object-cover" />
-              </div>
+            {imagePreview && (
+                <div className="mt-4 w-32 h-32 border rounded overflow-hidden">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                </div>
             )}
           </div>
 
