@@ -165,7 +165,7 @@ export default function AddProduct() {
               {/* Price & Quantity */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold mb-1">Price ($)</label>
+                  <label className="block font-semibold mb-1">Price (₹)</label>
                   <input
                     type="number"
                     name="price"

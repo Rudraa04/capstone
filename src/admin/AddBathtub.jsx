@@ -109,7 +109,7 @@ export default function AddBathtub() {
               <input type="text" name="color" value={formData.color} onChange={handleChange} className="w-full p-2 border rounded" required />
             </div>
             <div>
-              <label className="block font-semibold mb-1">Price ($)</label>
+              <label className="block font-semibold mb-1">Price (₹)</label>
               <input type="number" name="price" value={formData.price} onChange={handleChange} className="w-full p-2 border rounded" required />
             </div>
           </div>

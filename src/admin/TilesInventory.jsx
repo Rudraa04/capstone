@@ -411,7 +411,7 @@ export default function TilesInventory() {
                     <tr key={index} className="border-b">
                       <td className="px-6 py-4">{item.ProductName}</td>
                       <td className="px-6 py-4">{item.Category}</td>
-                      <td className="px-6 py-4">${item.Price}</td>
+                      <td className="px-6 py-4">₹{item.Price}</td>
                       <td className="px-6 py-4">{item.Quantity}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
@@ -527,7 +527,7 @@ export default function TilesInventory() {
               </div>
 
               <div>
-                <label className="block font-medium mb-1">Price ($)</label>
+                <label className="block font-medium mb-1">Price (₹)</label>
                 <input
                   type="number"
                   name="Price"

@@ -513,7 +513,7 @@ export default function BathtubInventory() {
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1">Price ($)</label>
+                <label className="block font-medium mb-1">Price (₹)</label>
                 <input
                   type="number"
                   name="Price"

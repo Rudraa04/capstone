@@ -16,7 +16,13 @@ export default function Header() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
+  
+const handleSearch = () => {
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed) return;
 
+  navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+};
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -99,87 +105,67 @@ export default function Header() {
         </Link>
 
         <div className="relative w-full max-w-md">
-          <div className="flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={query}
-              onChange={(e) => {
-                const value = e.target.value;
-                setQuery(value);
+      <div className="flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full">
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={query}
+          onChange={(e) => {
+            const value = e.target.value;
+            setQuery(value);
 
-                let filtered = allProducts;
+            if (value.length > 1) {
+              const filtered = allProducts.filter((product) =>
+                product.Name?.toLowerCase().includes(value.toLowerCase())
+              );
+              setSuggestions(filtered);
+            } else {
+              setSuggestions([]);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSearch();
+          }}
+          className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
+        />
 
-                // ✅ Apply category filter if selected
-                if (selectedCategory !== "All") {
-                  filtered = filtered.filter(
-                    (product) => product.category === selectedCategory
-                  );
-                }
+        <button
+          onClick={handleSearch}
+          className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+        >
+          <FaSearch size={18} />
+        </button>
+      </div>
 
-                if (value.length > 1) {
-                  filtered = filtered.filter((product) =>
-                    product.Name?.toLowerCase().includes(value.toLowerCase())
-                  );
-                  setSuggestions(filtered);
-                } else {
-                  setSuggestions([]);
-                }
+      {/* 🔍 Search Suggestions with Image */}
+      {suggestions.length > 0 && (
+        <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
+          {suggestions.map((product, index) => (
+            <li
+              key={index}
+              className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                navigate(
+                  `/product/${product.category.toLowerCase()}/${product._id}`
+                );
+                setSuggestions([]);
+                setQuery("");
               }}
-              className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
-            />
-
-            {/* ✅ Category Dropdown */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="border border-gray-300 rounded ml-2 text-gray-700 p-1 text-sm"
             >
-              <option value="All">All Categories</option>
-              <option value="Tiles">Tiles</option>
-              <option value="Sinks">Sinks</option>
-              <option value="Granite">Granite</option>
-              <option value="Marble">Marble</option>
-              <option value="Toilets">Toilets</option>
-            </select>
-
-            <button className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center">
-              <FaSearch size={18} />
-            </button>
-          </div>
-
-          {/* ✅ Search Suggestions List */}
-          {suggestions.length > 0 && (
-            <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
-              {suggestions.map((product, index) => (
-                <li
-                  key={index}
-                  className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    navigate(
-                      `/product/${product.category.toLowerCase()}/${
-                        product._id
-                      }`
-                    );
-                    setSuggestions([]);
-                    setQuery("");
-                  }}
-                >
-                  <img
-                    src={product.Image || "https://via.placeholder.com/40x40"}
-                    alt={product.Name}
-                    className="w-10 h-10 object-cover rounded border"
-                  />
-                  <div>
-                    <p className="text-sm font-semibold">{product.Name}</p>
-                    <p className="text-xs text-gray-500">{product.category}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
+              <img
+                src={product.Image || "https://via.placeholder.com/40x40"}
+                alt={product.Name}
+                className="w-10 h-10 object-cover rounded border"
+              />
+              <div>
+                <p className="text-sm font-semibold">{product.Name}</p>
+                <p className="text-xs text-gray-500">{product.category}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
         <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
           <Link to="/" className={`uppercase ${underlineHover}`}>
             Home

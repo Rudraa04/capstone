@@ -202,7 +202,7 @@ export default function AddMarble() {
               />
             </div>
             <div>
-              <label className="block font-semibold">Price ($)</label>
+              <label className="block font-semibold">Price (₹)</label>
               <input
                 type="number"
                 name="price"
