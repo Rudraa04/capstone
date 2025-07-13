@@ -275,29 +275,29 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     const cartItem = {
-  id: Date.now(), // or a UUID
-  ...product,
-  size: customSize,
-  quantity,
-  totalTiles,
-  totalPrice,
-};
+      id: Date.now(), // or a UUID
+      ...product,
+      size: customSize,
+      quantity,
+      totalTiles,
+      totalPrice,
+    };
 
     const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
     const existingItemIndex = existingCart.findIndex(
-  (item) => item.name === cartItem.name && item.size === cartItem.size
-);
+      (item) => item.name === cartItem.name && item.size === cartItem.size
+    );
 
-if (existingItemIndex !== -1) {
-  existingCart[existingItemIndex].quantity += cartItem.quantity;
-  existingCart[existingItemIndex].totalTiles += cartItem.totalTiles;
-  existingCart[existingItemIndex].totalPrice += cartItem.totalPrice;
-} else {
-  existingCart.push(cartItem);
-}
+    if (existingItemIndex !== -1) {
+      existingCart[existingItemIndex].quantity += cartItem.quantity;
+      existingCart[existingItemIndex].totalTiles += cartItem.totalTiles;
+      existingCart[existingItemIndex].totalPrice += cartItem.totalPrice;
+    } else {
+      existingCart.push(cartItem);
+    }
 
-localStorage.setItem("cart", JSON.stringify(existingCart));
-alert("✅ Added to cart!");
+    localStorage.setItem("cart", JSON.stringify(existingCart));
+    alert("✅ Added to cart!");
   };
   if (
     (type === "tiles" && !tileData) ||
@@ -555,20 +555,31 @@ alert("✅ Added to cart!");
       <main className="max-w-7xl mx-auto px-4 sm:px-8 py-12 bg-white text-gray-900">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
           {/* Image with Zoom */}
-          <div className="relative overflow-hidden border rounded-xl shadow-sm">
+          <div
+            className={`relative rounded-2xl overflow-hidden shadow-lg ${
+              type === "marble"
+                ? "border border-gray-200 bg-white p-1 shadow-[0_4px_20px_rgba(218,165,32,0.3)]"
+                : "border"
+            }`}
+          >
             <img
               src={product.image}
               alt={product.name}
-              className="w-full h-[420px] object-contain transition-transform duration-300 hover:scale-110"
+              className="w-full h-[420px] object-cover rounded-xl transition-transform duration-300 hover:scale-105"
             />
           </div>
 
           {/* Product Details */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1
+                className={`text-3xl font-bold ${
+                  type === "marble" ? "text-gray-800 italic" : "text-gray-900"
+                }`}
+              >
                 {product.name}
               </h1>
+
               <button
                 onClick={() => alert("📷 Coming Soon: Visualize in Room!")}
                 className="text-sm px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
@@ -630,120 +641,191 @@ alert("✅ Added to cart!");
             </div>
             <p className="text-base text-gray-600">{product.description}</p>
             {type === "tiles" && (
-              <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                <li>
-                  <strong>Size:</strong> {product.size || "N/A"}
-                </li>
-                <li>
-                  <strong>Sub Category:</strong> {product.subcategory || "N/A"}
-                </li>
-                <li>
-                  <strong>Manufacturer:</strong> {product.manufacturer || "N/A"}
-                </li>
-                <li>
-                  <strong>Color:</strong> {product.color || "N/A"}
-                </li>
-                <li>
-                  <strong>Stock:</strong> {product.stock || "N/A"}
-                </li>
-                <li>
-                  <strong>Price:</strong> ₹{product.price}
-                </li>
-              </ul>
+              <div
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                style={{ animationDuration: "0.8s" }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold">
+                    Ceramic Tile
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    (Category: Tiles)
+                  </span>
+                </div>
+                <ul className="text-base text-gray-800 leading-relaxed space-y-2">
+                  <li>
+                    <strong>📏 Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>🧱 Sub Category:</strong> {product.subcategory}
+                  </li>
+                  <li>
+                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
+                  </li>
+                  <li>
+                    <strong>🎨 Color:</strong> {product.color}
+                  </li>
+                  <li>
+                    <strong>📦 Stock:</strong> {product.stock}
+                  </li>
+                  <li>
+                    <strong>💰 Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
+                </ul>
+              </div>
             )}
 
             {type === "sinks" && (
-              <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                <li>
-                  <strong>Size:</strong> {product.size}
-                </li>
-                <li>
-                  <strong>Sub Category:</strong> {product.subcategory}
-                </li>
-                <li>
-                  <strong>Color:</strong> {product.color}
-                </li>
-                <li>
-                  <strong>Manufacturer:</strong> {product.manufacturer}
-                </li>
-                <li>
-                  <strong>Stock:</strong> {product.stock}
-                </li>
-                <li>
-                  <strong>Price:</strong> ₹{product.price}
-                </li>
-              </ul>
+              <div
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                style={{ animationDuration: "0.8s" }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-cyan-100 text-cyan-800 px-3 py-1 rounded-full font-semibold">
+                    Ceramic Sink
+                  </span>
+                  <span className="text-xs text-gray-500">(Sanitary Ware)</span>
+                </div>
+                <ul className="text-base text-gray-800 leading-relaxed space-y-2">
+                  <li>
+                    <strong>📏 Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>🏷️ Sub Category:</strong> {product.subcategory}
+                  </li>
+                  <li>
+                    <strong>🏢 Brand:</strong> {product.brand}
+                  </li>
+                  <li>
+                    <strong>🎨 Color:</strong> {product.color}
+                  </li>
+                  <li>
+                    <strong>📦 Stock:</strong> {product.stock}
+                  </li>
+                  <li>
+                    <strong>💰 Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
+                </ul>
+              </div>
             )}
 
             {type === "toilets" && (
-              <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                <li>
-                  <strong>Size:</strong> {product.size || "N/A"}
-                </li>
-                <li>
-                  <strong>Type:</strong> {product.type || "N/A"}
-                </li>
-                <li>
-                  <strong>Color:</strong> {product.color || "N/A"}
-                </li>
-                <li>
-                  <strong>Manufacturer:</strong> {product.manufacturer || "N/A"}
-                </li>
-                <li>
-                  <strong>Flush Type:</strong> {product.flush || "N/A"}
-                </li>
-                <li>
-                  <strong>Origin:</strong> {product.origin || "N/A"}
-                </li>
-                <li>
-                  <strong>Price:</strong> ₹{product.price}
-                </li>
-              </ul>
+              <div
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                style={{ animationDuration: "0.8s" }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-pink-100 text-pink-800 px-3 py-1 rounded-full font-semibold">
+                    Modern Toilet
+                  </span>
+                  <span className="text-xs text-gray-500">(Sanitary Ware)</span>
+                </div>
+                <ul className="text-base text-gray-800 leading-relaxed space-y-2">
+                  <li>
+                    <strong>🚽 Type:</strong> {product.type || "N/A"}
+                  </li>
+                  <li>
+                    <strong>📏 Size:</strong> {product.size || "N/A"}
+                  </li>
+                  <li>
+                    <strong>🎨 Color:</strong> {product.color || "N/A"}
+                  </li>
+                  <li>
+                    <strong>🏢 Manufacturer:</strong>{" "}
+                    {product.manufacturer || "N/A"}
+                  </li>
+                  <li>
+                    <strong>🚿 Flush Type:</strong> {product.flush || "N/A"}
+                  </li>
+                  <li>
+                    <strong>🌍 Origin:</strong> {product.origin || "N/A"}
+                  </li>
+                  <li>
+                    <strong>💰 Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
+                </ul>
+              </div>
             )}
 
             {type === "marble" && (
-              <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                {" "}
-                <li>
-                  <strong>Size:</strong> {product.size}
-                </li>{" "}
-                <li>
-                  <strong>Color:</strong> {product.color}
-                </li>{" "}
-                <li>
-                  <strong>Origin:</strong> {product.origin}
-                </li>{" "}
-                <li>
-                  <strong>Stock:</strong> {product.stock}
-                </li>{" "}
-                <li>
-                  <strong>Price:</strong> ₹{product.price}
-                </li>{" "}
-              </ul>
+              <div
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                style={{ animationDuration: "0.8s" }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-semibold">
+                    Premium Marble
+                  </span>
+                  <span className="text-xs text-gray-500">(Natural Stone)</span>
+                </div>
+                <ul className="text-base text-gray-800 leading-relaxed space-y-2">
+                  <li>
+                    <strong>🪨 Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>🎨 Color:</strong> {product.color}
+                  </li>
+                  <li>
+                    <strong>🌍 Origin:</strong> {product.origin}
+                  </li>
+                  <li>
+                    <strong>📦 Stock:</strong> {product.stock}
+                  </li>
+                  <li>
+                    <strong>💰 Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
+                </ul>
+              </div>
             )}
 
             {type === "granite" && (
-              <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                {" "}
-                <li>
-                  <strong>Size:</strong> {product.size}
-                </li>{" "}
-                <li>
-                  <strong>Color:</strong> {product.color}
-                </li>{" "}
-                <li>
-                  <strong>Manufacturer:</strong> {product.manufacturer}
-                </li>{" "}
-                <li>
-                  <strong>Origin:</strong> {product.origin}
-                </li>{" "}
-                <li>
-                  <strong>Stock:</strong> {product.stock}
-                </li>{" "}
-                <li>
-                  <strong>Price:</strong> ₹{product.price}
-                </li>{" "}
-              </ul>
+              <div
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                style={{ animationDuration: "0.8s" }}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-semibold">
+                    Premium Granite
+                  </span>
+                  <span className="text-xs text-gray-500">(Natural Stone)</span>
+                </div>
+                <ul className="text-base text-gray-800 leading-relaxed space-y-2">
+                  <li>
+                    <strong>🪨 Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>🎨 Color:</strong> {product.color}
+                  </li>
+                  <li>
+                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
+                  </li>
+                  <li>
+                    <strong>🌍 Origin:</strong> {product.origin}
+                  </li>
+                  <li>
+                    <strong>📦 Stock:</strong> {product.stock}
+                  </li>
+                  <li>
+                    <strong>💰 Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
+                </ul>
+              </div>
             )}
 
             {(type === "tiles" ||
@@ -752,55 +834,60 @@ alert("✅ Added to cart!");
               type === "marble" ||
               type === "granite") && (
               <>
-                <div className="space-y-2 mt-4">
-                  <label className="block text-sm font-semibold text-gray-800">
-                    Enter Custom Size (in inches, e.g., 24x36)
-                  </label>
-                  <input
-                    type="text"
-                    value={customSize}
-                    onChange={(e) => setCustomSize(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800">
-                    Quantity
+                {/* Input Quantity */}
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    📦 Quantity
                   </label>
                   <input
                     type="number"
                     min="1"
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                    className="w-32 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. 2"
                   />
                 </div>
 
-                <div className="flex justify-between text-sm text-gray-700 pt-2">
-                  <span>Total Units:</span>
-                  <span className="font-semibold text-green-700">
-                    {totalTiles}
-                  </span>
+                {/* Pricing Summary Section */}
+                <div className="mt-6 grid gap-4">
+                  {/* Total Units */}
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                      🧮 Total Units
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">
+                      {totalTiles}
+                    </span>
+                  </div>
+
+                  {/* Price Per Unit */}
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                      💵 Price Per Unit
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">
+                      ₹{product.price}
+                    </span>
+                  </div>
+
+                  {/* Final Price */}
+                  <div className="flex justify-between items-center bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-300 rounded-xl px-5 py-4 shadow-md">
+                    <span className="text-base font-semibold text-gray-800">
+                      Total Price
+                    </span>
+                    <span className="text-blue-700 text-lg font-bold">
+                      ₹{totalPrice}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex justify-between text-sm text-gray-700 pt-2">
-                  <span>Price Per Item:</span>
-                  <span className="font-semibold text-green-700">
-                    ₹{product.price || pricePerTile}
-                  </span>
-                </div>
-
-                <div className="flex justify-between text-lg font-semibold mt-2">
-                  <span>Total Price:</span>
-                  <span className="text-blue-700">₹{totalPrice}</span>
-                </div>
-
+                {/* Add to Cart Button */}
                 <button
                   onClick={handleAddToCart}
-                  className="w-full py-3 px-6 bg-blue-600 text-white text-base rounded-lg font-semibold shadow hover:bg-blue-700 transition"
+                  className="mt-6 w-full py-3 px-6 bg-blue-600 text-white text-base rounded-xl font-semibold shadow-md hover:bg-blue-700 transition"
                 >
-                  Add to Cart
+                  🛒 Add to Cart
                 </button>
               </>
             )}
