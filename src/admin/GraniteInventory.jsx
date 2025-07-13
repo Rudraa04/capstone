@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { FaMountain, FaPlus } from "react-icons/fa";
 import axios from "axios";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../firebase/firebase"
+import { storage } from "../firebase/firebase";
 import { deleteObject, ref as storageRef } from "firebase/storage";
 
 import {
@@ -494,6 +494,7 @@ export default function GraniteInventory() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
+                              const [length, width] = String(item.Size || "").split("x");
                               setFormData({
                                 ProductName: item.Name,
                                 ProductDescription: item.Description,
@@ -503,8 +504,8 @@ export default function GraniteInventory() {
                                 Quantity: item.Stock_admin,
                                 Manufacturer: item.Manufacturer,
                                 Origin: item.Origin,
-                                length: length,
-                                width: width,
+                                length: length?.trim() || "",
+                                width: width?.trim() || "",
                                 customBrand: "",
                               });
                               setImage(item.Image || null);

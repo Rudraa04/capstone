@@ -72,7 +72,6 @@ export default function MarbleInventory() {
   });
 
   const [image, setImage] = useState(null);
-
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [colorFilter, setColorFilter] = useState("");
@@ -100,7 +99,21 @@ export default function MarbleInventory() {
   }, []);
 
   const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const fileRef = ref(storage, `Inventory/Marble/${file.name}-${Date.now()}`);
+      try {
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        setFormData((prev) => ({ ...prev, Image: url }));
+        setImage(url);
+      } catch (err) {
+        console.error("Firebase upload failed:", err);
+        alert("Image upload failed. Try again.");
+      }
+    }
+  };
   // ✅ Add OR Edit Product (POST or PUT)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -137,18 +150,6 @@ export default function MarbleInventory() {
       setShowModal(false);
       setImage(null);
     }
-    let uploadedImageURL = formData.Image || "";
-    if (image instanceof File) {
-      const fileRef = ref(storage, `Inventory/Marble/${image.name}-${Date.now()}`);
-      try {
-        const snapshot = await uploadBytes(fileRef, image);
-        uploadedImageURL = await getDownloadURL(snapshot.ref);
-      } catch (err) {
-        console.error("Firebase upload failed:", err);
-        alert("Image upload failed. Try again.");
-        return;
-      }
-    }
   };
 
 
@@ -163,14 +164,14 @@ export default function MarbleInventory() {
     try {
       // Delete from Firebase Storage if image URL exists
       if (productToDelete.Image && productToDelete.Image.includes("firebasestorage.googleapis.com")) {
-        const imagePath = decodeURIComponent(
-          productToDelete.Image
-            .split("/o/")[1]
-            .split("?")[0]
-            .replace("%2F", "/")
-        );
-        const imgRef = storageRef(storage, imagePath);
-        await deleteObject(imgRef);
+        try {
+          const fullEncodedPath = productToDelete.Image.split("/o/")[1].split("?")[0];
+          const decodedPath = decodeURIComponent(fullEncodedPath);
+          const imgRef = storageRef(storage, decodedPath);
+          await deleteObject(imgRef);
+        } catch (error) {
+          console.error("Failed to delete image from Firebase:", error);
+        }
       }
 
       // Delete from MongoDB
@@ -221,22 +222,6 @@ export default function MarbleInventory() {
     setSelectedProduct(null);
     setImage(null);
     setShowModal(true);
-  };
-
-  const handleImageChange = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const fileRef = ref(storage, `Inventory/Marble/${file.name}-${Date.now()}`);
-      try {
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
-        setFormData((prev) => ({ ...prev, Image: url }));
-        setImage(url); // this replaces blob with Firebase URL
-      } catch (err) {
-        console.error("Firebase upload failed:", err);
-        alert("Image upload failed. Try again.");
-      }
-    }
   };
 
   return (
