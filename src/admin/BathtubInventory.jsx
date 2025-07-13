@@ -399,7 +399,7 @@ export default function BathtubInventory() {
                     <tr key={index} className="border-b">
                       <td className="px-6 py-4">{item.ProductName}</td>
                       <td className="px-6 py-4">{item.Category}</td>
-                      <td className="px-6 py-4">${item.Price}</td>
+                      <td className="px-6 py-4">₹{item.Price}</td>
                       <td className="px-6 py-4">{item.Quantity}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
