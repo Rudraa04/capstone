@@ -52,12 +52,10 @@ const AllProducts = () => {
   }, []);
 
   useEffect(() => {
-  const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-  const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-  setCartCount(totalCount);
-}, []);
-
-
+    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalCount);
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);

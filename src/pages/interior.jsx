@@ -26,18 +26,16 @@ export default function Interior() {
 
   const [cartCount, setCartCount] = useState(0);
 
-
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
   useEffect(() => {
-  const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-  const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-  setCartCount(totalCount);
-}, []);
+    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalCount);
+  }, []);
 
-  
-    useEffect(() => {
+  useEffect(() => {
     const fetchAllProducts = async () => {
       try {
         const endpoints = ["tiles", "sinks", "granite", "marble", "toilets"];
@@ -116,7 +114,7 @@ export default function Interior() {
         setTiles(filtered);
       })
       .catch((err) => console.error("Error fetching tiles:", err));
-  }, []);
+  }, [selectedSubCategory]);
 
   return (
     <div className="bg-white text-gray-900 font-sans">
@@ -125,7 +123,7 @@ export default function Interior() {
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
               className="text-blue-700 hover:text-blue-900"
             >
               <FaArrowLeft size={18} />
@@ -139,71 +137,71 @@ export default function Interior() {
           </div>
 
           <div className="relative w-full max-w-md">
-                      <div className="flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full">
-                        <input
-                          type="text"
-                          placeholder="Search products..."
-                          value={query}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setQuery(value);
-          
-                            if (value.length > 1) {
-                              const filtered = allProducts.filter((product) =>
-                                product.Name?.toLowerCase().includes(value.toLowerCase())
-                              );
-                              setSuggestions(filtered);
-                            } else {
-                              setSuggestions([]);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSearch();
-                          }}
-                          className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
-                        />
-          
-                        <button
-                          onClick={handleSearch}
-                          className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
-                        >
-                          <FaSearch size={18} />
-                        </button>
-                      </div>
-          
-                      {/* 🔍 Search Suggestions with Image */}
-                      {suggestions.length > 0 && (
-                        <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
-                          {suggestions.map((product, index) => (
-                            <li
-                              key={index}
-                              className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => {
-                                navigate(
-                                  `/product/${product.category.toLowerCase()}/${
-                                    product._id
-                                  }`
-                                );
-                                setSuggestions([]);
-                                setQuery("");
-                              }}
-                            >
-                              <img
-                                src={product.Image || "https://via.placeholder.com/40x40"}
-                                alt={product.Name}
-                                className="w-10 h-10 object-cover rounded border"
-                              />
-                              <div>
-                                <p className="text-sm font-semibold">{product.Name}</p>
-                                <p className="text-xs text-gray-500">
-                                  {product.category}
-                                </p>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+            <div className="flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={query}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setQuery(value);
+
+                  if (value.length > 1) {
+                    const filtered = allProducts.filter((product) =>
+                      product.Name?.toLowerCase().includes(value.toLowerCase())
+                    );
+                    setSuggestions(filtered);
+                  } else {
+                    setSuggestions([]);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+                className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
+              />
+
+              <button
+                onClick={handleSearch}
+                className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+              >
+                <FaSearch size={18} />
+              </button>
+            </div>
+
+            {/* 🔍 Search Suggestions with Image */}
+            {suggestions.length > 0 && (
+              <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
+                {suggestions.map((product, index) => (
+                  <li
+                    key={index}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      navigate(
+                        `/product/${product.category.toLowerCase()}/${
+                          product._id
+                        }`
+                      );
+                      setSuggestions([]);
+                      setQuery("");
+                    }}
+                  >
+                    <img
+                      src={product.Image || "https://via.placeholder.com/40x40"}
+                      alt={product.Name}
+                      className="w-10 h-10 object-cover rounded border"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold">{product.Name}</p>
+                      <p className="text-xs text-gray-500">
+                        {product.category}
+                      </p>
                     </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
             <Link to="/" className={`uppercase ${underlineHover}`}>
@@ -242,40 +240,40 @@ export default function Interior() {
                     ))}
                   </div>
                   <div>
-                                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                                      WALL / FLOOR TILES
-                                    </h3>
-                                    {[
-                                      {
-                                        name: "Exterior Floor Tiles",
-                                        to: "/exterior?sub=Exterior Floor Tiles",
-                                      },
-                                      {
-                                        name: "Exterior Wall Tiles",
-                                        to: "/exterior?sub=Exterior Wall Tiles",
-                                      },
-                                      {
-                                        name: "Kitchen Wall Tiles",
-                                        to: "/interior?sub=Kitchen Wall Tiles",
-                                      },
-                                      {
-                                        name: "Bathroom Wall Tiles",
-                                        to: "/interior?sub=Bathroom Wall Tiles",
-                                      },
-                                      {
-                                        name: "Interior Floor Tiles",
-                                        to: "/interior?sub=Interior Floor Tiles",
-                                      },
-                                    ].map((item) => (
-                                      <Link
-                                        key={item.name}
-                                        to={item.to}
-                                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                                      >
-                                        {item.name}
-                                      </Link>
-                                    ))}
-                                  </div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      WALL / FLOOR TILES
+                    </h3>
+                    {[
+                      {
+                        name: "Exterior Floor Tiles",
+                        to: "/exterior?sub=Exterior Floor Tiles",
+                      },
+                      {
+                        name: "Exterior Wall Tiles",
+                        to: "/exterior?sub=Exterior Wall Tiles",
+                      },
+                      {
+                        name: "Kitchen Wall Tiles",
+                        to: "/interior?sub=Kitchen Wall Tiles",
+                      },
+                      {
+                        name: "Bathroom Wall Tiles",
+                        to: "/interior?sub=Bathroom Wall Tiles",
+                      },
+                      {
+                        name: "Interior Floor Tiles",
+                        to: "/interior?sub=Interior Floor Tiles",
+                      },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -283,15 +281,17 @@ export default function Interior() {
             {user ? (
               <>
                 <Link
-  to="/cart"
-  className={`uppercase ${underlineHover} flex items-center gap-1`}
->
-  <FaShoppingCart />
-  Cart
-  {cartCount > 0 && (
-    <span className="ml-1 font-bold text-blue-600">({cartCount})</span>
-  )}
-</Link>
+                  to="/cart"
+                  className={`uppercase ${underlineHover} flex items-center gap-1`}
+                >
+                  <FaShoppingCart />
+                  Cart
+                  {cartCount > 0 && (
+                    <span className="ml-1 font-bold text-blue-600">
+                      ({cartCount})
+                    </span>
+                  )}
+                </Link>
 
                 <Link
                   to="/profile"
