@@ -30,43 +30,39 @@ export default function Cart() {
   }, []);
 
   const [cartItems, setCartItems] = useState(() => {
-  const storedCart = localStorage.getItem("cart");
-  return storedCart ? JSON.parse(storedCart) : [];
-});
-
+    const storedCart = localStorage.getItem("cart");
+    return storedCart ? JSON.parse(storedCart) : [];
+  });
 
   const [discount, setDiscount] = useState(0);
 
   const handleQuantityChange = (id, newQuantity) => {
-  const updated = cartItems.map((item) =>
-    item.name === id ? { ...item, quantity: newQuantity } : item
-  );
-  setCartItems(updated);
-  localStorage.setItem("cart", JSON.stringify(updated));
-};
-
+    const updated = cartItems.map((item) =>
+      item.name === id ? { ...item, quantity: newQuantity } : item
+    );
+    setCartItems(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
+  };
 
   const handleRemoveItem = (id) => {
-  const filtered = cartItems.filter((item) => item.name !== id);
-  setCartItems(filtered);
-  localStorage.setItem("cart", JSON.stringify(filtered));
-};
-
+    const filtered = cartItems.filter((item) => item.name !== id);
+    setCartItems(filtered);
+    localStorage.setItem("cart", JSON.stringify(filtered));
+  };
 
   const subtotal = cartItems.reduce((sum, item) => {
-  const price = parseFloat(item.price) || 0;
-  const quantity = parseInt(item.quantity) || 0;
-  return sum + price * quantity;
-}, 0);
+    const price = parseFloat(item.price) || 0;
+    const quantity = parseInt(item.quantity) || 0;
+    return sum + price * quantity;
+  }, 0);
 
-const totalItemDiscount = cartItems.reduce((sum, item) => {
-  const discount = parseFloat(item.discount) || 0;
-  const quantity = parseInt(item.quantity) || 0;
-  return sum + discount * quantity;
-}, 0);
+  const totalItemDiscount = cartItems.reduce((sum, item) => {
+    const discount = parseFloat(item.discount) || 0;
+    const quantity = parseInt(item.quantity) || 0;
+    return sum + discount * quantity;
+  }, 0);
 
-const total = subtotal - totalItemDiscount - (parseFloat(discount) || 0);
-
+  const total = subtotal - totalItemDiscount - (parseFloat(discount) || 0);
 
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900 font-sans">
@@ -147,19 +143,23 @@ const total = subtotal - totalItemDiscount - (parseFloat(discount) || 0);
                             </p>
                           )}
                           <p className="text-lg font-bold text-gray-900">
-  ₹
-  {(
-    (parseFloat(item.price || 0) - parseFloat(item.discount || 0)) *
-    parseInt(item.quantity || 0)
-  ).toFixed(2)}
-</p>
+                            ₹
+                            {(
+                              (parseFloat(item.price || 0) -
+                                parseFloat(item.discount || 0)) *
+                              parseInt(item.quantity || 0)
+                            ).toFixed(2)}
+                          </p>
 
                           {item.discount > 0 && (
-  <p className="text-xs text-green-600 font-medium">
-    You save ₹{(parseFloat(item.discount || 0) * parseInt(item.quantity || 0)).toFixed(2)}
-  </p>
-)}
-
+                            <p className="text-xs text-green-600 font-medium">
+                              You save ₹
+                              {(
+                                parseFloat(item.discount || 0) *
+                                parseInt(item.quantity || 0)
+                              ).toFixed(2)}
+                            </p>
+                          )}
                         </div>
                       </div>
 
