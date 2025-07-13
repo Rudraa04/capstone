@@ -13,8 +13,10 @@ import slabBanner from "../images/slabs-banner.png";
 
 export default function Slabs() {
   const navigate = useNavigate();
-
-  const [activeTab, setActiveTab] = useState("marble");
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get("type") || "marble";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [graniteProducts, setGraniteProducts] = useState([]);
   const [marbleProducts, setMarbleProducts] = useState([]);
   const [filters, setFilters] = useState({
@@ -28,7 +30,9 @@ export default function Slabs() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
-  const [granite, setGranite] = useState([]);
+  
+  
+
 
   const filterOptions = {
     marble: {
