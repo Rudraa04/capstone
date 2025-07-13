@@ -360,51 +360,51 @@ export default function ProductDetail() {
                 Products
               </button>
               {showProductDropdown && (
-                            <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-2 gap-8 w-[600px] z-50 text-base font-sans translate-x-[100px]">
-                              {" "}
-                              <div>
-                                <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                                  CATEGORY
-                                </h3>
-                                {[
-                                  { name: "Marble", to: "/slabs?type=marble" },
-                                  { name: "Granite", to: "/slabs?type=granite" },
-                                  { name: "Tiles", to: "/ceramics?type=tiles" },
-                                  { name: "Sinks", to: "/ceramics?type=sinks" },
-                                  { name: "Bathtubs", to: "/ceramics?type=bathtub" },
-                                  { name: "Toilets", to: "/ceramics?type=toilets" },
-                                ].map((item) => (
-                                  <Link
-                                    key={item.name}
-                                    to={item.to}
-                                    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                                  >
-                                    {item.name}
-                                  </Link>
-                                ))}
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                                  WALL / FLOOR TILES
-                                </h3>
-                                {[
-                                  { name: "Exterior Floor Tiles", to: "/exteriorfloor" },
-                                  { name: "Exterior Wall Tiles", to: "/exteriorwall" },
-                                  { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
-                                  { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
-                                  { name: "Interior Floor Tiles", to: "/interiorfloor" },
-                                ].map((item) => (
-                                  <Link
-                                    key={item.name}
-                                    to={item.to}
-                                    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                                  >
-                                    {item.name}
-                                  </Link>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-2 gap-8 w-[600px] z-50 text-base font-sans translate-x-[100px]">
+                  {" "}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      CATEGORY
+                    </h3>
+                    {[
+                      { name: "Marble", to: "/slabs?type=marble" },
+                      { name: "Granite", to: "/slabs?type=granite" },
+                      { name: "Tiles", to: "/ceramics?type=tiles" },
+                      { name: "Sinks", to: "/ceramics?type=sinks" },
+                      { name: "Bathtubs", to: "/ceramics?type=bathtub" },
+                      { name: "Toilets", to: "/ceramics?type=toilets" },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      WALL / FLOOR TILES
+                    </h3>
+                    {[
+                      { name: "Exterior Floor Tiles", to: "/exteriorfloor" },
+                      { name: "Exterior Wall Tiles", to: "/exteriorwall" },
+                      { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
+                      { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
+                      { name: "Interior Floor Tiles", to: "/interiorfloor" },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {user ? (
@@ -625,9 +625,12 @@ export default function ProductDetail() {
                   <li>
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
-                  <li>
-                    <strong>📦 In Stock:</strong> {product.stock}
-                  </li>
+                  <strong>📦 In Stock:</strong>{" "}
+                  {product.stock !== "N/A" && parseInt(product.stock) > 10
+                    ? "In Stock"
+                    : product.stock !== "N/A"
+                    ? `Only ${product.stock} in stock`
+                    : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
@@ -662,9 +665,12 @@ export default function ProductDetail() {
                   <li>
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
-                  <li>
-                    <strong>📦 In Stock:</strong> {product.stock}
-                  </li>
+                  <strong>📦 In Stock:</strong>{" "}
+                  {product.stock !== "N/A" && parseInt(product.stock) > 10
+                    ? "In Stock"
+                    : product.stock !== "N/A"
+                    ? `Only ${product.stock} in stock`
+                    : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
@@ -737,9 +743,12 @@ export default function ProductDetail() {
                   <li>
                     <strong>🌍 Origin:</strong> {product.origin}
                   </li>
-                  <li>
-                    <strong>📦 In Stock:</strong> {product.stock}
-                  </li>
+                  <strong>📦 In Stock:</strong>{" "}
+                  {product.stock !== "N/A" && parseInt(product.stock) > 10
+                    ? "In Stock"
+                    : product.stock !== "N/A"
+                    ? `Only ${product.stock} in stock`
+                    : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
@@ -774,9 +783,12 @@ export default function ProductDetail() {
                   <li>
                     <strong>🌍 Origin:</strong> {product.origin}
                   </li>
-                  <li>
-                    <strong>📦 In Stock:</strong> {product.stock}
-                  </li>
+                  <strong>📦 In Stock:</strong>{" "}
+                  {product.stock !== "N/A" && parseInt(product.stock) > 10
+                    ? "In Stock"
+                    : product.stock !== "N/A"
+                    ? `Only ${product.stock} in stock`
+                    : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
@@ -807,7 +819,7 @@ export default function ProductDetail() {
                         : undefined
                     }
                     value={quantity}
-                    onChange={(e) => {
+                    onInput={(e) => {
                       const val = parseInt(e.target.value);
                       const stock = parseInt(product.stock);
 
