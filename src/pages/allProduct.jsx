@@ -19,6 +19,7 @@ const AllProducts = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -317,11 +318,23 @@ const AllProducts = () => {
             </div>
 
             <button
-              onClick={() =>
-                navigate(
-                  `/product/${product.Type.toLowerCase()}/${product._id}`
-                )
-              }
+              onClick={() => {
+                const validTypes = [
+                  "tiles",
+                  "sinks",
+                  "toilets",
+                  "marble",
+                  "granite",
+                ];
+                const type = product.category?.toLowerCase(); // ✅ FIXED HERE
+
+                if (!type || !validTypes.includes(type)) {
+                  alert("❌ Invalid product type. Cannot navigate to details.");
+                  return;
+                }
+
+                navigate(`/product/${type}/${product._id}`);
+              }}
               className="mt-auto bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
             >
               View Details
