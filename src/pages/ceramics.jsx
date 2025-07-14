@@ -36,6 +36,10 @@ export default function Ceramics() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const [allProducts, setAllProducts] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
+
   // for filter for tiles
   const mapSize = (size) => {
     if (!size) return "";
@@ -134,7 +138,7 @@ export default function Ceramics() {
     if (m.includes("soncera")) return "Soncera";
     return "";
   };
-  
+
   const otherCategories = [
     {
       type: "tiles",
@@ -186,6 +190,38 @@ export default function Ceramics() {
   };
 
   useEffect(() => {
+    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalCount);
+  }, []);
+
+  useEffect(() => {
+    const fetchAllProducts = async () => {
+      try {
+        const endpoints = ["tiles", "sinks", "granite", "marble", "toilets"];
+        const allFetched = await Promise.all(
+          endpoints.map((type) =>
+            fetch(`http://localhost:5000/api/products/${type}`).then((res) =>
+              res.json()
+            )
+          )
+        );
+        const combined = endpoints.flatMap((type, index) =>
+          allFetched[index].map((item) => ({
+            ...item,
+            category: type,
+          }))
+        );
+        setAllProducts(combined);
+      } catch (err) {
+        console.error("Failed to fetch products for search:", err);
+      }
+    };
+
+    fetchAllProducts();
+  }, []);
+
+  useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const type = queryParams.get("type") || "tiles";
     setActiveTab(type.toLowerCase());
@@ -227,19 +263,21 @@ export default function Ceramics() {
   };
 
   useEffect(() => {
-  const fetchBathtubs = async () => {
-    try {
-      const response = await axios.get("http://localhost:5000/api/products/bathtubs");
-      setBathtubs(response.data);
-    } catch (error) {
-      console.error("Failed to fetch bathtubs:", error);
-    }
-  };
+    const fetchBathtubs = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/products/bathtubs"
+        );
+        setBathtubs(response.data);
+      } catch (error) {
+        console.error("Failed to fetch bathtubs:", error);
+      }
+    };
 
-  if (activeTab === "bathtub") {
-    fetchBathtubs();
-  }
-}, [activeTab]);
+    if (activeTab === "bathtub") {
+      fetchBathtubs();
+    }
+  }, [activeTab]);
   useEffect(() => {
     const fetchSinks = async () => {
       try {
@@ -366,6 +404,20 @@ export default function Ceramics() {
     return typeMatch && flushMatch && colorMatch && manufacturerMatch;
   });
 
+  const handleSearch = () => {
+    let combined = [];
+
+    if (activeTab === "tiles") combined = tiles;
+    if (activeTab === "sinks") combined = sinks;
+    if (activeTab === "toilets") combined = toilets;
+    if (activeTab === "bathtub") combined = bathtubs;
+
+    const filtered = combined.filter((product) =>
+      product.Name?.toLowerCase().includes(query.toLowerCase())
+    );
+    setSuggestions(filtered);
+  };
+
   return (
     <div className="bg-white text-gray-900">
       {/* HEADER */}
@@ -387,20 +439,71 @@ export default function Ceramics() {
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full max-w-md hover:border-gray-600 transition-colors duration-200">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-base px-2 text-gray-700 font-medium"
-            />
-            <button
-              onClick={() => console.log("Search query:", query)}
-              className="text-blue-600 hover:text-blue-800 p-1"
-            >
-              <FaSearch size={18} />
-            </button>
+          <div className="relative w-full max-w-md">
+            <div className="flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={query}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setQuery(value);
+
+                  if (value.length > 1) {
+                    const filtered = allProducts.filter((product) =>
+                      product.Name?.toLowerCase().includes(value.toLowerCase())
+                    );
+                    setSuggestions(filtered);
+                  } else {
+                    setSuggestions([]);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+                className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
+              />
+
+              <button
+                onClick={handleSearch}
+                className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+              >
+                <FaSearch size={18} />
+              </button>
+            </div>
+
+            {/* 🔍 Search Suggestions with Image */}
+            {suggestions.length > 0 && (
+              <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
+                {suggestions.map((product, index) => (
+                  <li
+                    key={index}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      navigate(
+                        `/product/${product.category.toLowerCase()}/${
+                          product._id
+                        }`
+                      );
+                      setSuggestions([]);
+                      setQuery("");
+                    }}
+                  >
+                    <img
+                      src={product.Image || "https://via.placeholder.com/40x40"}
+                      alt={product.Name}
+                      className="w-10 h-10 object-cover rounded border"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold">{product.Name}</p>
+                      <p className="text-xs text-gray-500">
+                        {product.category}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
@@ -415,51 +518,66 @@ export default function Ceramics() {
                 Products
               </button>
               {showProductDropdown && (
-                            <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-2 gap-8 w-[600px] z-50 text-base font-sans translate-x-[100px]">
-                              {" "}
-                              <div>
-                                <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                                  CATEGORY
-                                </h3>
-                                {[
-                                  { name: "Marble", to: "/slabs?type=marble" },
-                                  { name: "Granite", to: "/slabs?type=granite" },
-                                  { name: "Tiles", to: "/ceramics?type=tiles" },
-                                  { name: "Sinks", to: "/ceramics?type=sinks" },
-                                  { name: "Bathtubs", to: "/ceramics?type=bathtub" },
-                                  { name: "Toilets", to: "/ceramics?type=toilets" },
-                                ].map((item) => (
-                                  <Link
-                                    key={item.name}
-                                    to={item.to}
-                                    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                                  >
-                                    {item.name}
-                                  </Link>
-                                ))}
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                                  WALL / FLOOR TILES
-                                </h3>
-                                {[
-                                  { name: "Exterior Floor Tiles", to: "/exteriorfloor" },
-                                  { name: "Exterior Wall Tiles", to: "/exteriorwall" },
-                                  { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
-                                  { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
-                                  { name: "Interior Floor Tiles", to: "/interiorfloor" },
-                                ].map((item) => (
-                                  <Link
-                                    key={item.name}
-                                    to={item.to}
-                                    className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                                  >
-                                    {item.name}
-                                  </Link>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-2 gap-8 w-[600px] z-50 text-base font-sans translate-x-[100px]">
+                  {" "}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      CATEGORY
+                    </h3>
+                    {[
+                      { name: "Marble", to: "/slabs?type=marble" },
+                      { name: "Granite", to: "/slabs?type=granite" },
+                      { name: "Tiles", to: "/ceramics?type=tiles" },
+                      { name: "Sinks", to: "/ceramics?type=sinks" },
+                      { name: "Bathtubs", to: "/ceramics?type=bathtub" },
+                      { name: "Toilets", to: "/ceramics?type=toilets" },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      WALL / FLOOR TILES
+                    </h3>
+                    {[
+                      {
+                        name: "Exterior Floor Tiles",
+                        to: "/exterior?sub=Exterior Floor Tiles",
+                      },
+                      {
+                        name: "Exterior Wall Tiles",
+                        to: "/exterior?sub=Exterior Wall Tiles",
+                      },
+                      {
+                        name: "Kitchen Wall Tiles",
+                        to: "/interior?sub=Kitchen Wall Tiles",
+                      },
+                      {
+                        name: "Bathroom Wall Tiles",
+                        to: "/interior?sub=Bathroom Wall Tiles",
+                      },
+                      {
+                        name: "Interior Floor Tiles",
+                        to: "/interior?sub=Interior Floor Tiles",
+                      },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             {user ? (
               <>
@@ -467,8 +585,15 @@ export default function Ceramics() {
                   to="/cart"
                   className={`uppercase ${underlineHover} flex items-center gap-1`}
                 >
-                  <FaShoppingCart /> Cart
+                  <FaShoppingCart />
+                  Cart
+                  {cartCount > 0 && (
+                    <span className="ml-1 font-bold text-blue-600">
+                      ({cartCount})
+                    </span>
+                  )}
                 </Link>
+
                 <Link
                   to="/profile"
                   state={
@@ -703,32 +828,35 @@ export default function Ceramics() {
                 ))}
 
               {activeTab === "bathtub" &&
-  bathtubs.map((tub, i) => (
-    <div
-      key={tub._id || i}
-      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
-    >
-      <div className="relative">
-        <img
-          src={tub.Image}
-          alt={tub.Name}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      </div>
-      <div className="p-4">
-        <h3 className="text-lg font-bold text-gray-800">{tub.Name}</h3>
-        <p className="text-sm text-gray-500 mt-1">{tub.Description}</p>
-        <Link
-          to={`/product/bathtubs/${tub._id}`}
-          state={{ fromTab: "bathtub" }}
-          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
-        >
-          View Details
-        </Link>
-      </div>
-    </div>
-  ))}
-
+                bathtubs.map((tub, i) => (
+                  <div
+                    key={tub._id || i}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
+                  >
+                    <div className="relative">
+                      <img
+                        src={tub.Image}
+                        alt={tub.Name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-800">
+                        {tub.Name}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {tub.Description}
+                      </p>
+                      <Link
+                        to={`/product/bathtubs/${tub._id}`}
+                        state={{ fromTab: "bathtub" }}
+                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium inline-block text-center"
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </div>
+                ))}
 
               {activeTab === "toilets" &&
                 filteredToilets.map((toilet, i) => (

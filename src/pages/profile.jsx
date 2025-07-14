@@ -8,29 +8,11 @@ import {
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth, db } from "../firebase/firebase";
+import { auth, db, storage } from "../firebase/firebase";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { storage } from "../firebase/firebase";
 
 export default function Profile() {
-  const maskEmail = (email) => {
-    if (!email) return "";
-    const [name, domain] = email.split("@");
-    const visible = name.slice(0, 2);
-    return `${visible}*****@${domain}`;
-  };
-
-  const maskPhone = (phone) => {
-    if (!phone) return "";
-    return phone.slice(0, 2) + "*****" + phone.slice(-2);
-  };
-
-  const maskAddress = (address) => {
-    if (!address) return "";
-    return "Confidential";
-  };
-
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [fromAdmin, setFromAdmin] = useState(false);
@@ -42,10 +24,6 @@ export default function Profile() {
   });
   const [editing, setEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-  const [showEmail, setShowEmail] = useState(false);
-  const [showPhone, setShowPhone] = useState(false);
-  const [showAddress, setShowAddress] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -118,19 +96,11 @@ export default function Profile() {
 
     setUploading(true);
     try {
-      console.log("Upload started");
-
-      const storage = getStorage();
       const storageRef = ref(storage, `Profile/${auth.currentUser.uid}.jpg`);
-
       await uploadBytes(storageRef, file);
-      console.log("File uploaded");
-
       const url = await getDownloadURL(storageRef);
-      console.log("Download URL:", url);
 
       await updateProfile(auth.currentUser, { photoURL: url });
-      console.log("Firebase Auth updated");
 
       await setDoc(
         doc(db, "users", auth.currentUser.uid),
@@ -141,7 +111,6 @@ export default function Profile() {
         },
         { merge: true }
       );
-      console.log("Firestore updated");
 
       await auth.currentUser.reload();
       const refreshedUser = auth.currentUser;
@@ -158,7 +127,6 @@ export default function Profile() {
 
       alert("Profile picture updated!");
     } catch (err) {
-      console.error("Upload failed:", err);
       alert("Error uploading picture: " + err.message);
     }
     setUploading(false);
@@ -175,7 +143,7 @@ export default function Profile() {
                 onClick={() => navigate("/admin")}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow"
               >
-                🔙 Back to Admin
+                Back to Admin
               </button>
             </div>
           )}
@@ -196,25 +164,30 @@ export default function Profile() {
             </div>
 
             <label className="mt-4 text-sm font-medium">
-              {uploading
-                ? "Uploading..."
-                : user?.photoURL
-                ? "Change Picture"
-                : "Upload Picture"}
+             {uploading
+              ? "Uploading..."
+              : user?.photoURL
+              ? "Change Picture"
+              : "Upload Picture"}
             </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleProfilePicUpload}
-              className="text-sm mt-1"
-            />
+
+            <div className="relative mt-2">
+              <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg shadow-md transition">
+                Choose File
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePicUpload}
+                  className="hidden"
+                />
+             </label>
+             </div>
+
 
             <h2 className="text-2xl font-bold mt-4">
               {profileData.fullName || "Unnamed User"}
             </h2>
-            <p className="text-sm text-gray-600 mb-2">
-              {fromAdmin ? maskEmail(user?.email) : user?.email}
-            </p>
+            <p className="text-sm text-gray-600 mb-2">{user?.email}</p>
 
             {fromAdmin && (
               <span className="text-xs text-white bg-blue-600 px-2 py-1 rounded-full">
@@ -249,15 +222,10 @@ export default function Profile() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {[
-              { label: "Full Name", key: "fullName" },
-              { label: "Phone", key: "phone" },
-              { label: "Email", key: "email", value: user?.email },
-              { label: "Address", key: "address" },
-            ].map(({ label, key, value = null }) => (
+            {["fullName", "phone", "email", "address"].map((key) => (
               <div key={key}>
                 <label className="text-sm font-semibold mb-1 block text-gray-700">
-                  {label}
+                  {key.charAt(0).toUpperCase() + key.slice(1)}
                 </label>
                 {editing && key !== "email" ? (
                   key === "address" ? (
@@ -286,63 +254,8 @@ export default function Profile() {
                     />
                   )
                 ) : (
-                  <div className="w-full border border-gray-200 px-4 py-3 rounded-lg bg-gray-100 flex justify-between items-center">
-                    {(() => {
-                      const actualValue = value || profileData[key] || "-";
-                      if (!fromAdmin) return actualValue;
-
-                      if (key === "email") {
-                        return (
-                          <>
-                            <span>
-                              {showEmail ? actualValue : maskEmail(actualValue)}
-                            </span>
-                            <button
-                              onClick={() => setShowEmail(!showEmail)}
-                              className="ml-2 text-sm text-blue-600 underline"
-                            >
-                              {showEmail ? "Hide" : "Show"}
-                            </button>
-                          </>
-                        );
-                      }
-
-                      if (key === "phone") {
-                        return (
-                          <>
-                            <span>
-                              {showPhone ? actualValue : maskPhone(actualValue)}
-                            </span>
-                            <button
-                              onClick={() => setShowPhone(!showPhone)}
-                              className="ml-2 text-sm text-blue-600 underline"
-                            >
-                              {showPhone ? "Hide" : "Show"}
-                            </button>
-                          </>
-                        );
-                      }
-
-                      if (key === "address") {
-                        return (
-                          <>
-                            <span>
-                              {showAddress
-                                ? actualValue
-                                : maskAddress(actualValue)}
-                            </span>
-                            <button
-                              onClick={() => setShowAddress(!showAddress)}
-                              className="ml-2 text-sm text-blue-600 underline"
-                            >
-                              {showAddress ? "Hide" : "Show"}
-                            </button>
-                          </>
-                        );
-                      }
-
-                      return actualValue;
-                    })()}
+                  <div className="w-full border border-gray-200 px-4 py-3 rounded-lg bg-gray-100">
+                    {key === "email" ? user?.email : profileData[key] || "-"}
                   </div>
                 )}
               </div>
