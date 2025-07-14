@@ -15,7 +15,10 @@ import slabBanner from "../images/slabs-banner.png";
 
 export default function Ceramics() {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState("tiles");
+  const queryParams = new URLSearchParams(location.search);
+  const initialTab = queryParams.get("type") || "tiles";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
   const [tiles, setTiles] = useState([]);
   const [bathtubs, setBathtubs] = useState([]);
   const [sinks, setSinks] = useState([]);
@@ -243,6 +246,9 @@ export default function Ceramics() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  useEffect(() => {
+    setActiveTab(queryParams.get("type") || "tiles");
+  }, [location.search]);
 
   useEffect(() => {
     if (activeTab === "tiles") {

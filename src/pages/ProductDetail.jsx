@@ -56,8 +56,6 @@ export default function ProductDetail() {
   const location = useLocation();
   const fromTab = location.state?.fromTab;
 
-  
-
   const [stockError, setStockError] = useState("");
 
   useEffect(() => {
@@ -351,6 +349,33 @@ export default function ProductDetail() {
   const totalTiles = parseSize(customSize);
   const totalPrice = totalTiles * (product.price || pricePerTile || 0);
 
+  const handleBack = () => {
+    switch (type) {
+      case "marble":
+        navigate("/slabs?type=marble");
+        break;
+      case "granite":
+        navigate("/slabs?type=granite");
+        break;
+      case "tiles":
+        navigate("/ceramics?type=tiles");
+        break;
+      case "sinks":
+        navigate("/ceramics?type=sinks");
+        break;
+      case "toilets":
+          navigate("/ceramics?type=toilets");
+        break;
+      case "bathtub":
+      case "bathtubs":
+        navigate("/ceramics?type=bathtub");
+        break;
+      default:
+        navigate("/");
+        break;
+    }
+  };
+
   const handleAddToCart = () => {
     const cartItem = {
       id: Date.now(), // or a UUID
@@ -395,15 +420,7 @@ export default function ProductDetail() {
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => {
-                if (["tiles", "sinks", "bathtubs", "toilets"].includes(type)) {
-                  navigate(`/ceramics?tab=${fromTab || "tiles"}`);
-                } else if (["granite", "marble"].includes(type)) {
-                  navigate(`/slabs?type=${fromTab || "marble"}`);
-                } else {
-                  navigate("/");
-                }
-              }}
+              onClick={handleBack}
               className="text-blue-700 hover:text-blue-900"
             >
               <FaArrowLeft size={18} />
