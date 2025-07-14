@@ -56,14 +56,15 @@ export default function ProductDetail() {
   const location = useLocation();
   const fromTab = location.state?.fromTab;
 
+  
+
   const [stockError, setStockError] = useState("");
 
   useEffect(() => {
-  const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-  const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-  setCartCount(totalCount);
-}, []);
-
+    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
+    setCartCount(totalCount);
+  }, []);
 
   useEffect(() => {
     const fetchAllProducts = async () => {
@@ -394,11 +395,20 @@ export default function ProductDetail() {
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                if (["tiles", "sinks", "bathtubs", "toilets"].includes(type)) {
+                  navigate(`/ceramics?tab=${fromTab || "tiles"}`);
+                } else if (["granite", "marble"].includes(type)) {
+                  navigate(`/slabs?type=${fromTab || "marble"}`);
+                } else {
+                  navigate("/");
+                }
+              }}
               className="text-blue-700 hover:text-blue-900"
             >
               <FaArrowLeft size={18} />
             </button>
+
             <Link
               to="/"
               className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
@@ -511,40 +521,40 @@ export default function ProductDetail() {
                     ))}
                   </div>
                   <div>
-                                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                                      WALL / FLOOR TILES
-                                    </h3>
-                                    {[
-                                      {
-                                        name: "Exterior Floor Tiles",
-                                        to: "/exterior?sub=Exterior Floor Tiles",
-                                      },
-                                      {
-                                        name: "Exterior Wall Tiles",
-                                        to: "/exterior?sub=Exterior Wall Tiles",
-                                      },
-                                      {
-                                        name: "Kitchen Wall Tiles",
-                                        to: "/interior?sub=Kitchen Wall Tiles",
-                                      },
-                                      {
-                                        name: "Bathroom Wall Tiles",
-                                        to: "/interior?sub=Bathroom Wall Tiles",
-                                      },
-                                      {
-                                        name: "Interior Floor Tiles",
-                                        to: "/interior?sub=Interior Floor Tiles",
-                                      },
-                                    ].map((item) => (
-                                      <Link
-                                        key={item.name}
-                                        to={item.to}
-                                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                                      >
-                                        {item.name}
-                                      </Link>
-                                    ))}
-                                  </div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      WALL / FLOOR TILES
+                    </h3>
+                    {[
+                      {
+                        name: "Exterior Floor Tiles",
+                        to: "/exterior?sub=Exterior Floor Tiles",
+                      },
+                      {
+                        name: "Exterior Wall Tiles",
+                        to: "/exterior?sub=Exterior Wall Tiles",
+                      },
+                      {
+                        name: "Kitchen Wall Tiles",
+                        to: "/interior?sub=Kitchen Wall Tiles",
+                      },
+                      {
+                        name: "Bathroom Wall Tiles",
+                        to: "/interior?sub=Bathroom Wall Tiles",
+                      },
+                      {
+                        name: "Interior Floor Tiles",
+                        to: "/interior?sub=Interior Floor Tiles",
+                      },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -552,15 +562,17 @@ export default function ProductDetail() {
             {user ? (
               <>
                 <Link
-  to="/cart"
-  className={`uppercase ${underlineHover} flex items-center gap-1`}
->
-  <FaShoppingCart />
-  Cart
-  {cartCount > 0 && (
-    <span className="ml-1 font-bold text-blue-600">({cartCount})</span>
-  )}
-</Link>
+                  to="/cart"
+                  className={`uppercase ${underlineHover} flex items-center gap-1`}
+                >
+                  <FaShoppingCart />
+                  Cart
+                  {cartCount > 0 && (
+                    <span className="ml-1 font-bold text-blue-600">
+                      ({cartCount})
+                    </span>
+                  )}
+                </Link>
 
                 <Link
                   to="/profile"

@@ -277,11 +277,12 @@ export default function Slabs() {
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
               className="text-blue-700 hover:text-blue-900"
             >
               <FaArrowLeft size={18} />
             </button>
+
             <Link
               to="/"
               className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
@@ -664,8 +665,21 @@ export default function Slabs() {
                       <p className="text-sm text-gray-500 mt-1">
                         {product.Description}
                       </p>
-                      <Link to={`/product/granite/${product._id}`}>
-                        <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium">
+                      <Link
+                        to={`/product/granite/${product._id}`}
+                        state={{ fromTab: "granite" }}
+                      >
+                        <button
+                          className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
+                          onClick={() =>
+                            navigate(
+                              `/product/${product.category}/${product._id}`,
+                              {
+                                state: { fromTab: activeTab },
+                              }
+                            )
+                          }
+                        >
                           View Details
                         </button>
                       </Link>
