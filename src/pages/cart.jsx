@@ -42,12 +42,14 @@ export default function Cart() {
     );
     setCartItems(updated);
     localStorage.setItem("cart", JSON.stringify(updated));
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   const handleRemoveItem = (id) => {
     const filtered = cartItems.filter((item) => item.name !== id);
     setCartItems(filtered);
     localStorage.setItem("cart", JSON.stringify(filtered));
+    window.dispatchEvent(new Event("cartUpdated")); 
   };
 
   const subtotal = cartItems.reduce((sum, item) => {
@@ -174,7 +176,7 @@ export default function Cart() {
                         >
                           −
                         </button>
-                        <span className="px-4 text-md font-medium bg-gray-100 px-3 py-1 rounded">
+                        <span className="px-4 text-md font-medium bg-gray-100 py-1 rounded">
                           {item.quantity}
                         </span>
                         <button

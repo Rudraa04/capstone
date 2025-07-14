@@ -21,7 +21,7 @@ export default function Header() {
   const trimmed = query.trim().toLowerCase();
   if (!trimmed) return;
 
-  // 🔹 Direct Category Matching
+  //  Direct Category Matching
   if (trimmed.includes("marble")) {
     navigate("/slabs?type=marble");
   } else if (trimmed.includes("granite")) {
@@ -35,21 +35,21 @@ export default function Header() {
   } else if (trimmed.includes("toilet")) {
     navigate("/ceramics?type=toilets");
 
-  // 🔹 SubCategory Handling
+  // SubCategory Handling
   } else if (trimmed.includes("interior floor")) {
     navigate("/interior?sub=Interior Floor Tiles");
   } else if (trimmed.includes("interior wall")) {
     navigate("/interior?sub=Interior Wall Tiles");
-  } else if (trimmed.includes("bathroom")) {
+  } else if (trimmed.includes("bathroom wall")) {
     navigate("/interior?sub=Bathroom Wall Tiles");
-  } else if (trimmed.includes("kitchen")) {
+  } else if (trimmed.includes("kitchen wall")) {
     navigate("/interior?sub=Kitchen Wall Tiles");
   } else if (trimmed.includes("exterior wall")) {
     navigate("/exterior?sub=Exterior Wall Tiles");
   } else if (trimmed.includes("exterior floor")) {
     navigate("/exterior?sub=Exterior Floor Tiles");
 
-  // 🔹 Fallback
+  // Fallback
   } else {
     alert("No matching category found.");
     
@@ -117,10 +117,19 @@ export default function Header() {
     fetchAllCategories();
   }, []);
   useEffect(() => {
+  const updateCartCount = () => {
     const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalCount);
-  }, []);
+    setCartCount(storedCart.length);
+  };
+
+  updateCartCount(); // initial
+
+  window.addEventListener("cartUpdated", updateCartCount);
+  return () => {
+    window.removeEventListener("cartUpdated", updateCartCount);
+  };
+}, []);
+
 
   const handleLogout = async () => {
     await signOut(auth);
