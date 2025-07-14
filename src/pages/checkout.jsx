@@ -15,15 +15,11 @@ import { auth } from "../firebase/firebase";
 export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  // 🔒 Authentication & Header State
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
-
-  // 🛒 Checkout State
   const [cartItems, setCartItems] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("");
   const [addressList, setAddressList] = useState([
@@ -49,7 +45,6 @@ export default function Checkout() {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
 
-  // 👁 Effects
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -74,7 +69,6 @@ export default function Checkout() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✋ Handlers
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
@@ -193,11 +187,11 @@ export default function Checkout() {
                                   WALL / FLOOR TILES
                                 </h3>
                                 {[
-                                  { name: "Exterior Floor Tiles", to: "/exteriorfloor" },
-                                  { name: "Exterior Wall Tiles", to: "/exteriorwall" },
-                                  { name: "Kitchen Wall Tiles", to: "/kitchenwall" },
-                                  { name: "Bathroom Wall Tiles", to: "/bathroomwall" },
-                                  { name: "Interior Floor Tiles", to: "/interiorfloor" },
+                                  { name: "Exterior Floor Tiles", to: "/exterior?sub=Exterior%20Floor%20Tiles" },
+                                  { name: "Exterior Wall Tiles", to: "/exterior?sub=Exterior%20Wall%20Tiles" },
+                                  { name: "Kitchen Wall Tiles", to: "/kitchenwall?sub=Kitchen%20Wall%20Tiles" },
+                                  { name: "Bathroom Wall Tiles", to: "/bathroomwall?sub=Bathroom%20Wall%20Tiles" },
+                                  { name: "Interior Floor Tiles", to: "/interiorfloor?sub=Interior%20Floor%20Tiles" },
                                 ].map((item) => (
                                   <Link
                                     key={item.name}
