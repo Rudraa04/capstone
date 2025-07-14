@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../firebase/firebase";
 import {
   FiBox,
   FiPackage,
@@ -28,7 +31,8 @@ export default function AddTiles() {
     usageCategory: "",
   });
 
-  const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const brands = ["Kajaria", "Somany", "Johnson", "Asian Granito", "Nitco"];
   const usageTypes = ["Interior", "Exterior", "Sanitaryware"];
@@ -44,7 +48,8 @@ export default function AddTiles() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImage(URL.createObjectURL(file));
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -53,14 +58,50 @@ export default function AddTiles() {
     navigate("/login");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const size = `${formData.length}x${formData.width}`;
-    const tileData = { ...formData, size };
-    console.log("Submitted:", tileData);
-    alert("Tile product added successfully!");
-    navigate(-1);
+    const size = `${formData.length.trim()}x${formData.width.trim()}`;
+
+    let imageUrl = "";
+    if (imageFile) {
+      try {
+        const storageRef = ref(
+          storage,
+          `Inventory/Tiles/${Date.now()}_${imageFile.name}`
+        );
+        const snapshot = await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        alert("Failed to upload image.");
+        return;
+      }
+   }
+
+      const tileData = {
+      Name: formData.name,
+      Description: formData.description,
+      Color: formData.color,
+      Price: parseFloat(formData.price),
+      Image: imageUrl,
+      Category: "Tile",
+      Stock_admin: parseInt(formData.quantity),
+      Manufacturer: formData.brand,
+      Size: size,
+      SubCategory: formData.usageCategory,
+      UsageType: formData.usageType,
+    };
+
+    try {
+      await axios.post("http://localhost:5000/tiles", tileData);
+      alert("Tile product added successfully!");
+      navigate(-1);
+    } catch (error) {
+      console.error(error);
+      alert("Error adding tile product.");
+    }
   };
+
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -164,9 +205,9 @@ export default function AddTiles() {
           <div>
             <label className="block font-semibold mb-1">Upload Image</label>
             <input type="file" accept="image/*" onChange={handleImageChange} className="block" />
-            {image && (
+            {imagePreview && (
               <div className="mt-4 w-32 h-32 border rounded overflow-hidden">
-                <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
               </div>
             )}
           </div>

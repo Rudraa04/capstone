@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect  } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaThLarge, FaPlus } from "react-icons/fa";
+import axios from "axios";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { storage } from "../firebase/firebase";
 import {
   FiBox,
   FiPackage,
@@ -15,7 +18,6 @@ import {
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
-
   const handleBackdropClick = (e) => {
     if (e.target.id === "modal-backdrop") onClose();
   };
@@ -44,14 +46,7 @@ function Modal({ isOpen, onClose, children }) {
 
 export default function TilesInventory() {
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("isAdminLoggedIn");
-    navigate("/login");
-  };
-
-  const [showModal, setShowModal] = useState(false);
-
+  const [products, setProducts] = useState([]);
   const [formData, setFormData] = useState({
     ProductName: "",
     ProductDescription: "",
@@ -68,6 +63,12 @@ export default function TilesInventory() {
   });
 
   const [image, setImage] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [colorFilter, setColorFilter] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
+  const [usageTypeFilter, setUsageTypeFilter] = useState("");
 
   const brands = [
     "Kajaria",
@@ -80,6 +81,19 @@ export default function TilesInventory() {
   const usageTypes = ["Interior", "Exterior", "Sanitaryware"];
   const usageCategories = ["Wall", "Floor"];
 
+  // ✅ Fetch data
+  useEffect(() => {
+    const fetchTiles = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/products/tiles");
+        setProducts(res.data);
+      } catch (err) {
+        console.error("Fetch Error:", err);
+      }
+    };
+    fetchTiles();
+  }, []);
+
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -87,83 +101,110 @@ export default function TilesInventory() {
     }));
   };
 
-  const handleImageChange = (e) => {
+  // ✅ Firebase Image Upload
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) setImage(URL.createObjectURL(file));
+    if (!file) return;
+    const fileRef = ref(storage, `Inventory/Tiles/${file.name}-${Date.now()}`);
+    try {
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      setImage(url);
+      setFormData((prev) => ({ ...prev, Image: url }));
+    } catch (err) {
+      alert("Image upload failed.");
+    }
   };
 
-  const handleSubmit = (e) => {
+  // ✅ Add / Update Product
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const Size = `${formData.length}x${formData.width}`;
-    const ManufacturerFinal =
-      formData.Manufacturer === "Other"
-        ? formData.customBrand
-        : formData.Manufacturer;
+    const finalBrand = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
 
     const tileData = {
-      ProductName: formData.ProductName,
-      ProductDescription: formData.ProductDescription,
+      Name: formData.ProductName,
+      Description: formData.ProductDescription,
       Color: formData.Color,
-      Price: formData.Price,
-      Image: image || "",
+      Price: parseFloat(formData.Price),
+      Image: image || formData.Image,
       Category: formData.Category,
       SubCategory: formData.SubCategory,
-      Quantity: formData.Quantity,
-      Manufacturer: ManufacturerFinal,
-      Size: Size,
+      Stock_admin: parseInt(formData.Quantity),
+      Manufacturer: finalBrand,
+      Size,
     };
 
-    if (selectedIndex !== null) {
-      const updated = [...products];
-      updated[selectedIndex] = tileData;
-      setProducts(updated);
-      alert("Tile product updated successfully!");
-    } else {
-      setProducts([...products, tileData]);
-      alert("Tile product added successfully!");
+    try {
+      if (selectedProduct) {
+        await axios.put(`http://localhost:5000/api/products/tiles/${selectedProduct._id}`, tileData);
+        alert("Tile updated successfully!");
+      } else {
+        await axios.post("http://localhost:5000/api/products/tiles", tileData);
+        alert("Tile added successfully!");
+      }
+    const res = await axios.get("http://localhost:5000/api/products/tiles");
+    console.log("Fetched after update:", res.data);
+    setProducts(res.data);
+    } catch (err) {
+      console.error("Save Error:", err);
+    } finally {
+      resetForm();
     }
-
-    setFormData({});
-    setImage(null);
-    setSelectedIndex(null);
-    setShowModal(false);
   };
 
-  const [products, setProducts] = useState([
-    {
-      ProductName: "Glossy Wall Tile",
-      ProductDescription: "High gloss wall tile.",
-      Color: "White",
-      Price: 15,
-      Category: "Tile",
-      SubCategory: "Wall",
-      Quantity: 100,
-      Manufacturer: "Kajaria",
-      Origin: "India",
-      Size: "12x12",
-      Image: "",
-    },
-    {
-      ProductName: "Anti-Skid Floor Tile",
-      ProductDescription: "Slip-resistant floor tile.",
-      Color: "Grey",
-      Price: 18,
-      Category: "Tile",
-      SubCategory: "Floor",
-      Quantity: 75,
-      Manufacturer: "Nitco",
-      Origin: "India",
-      Size: "12x12",
-      Image: "",
-    },
-  ]);
+    // ✅ Edit
+  const handleEdit = (product) => {
+    const [length, width] = (product.Size || "").split("x");
+    setFormData({
+      ProductName: product.Name,
+      ProductDescription: product.Description,
+      Color: product.Color,
+      Price: product.Price,
+      Image: product.Image,
+      Category: product.Category,
+      SubCategory: product.SubCategory,
+      Quantity: product.Stock_admin,
+      Manufacturer: product.Manufacturer,
+      customBrand: "",
+      length,
+      width,
+    });
+    setSelectedProduct(product);
+    setImage(product.Image);
+    setShowModal(true);
+  };
 
-  const [selectedIndex, setSelectedIndex] = useState(null);
+  // ✅ Delete
+  const handleDelete = async (id) => {
+    const product = products.find((p) => p._id === id);
+    if (!product || !window.confirm("Delete this tile?")) return;
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [colorFilter, setColorFilter] = useState("");
-  const [brandFilter, setBrandFilter] = useState("");
-  const [usageTypeFilter, setUsageTypeFilter] = useState("");
+    try {
+      if (product.Image?.includes("firebasestorage")) {
+        const path = decodeURIComponent(product.Image.split("/o/")[1].split("?")[0]);
+        await deleteObject(ref(storage, path));
+      }
+      await axios.delete(`http://localhost:5000/api/products/tiles/${id}`);
+      setProducts((prev) => prev.filter((p) => p._id !== id));
+      alert("Deleted successfully");
+    } catch (err) {
+      console.error("Delete Error:", err);
+      alert("Failed to delete");
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ ProductName: "", ProductDescription: "", Color: "", Price: "", Image: "", Category: "Tile", SubCategory: "", Quantity: "", Manufacturer: "", customBrand: "", length: "", width: "" });
+    setSelectedProduct(null);
+    setShowModal(false);
+    setImage(null);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAdminLoggedIn");
+    navigate("/login");
+  };
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -250,7 +291,7 @@ export default function TilesInventory() {
                   length: "",
                   width: "",
                 });
-                setSelectedIndex(null);
+                setSelectedProduct(null);
                 setImage(null);
                 setShowModal(true);
               }}
@@ -398,8 +439,9 @@ export default function TilesInventory() {
                 {products
                   .filter(
                     (item) =>
-                      item.ProductName.toLowerCase().includes(
-                        searchTerm.toLowerCase()
+                      (item.Name || "")
+                      .toLowerCase()
+                      .includes(searchTerm.toLowerCase()
                       ) &&
                       (colorFilter === "" || item.Color === colorFilter) &&
                       (brandFilter === "" ||
@@ -409,21 +451,21 @@ export default function TilesInventory() {
                   )
                   .map((item, index) => (
                     <tr key={index} className="border-b">
-                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Name}</td>
                       <td className="px-6 py-4">{item.Category}</td>
                       <td className="px-6 py-4">₹{item.Price}</td>
-                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">{item.Stock_admin}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
                               setFormData({
-                                ProductName: item.ProductName,
-                                ProductDescription: item.ProductDescription,
+                                ProductName: item.Name,
+                                ProductDescription: item.Description,
                                 Color: item.Color,
                                 Price: item.Price,
                                 Category: item.Category,
-                                Quantity: item.Quantity,
+                                Quantity: item.Stock_admin,
                                 Manufacturer: item.Manufacturer,
                                 SubCategory: item.SubCategory,
                                 length: item.Size?.split("x")[0] || "",
@@ -431,7 +473,7 @@ export default function TilesInventory() {
                                 customBrand: "",
                               });
                               setImage(item.Image || null);
-                              setSelectedIndex(index);
+                              setSelectedProduct(item);
                               setShowModal(true);
                             }}
                             className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
@@ -439,9 +481,13 @@ export default function TilesInventory() {
                             Edit
                           </button>
 
-                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
-                            Delete
-                          </button>
+                          <button
+  onClick={() => handleDelete(item._id)}
+  className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition"
+>
+  Delete
+</button>
+
                         </div>
                       </td>
                     </tr>
@@ -452,7 +498,7 @@ export default function TilesInventory() {
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            {selectedIndex !== null ? "Edit Tile Product" : "Add Tile Product"}
+            {selectedProduct ? "Edit Tile Product" : "Add Tile Product"}
           </h2>
 
           <form
@@ -639,7 +685,7 @@ export default function TilesInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                {selectedIndex !== null ? "Update Product" : "Save Product"}
+                {selectedProduct ? "Edit Tile Product" : "Add Tile Product"}
               </button>
             </div>
           </form>
