@@ -164,18 +164,25 @@ export default function Profile() {
             </div>
 
             <label className="mt-4 text-sm font-medium">
-              {uploading
-                ? "Uploading..."
-                : user?.photoURL
-                ? "Change Picture"
-                : "Upload Picture"}
+             {uploading
+              ? "Uploading..."
+              : user?.photoURL
+              ? "Change Picture"
+              : "Upload Picture"}
             </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleProfilePicUpload}
-              className="text-sm mt-1"
-            />
+
+            <div className="relative mt-2">
+              <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg shadow-md transition">
+                Choose File
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePicUpload}
+                  className="hidden"
+                />
+             </label>
+             </div>
+
 
             <h2 className="text-2xl font-bold mt-4">
               {profileData.fullName || "Unnamed User"}
