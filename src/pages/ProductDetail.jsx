@@ -364,7 +364,7 @@ export default function ProductDetail() {
         navigate("/ceramics?type=sinks");
         break;
       case "toilets":
-          navigate("/ceramics?type=toilets");
+        navigate("/ceramics?type=toilets");
         break;
       case "bathtub":
       case "bathtubs":
@@ -1017,11 +1017,8 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {(type === "tiles" ||
-              type === "sinks" ||
+            {(              type === "sinks" ||
               type === "toilets" ||
-              type === "marble" ||
-              type === "granite" ||
               type === "bathtubs") && (
               <>
                 {/* Input Quantity */}
@@ -1105,6 +1102,92 @@ export default function ProductDetail() {
                 </button>
               </>
             )}
+            {(              type === "tiles" ||
+              type === "marble" ||
+              type === "granite" ) && (
+              <>
+                {/* Input Quantity */}
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    📦 Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={
+                      product.stock !== "N/A"
+                        ? parseInt(product.stock)
+                        : undefined
+                    }
+                    value={quantity}
+                    onInput={(e) => {
+                      const val = parseInt(e.target.value);
+                      const stock = parseInt(product.stock);
+
+                      if (isNaN(val) || val < 1) {
+                        setQuantity(1);
+                        setStockError("");
+                      } else if (product.stock !== "N/A" && val > stock) {
+                        setQuantity(stock);
+                        setStockError(
+                          `Only ${stock} units available in stock.`
+                        );
+                      } else {
+                        setQuantity(val);
+                        setStockError("");
+                      }
+                    }}
+                    className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. 2"
+                  />
+                  {stockError && (
+                    <p className="text-red-600 text-sm mt-1">{stockError}</p>
+                  )}
+                </div>
+
+                {/* Pricing Summary Section */}
+                <div className="mt-6 grid gap-4">
+                  {/* Total Units */}
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                      🧮 Total Units
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">
+                      {totalTiles}
+                    </span>
+                  </div>
+
+                  {/* Price Per Unit */}
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                      💵 Price Per Square Foot
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">
+                      ₹{product.price}
+                    </span>
+                  </div>
+
+                  {/* Final Price */}
+                  <div className="flex justify-between items-center bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-300 rounded-xl px-5 py-4 shadow-md">
+                    <span className="text-base font-semibold text-gray-800">
+                      Total Price
+                    </span>
+                    <span className="text-blue-700 text-lg font-bold">
+                      ₹{totalPrice}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Add to Cart Button */}
+                <button
+                  onClick={handleAddToCart}
+                  className="mt-6 w-full py-3 px-6 bg-blue-600 text-white text-base rounded-xl font-semibold shadow-md hover:bg-blue-700 transition"
+                >
+                  🛒 Add to Cart
+                </button>
+              </>
+            )}
+            
           </div>
         </div>
       </main>
