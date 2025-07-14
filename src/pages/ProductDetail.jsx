@@ -306,6 +306,7 @@ export default function ProductDetail() {
       manufacturer: toiletData.Manufacturer || "",
       flush: toiletData["Flush Type"] || "",
       origin: toiletData.Origin || "",
+      stock: toiletData.Stock_admin ?? "N/A",
     };
   } else if (type === "marble" && marbleData) {
     product = {
@@ -936,6 +937,14 @@ export default function ProductDetail() {
                       ₹{product.price}
                     </span>
                   </li>
+                  <li>
+                    <strong>📦 In Stock:</strong>{" "}
+                    {product.stock !== "N/A" && parseInt(product.stock) > 10
+                      ? "In Stock"
+                      : product.stock !== "N/A"
+                      ? `Only ${product.stock} in stock`
+                      : "N/A"}
+                  </li>
                 </ul>
               </div>
             )}
@@ -1017,7 +1026,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {(              type === "sinks" ||
+            {(type === "sinks" ||
               type === "toilets" ||
               type === "bathtubs") && (
               <>
@@ -1045,7 +1054,7 @@ export default function ProductDetail() {
                       } else if (product.stock !== "N/A" && val > stock) {
                         setQuantity(stock);
                         setStockError(
-                          `Only ${stock} units available in stock.`
+                          `You can shop upto ${stock} item only.`
                         );
                       } else {
                         setQuantity(val);
@@ -1102,9 +1111,7 @@ export default function ProductDetail() {
                 </button>
               </>
             )}
-            {(              type === "tiles" ||
-              type === "marble" ||
-              type === "granite" ) && (
+            {(type === "tiles" || type === "marble" || type === "granite") && (
               <>
                 {/* Input Quantity */}
                 <div className="mt-6 space-y-2">
@@ -1130,7 +1137,7 @@ export default function ProductDetail() {
                       } else if (product.stock !== "N/A" && val > stock) {
                         setQuantity(stock);
                         setStockError(
-                          `Only ${stock} units available in stock.`
+                          `You can shop upto ${stock} items only.`
                         );
                       } else {
                         setQuantity(val);
@@ -1187,7 +1194,6 @@ export default function ProductDetail() {
                 </button>
               </>
             )}
-            
           </div>
         </div>
       </main>
