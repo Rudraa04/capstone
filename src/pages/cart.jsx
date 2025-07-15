@@ -5,8 +5,7 @@ import { auth } from "../firebase/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import Tiles2 from "../images/Tiles2.png";
-import sink5 from "../images/sink5.png";
+
 
 function getDeliveryDate() {
   const today = new Date();

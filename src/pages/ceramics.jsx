@@ -32,6 +32,7 @@ export default function Ceramics() {
     manufacturer: [],
     type: [],
     flush: [],
+    priceRange: [],
   });
   const [user, setUser] = useState(null);
   const [query, setQuery] = useState("");
@@ -142,24 +143,7 @@ export default function Ceramics() {
     return "";
   };
 
-  const otherCategories = [
-    {
-      type: "tiles",
-      label: "Tile Product",
-      desc: "Premium ceramic tile for modern floors and walls.",
-    },
-    {
-      type: "bathtub",
-      label: "Bathtub",
-      desc: "Elegant bathtub design. Smooth, stylish, and relaxing.",
-    },
-    {
-      type: "toilets",
-      label: "Toilet Fixture",
-      desc: "Compact and efficient ceramic toilet for every home.",
-    },
-  ];
-
+ 
   const filterOptions = {
     tiles: {
       size: ["12x18", "48x24", "32x32"],
@@ -180,10 +164,11 @@ export default function Ceramics() {
     },
 
     bathtub: {
-      material: ["Acrylic", "Ceramic", "Stone Resin"],
-      size: ["5ft", "5.5ft", "6ft"],
-      color: ["White", "Black", "Maroon"],
-    },
+      color: ["White", "White + Dark Pink", "Light Blue"],
+      size: ["54 x 28 H 15", "60 x 30 H 14", "66 x 30 H 14", "72 x 36 H 18", "Round, 54” Dia x 22 H"],
+      priceRange: ["Below ₹15,000", "₹15,000–₹30,000", "Above ₹30,000"]
+},
+
     toilets: {
       type: ["One Piece", "Wall Hung"],
       flush: ["With/Without Jet", "Washdown Flushing"],
@@ -364,7 +349,7 @@ export default function Ceramics() {
   });
   //sinks filter
   const filteredSinks = sinks.filter((sink) => {
-    const typeValue = mapSinkType(sink["Sub Category"] || "");
+    const typeValue = mapSinkType(sink["SubCategory"] || "");
     const colorValue = mapSinkColor(sink.Color || "");
     const manufacturerValue = mapSinkManufacturer(sink.Manufacturer || "");
 
@@ -409,6 +394,25 @@ export default function Ceramics() {
 
     return typeMatch && flushMatch && colorMatch && manufacturerMatch;
   });
+const filteredBathtubs = bathtubs.filter((tub) => {
+  const colorMatch =
+    !filters?.color?.length || filters.color.includes(tub.Color);
+
+  const sizeMatch =
+    !filters?.size?.length || filters.size.includes(tub.Size);
+
+  const price = parseFloat(tub.Price || 0);
+  const priceRange = Array.isArray(filters?.priceRange) ? filters.priceRange : [];
+  const priceMatch =
+  priceRange.length === 0 ||
+  (priceRange.includes("Below ₹15,000") && price < 15000) ||
+  (priceRange.includes("₹15,000–₹30,000") && price >= 15000 && price <= 30000) ||
+  (priceRange.includes("Above ₹30,000") && price > 30000);
+
+
+  return colorMatch && sizeMatch && priceMatch;
+});
+
 
   const handleSearch = () => {
     let combined = [];
@@ -834,7 +838,7 @@ export default function Ceramics() {
                 ))}
 
               {activeTab === "bathtub" &&
-                bathtubs.map((tub, i) => (
+                 filteredBathtubs.map((tub, i) => (
                   <div
                     key={tub._id || i}
                     className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
