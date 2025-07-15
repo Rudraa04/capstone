@@ -80,7 +80,7 @@ router.post("/api/products/tiles", async (req, res) => {
   }
 });
 
-router.post("/sinks", async (req, res) => {
+router.post("/api/products/sinks", async (req, res) => {
   try {
     const newSink = new Sinks_Model(req.body);
     const saved = await newSink.save();
@@ -100,7 +100,7 @@ router.post("api/products/bathtubs", async (req, res) => {
   }
 });
 
-router.post("/toilets", async (req, res) => {
+router.post("/api/products/toilets", async (req, res) => {
   try {
     const newToilet = new Toilets_Model(req.body);
     const saved = await newToilet.save();
@@ -216,7 +216,7 @@ router.delete("/api/products/tiles/:id", async (req, res) => {
   }
 });
 
-router.delete("/sinks/:id", async (req, res) => {
+router.delete("/api/products/sinks/:id", async (req, res) => {
   try {
     await Sinks_Model.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Product deleted successfully" });
@@ -225,7 +225,7 @@ router.delete("/sinks/:id", async (req, res) => {
   }
 });
 
-router.delete("/bathtubs/:id", async (req, res) => {
+router.delete("/api/products/bathtubs/:id", async (req, res) => {
   try {
     await Bathtubs_Model.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Product deleted successfully" });
@@ -234,7 +234,7 @@ router.delete("/bathtubs/:id", async (req, res) => {
   }
 });
 
-router.delete("/toilets/:id", async (req, res) => {
+router.delete("/api/products/toilets/:id", async (req, res) => {
   try {
     await Toilets_Model.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Product deleted successfully" });
@@ -269,5 +269,15 @@ router.put("/api/products/tiles/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update marble", error: err.message });
   }
 });
+
+router.put("/api/products/sinks/:id", async (req, res) => {
+  try {
+    const updated = await Sinks_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Product updated", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update sink", error: err.message });
+  }
+});
+
 
 export default router;

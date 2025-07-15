@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSink, FaPlus } from "react-icons/fa6";
+import { storage } from "../firebase/firebase";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import axios from "axios";
 import {
   FiBox,
   FiPackage,
@@ -44,14 +47,7 @@ function Modal({ isOpen, onClose, children }) {
 
 export default function SinkInventory() {
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("isAdminLoggedIn");
-    navigate("/login");
-  };
-
-  const [showModal, setShowModal] = useState(false);
-
+  const [products, setProducts] = useState([]);
   const [formData, setFormData] = useState({
     ProductName: "",
     ProductDescription: "",
@@ -65,106 +61,152 @@ export default function SinkInventory() {
     customBrand: "",
     length: "",
     width: "",
+    height: "",
   });
-
   const [image, setImage] = useState(null);
-
-  const brands = [
-    "Hindware",
-    "Jaquar",
-    "Cera",
-    "Parryware",
-    "Imported",
-    "Other",
-  ];
-
-  const categories = [
-    "Wall Mounted",
-    "Table Top",
-    "Corner Sink",
-    "Under Counter",
-  ];
-
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) setImage(URL.createObjectURL(file));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const Size = `${formData.length}x${formData.width}`;
-    const ManufacturerFinal =
-      formData.Manufacturer === "Other"
-        ? formData.customBrand
-        : formData.Manufacturer;
-
-    const sinkData = {
-      ProductName: formData.ProductName,
-      ProductDescription: formData.ProductDescription,
-      Color: formData.Color,
-      Price: formData.Price,
-      Image: image || "",
-      Category: formData.Category,
-      SubCategory: formData.SubCategory,
-      Quantity: formData.Quantity,
-      Manufacturer: ManufacturerFinal,
-      Size: Size,
-    };
-
-    if (selectedIndex !== null) {
-      const updated = [...products];
-      updated[selectedIndex] = sinkData;
-      setProducts(updated);
-      alert("Sink product updated successfully!");
-    } else {
-      setProducts([...products, sinkData]);
-      alert("Sink product added successfully!");
-    }
-
-    setFormData({});
-    setImage(null);
-    setSelectedIndex(null);
-    setShowModal(false);
-  };
-
-  const [products, setProducts] = useState([
-    {
-      ProductName: "Modern Steel Sink",
-      ProductDescription: "Durable steel sink with modern design.",
-      Color: "Silver",
-      Price: 220,
-      Category: "Sink",
-      SubCategory: "Wall Mounted",
-      Quantity: 30,
-      Manufacturer: "Jaquar",
-      Origin: "India",
-      Size: "22x18",
-      Image: "",
-    },
-    {
-      ProductName: "Ceramic Bowl Sink",
-      ProductDescription: "Elegant ceramic bowl sink.",
-      Color: "White",
-      Price: 180,
-      Category: "Sink",
-      SubCategory: "Table Top",
-      Quantity: 25,
-      Manufacturer: "Hindware",
-      Origin: "India",
-      Size: "16x16",
-      Image: "",
-    },
-  ]);
-
-  const [selectedIndex, setSelectedIndex] = useState(null);
-
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [colorFilter, setColorFilter] = useState("");
   const [sizeFilter, setSizeFilter] = useState("");
   const [usageTypeFilter, setUsageTypeFilter] = useState("");
+
+  const brands = ["Hindware", "Jaquar", "Cera", "Parryware", "Imported", "Other"];
+  const categories = ["Wall Mounted", "Table Top", "Corner Sink", "Under Counter"];
+
+  useEffect(() => {
+    fetchSinks();
+  }, []);
+
+  const fetchSinks = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/products/sinks"); // use full URL if no proxy
+    setProducts(Array.isArray(res.data) ? res.data : []);
+  } catch (err) {
+    console.error("Error fetching sinks:", err);
+    setProducts([]);
+  }
+};
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fileRef = ref(storage, `Inventory/Sinks/${file.name}-${Date.now()}`);
+    try {
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      setImage(url);
+      setFormData((prev) => ({ ...prev, Image: url }));
+    } catch (err) {
+      alert("Image upload failed.");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const Size = `${formData.length}mm x ${formData.width}mm x ${formData.height}mm`;
+    const ManufacturerFinal = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+
+    const sinkData = {
+      Name: formData.ProductName,
+      Description: formData.ProductDescription,
+      Color: formData.Color,
+      Price: parseFloat(formData.Price),
+      Image: image || formData.Image,
+      Category: formData.Category,
+      SubCategory: formData.SubCategory,
+      Stock_admin: parseInt(formData.Quantity),
+      Manufacturer: ManufacturerFinal,
+      Size: `${formData.length} x ${formData.width} x ${formData.height}mm`
+    };
+
+    try {
+      if (selectedProduct) {
+        await axios.put(`http://localhost:5000/api/products/sinks/${selectedProduct._id}`, sinkData);
+        alert("Sink updated successfully!");
+      } else {
+        await axios.post("http://localhost:5000/api/products/sinks", sinkData);
+        alert("Sink added successfully!");
+      }
+    const res = await axios.get("http://localhost:5000/api/products/sinks");
+    console.log("Fetched after update:", res.data);
+    setProducts(res.data);
+    } catch (err) {
+      console.error("Submit Error:", err);
+      alert("Error saving sink.");
+    } finally {
+      resetForm();
+    }
+  };
+
+  const handleEdit = (item) => {
+    const [length, width, height] = (item.Size || "").split("x").map((s) => s.trim().replace("mm", ""));
+    setFormData({
+      ProductName: item.Name,
+      ProductDescription: item.Description,
+      Color: item.Color,
+      Price: item.Price,
+      Image: item.Image,
+      Category: item.Category,
+      SubCategory: item.SubCategory,
+      Quantity: item.Stock_admin,
+      Manufacturer: item.Manufacturer,
+      customBrand: "",
+      length,
+      width,
+      height,
+    });
+    setImage(item.Image);
+    setSelectedProduct(item);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    const product = products.find((p) => p._id === id);
+    if (!product || !window.confirm("Delete this sink?")) return;
+
+    try {
+      if (product.Image?.includes("firebasestorage")) {
+        const path = decodeURIComponent(product.Image.split("/o/")[1].split("?")[0]);
+        await deleteObject(ref(storage, path));
+      }
+      await axios.delete(`http://localhost:5000/api/products/sinks/${id}`);
+      setProducts((prev) => prev.filter((p) => p._id !== id));
+      alert("Deleted successfully");
+    } catch (err) {
+      console.error("Delete Error:", err);
+      alert("Failed to delete");
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      ProductName: "",
+      ProductDescription: "",
+      Color: "",
+      Price: "",
+      Image: "",
+      Category: "Sink",
+      SubCategory: "",
+      Quantity: "",
+      Manufacturer: "",
+      customBrand: "",
+      length: "",
+      width: "",
+    });
+    setImage(null);
+    setSelectedProduct(null);
+    setShowModal(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAdminLoggedIn");
+    navigate("/login");
+  };
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -251,7 +293,7 @@ export default function SinkInventory() {
                   length: "",
                   width: "",
                 });
-                setSelectedIndex(null);
+                setSelectedProduct(null);
                 setImage(null);
                 setShowModal(true);
               }}
@@ -387,7 +429,8 @@ export default function SinkInventory() {
                 onClick={() => {
                   setSearchTerm("");
                   setColorFilter("");
-                  setOriginFilter("");
+                  setSizeFilter("");
+                  setUsageTypeFilter("");
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
               >
@@ -423,41 +466,40 @@ export default function SinkInventory() {
               </thead>
               <tbody>
                 {products
-                  .filter(
-                    (item) =>
-                      item.ProductName.toLowerCase().includes(
-                        searchTerm.toLowerCase()
-                      ) &&
-                      (colorFilter === "" || item.Color === colorFilter) &&
-                      (sizeFilter === "" || item.Size === sizeFilter) &&
-                      (usageTypeFilter === "" ||
-                        item.SubCategory === usageTypeFilter)
+                  .filter((item) =>
+                    (item?.Name || "").toLowerCase().includes(searchTerm.toLowerCase()) &&
+                    (colorFilter === "" || item.Color === colorFilter) &&
+                    (sizeFilter === "" || item.Size === sizeFilter) &&
+                    (usageTypeFilter === "" || item.SubCategory === usageTypeFilter)
                   )
+
                   .map((item, index) => (
                     <tr key={index} className="border-b">
-                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Name}</td>
                       <td className="px-6 py-4">{item.Category}</td>
                       <td className="px-6 py-4">₹{item.Price}</td>
-                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">{item.Stock_admin}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
                               setFormData({
-                                ProductName: item.ProductName,
-                                ProductDescription: item.ProductDescription,
-                                Color: item.Color,
-                                Price: item.Price,
-                                Category: item.Category,
-                                SubCategory: item.SubCategory,
-                                Quantity: item.Quantity,
-                                Manufacturer: item.Manufacturer,
+                                ProductName: item.Name || "",
+                                ProductDescription: item.Description || "",
+                                Color: item.Color || "",
+                                Price: item.Price || "",
+                                Image: item.Image || "",
+                                Category: item.Category || "Sink",
+                                SubCategory: item.SubCategory || "",
+                                Quantity: item.Stock_admin || "",
+                                Manufacturer: item.Manufacturer || "",
                                 customBrand: "",
                                 length: item.Size?.split("x")[0] || "",
                                 width: item.Size?.split("x")[1] || "",
                               });
-                              setImage(item.Image || null);
-                              setSelectedIndex(index);
+
+                              setImage(item.Image);
+                              setSelectedProduct(item);
                               setShowModal(true);
                             }}
                             className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
@@ -465,7 +507,10 @@ export default function SinkInventory() {
                             Edit
                           </button>
 
-                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          <button
+                            onClick={() => handleDelete(item._id)}
+                            className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition"
+                          >
                             Delete
                           </button>
                         </div>
@@ -478,7 +523,7 @@ export default function SinkInventory() {
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            {selectedIndex !== null ? "Edit Sink Product" : "Add Sink Product"}
+            {selectedProduct ? "Edit Sink Product" : "Add Sink Product"}
           </h2>
 
           <form
@@ -506,7 +551,6 @@ export default function SinkInventory() {
                   rows="3"
                   value={formData.ProductDescription}
                   onChange={handleChange}
-                  required
                   className="w-full px-3 py-2 border rounded-md"
                 ></textarea>
               </div>
@@ -616,9 +660,9 @@ export default function SinkInventory() {
                     min="0"
                     step="any"
                     required
-                    className="w-1/2 px-3 py-2 border rounded-md"
+                    className="w-1/3 px-3 py-2 border rounded-md"
                   />
-                  <span className="font-bold text-lg leading-none">X</span>
+                  <span className="font-bold text-lg leading-none">×</span>
                   <input
                     type="number"
                     name="width"
@@ -628,7 +672,19 @@ export default function SinkInventory() {
                     min="0"
                     step="any"
                     required
-                    className="w-1/2 px-3 py-2 border rounded-md"
+                    className="w-1/3 px-3 py-2 border rounded-md"
+                  />
+                  <span className="font-bold text-lg leading-none">×</span>
+                  <input
+                    type="number"
+                    name="height"
+                    value={formData.height}
+                    onChange={handleChange}
+                    placeholder="Height"
+                    min="0"
+                    step="any"
+                    required
+                    className="w-1/3 px-3 py-2 border rounded-md"
                   />
                 </div>
               </div>
@@ -658,7 +714,7 @@ export default function SinkInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                {selectedIndex !== null ? "Update Product" : "Save Product"}
+                {selectedProduct ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>

@@ -14,7 +14,7 @@ const SinksSchema = new mongoose.Schema({
   Stock_admin: Number,
   Manufacturer: String,
   Size: String,
-  Description: String       // ✅ Add this line
+  Description: String       
 });
 
 
