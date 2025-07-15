@@ -74,9 +74,6 @@ export default function Signup() {
       );
       const user = userCredential.user;
 
-      await sendEmailVerification(user);
-      await auth.signOut();
-
       await updateProfile(user, {
         displayName: fullName,
       });
@@ -86,6 +83,9 @@ export default function Signup() {
         fullName: fullName,
         role: "customer",
       });
+
+      await sendEmailVerification(user);
+      await auth.signOut();
 
       setMessage(
         "Signup successful! A verification email has been sent. Please verify before logging in."

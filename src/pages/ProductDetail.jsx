@@ -274,7 +274,6 @@ export default function ProductDetail() {
     product = {
       name: sinkData.Name,
       image: sinkData.Image,
-      description: sinkData.Description || "N/A",
       size: sinkData.Size || "N/A",
       price: sinkData.Price || 0,
       color: sinkData.Color || "N/A",
@@ -306,6 +305,7 @@ export default function ProductDetail() {
       manufacturer: toiletData.Manufacturer || "",
       flush: toiletData["Flush Type"] || "",
       origin: toiletData.Origin || "",
+      stock: toiletData.Stock_admin ?? "N/A",
     };
   } else if (type === "marble" && marbleData) {
     product = {
@@ -364,7 +364,7 @@ export default function ProductDetail() {
         navigate("/ceramics?type=sinks");
         break;
       case "toilets":
-          navigate("/ceramics?type=toilets");
+        navigate("/ceramics?type=toilets");
         break;
       case "bathtub":
       case "bathtubs":
@@ -793,7 +793,7 @@ export default function ProductDetail() {
                     <strong>📏 Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🧱 Sub Category:</strong> {product.subcategory}
+                    <strong>🧱 Usage Type:</strong> {product.subcategory}
                   </li>
                   <li>
                     <strong>🏢 Manufacturer:</strong> {product.manufacturer}
@@ -801,11 +801,11 @@ export default function ProductDetail() {
                   <li>
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
-                  <strong>📦 In Stock:</strong>{" "}
+                  <strong>📦 Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
-                    ? `Only ${product.stock} in stock`
+                    ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -833,19 +833,19 @@ export default function ProductDetail() {
                     <strong>📏 Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🏷️ Sub Category:</strong> {product.subcategory}
+                    <strong>🏷️ Usage Type:</strong> {product.subcategory}
                   </li>
                   <li>
-                    <strong>🏢 Brand:</strong> {product.brand}
+                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
                   </li>
                   <li>
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
-                  <strong>📦 In Stock:</strong>{" "}
+                  <strong>📦 Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
-                    ? `Only ${product.stock} in stock`
+                    ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -876,17 +876,11 @@ export default function ProductDetail() {
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
-                  </li>
-                  <li>
-                    <strong>🌍 Origin:</strong> {product.origin}
-                  </li>
-                  <li>
-                    <strong>📦 In Stock:</strong>{" "}
+                    <strong>📦 Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
                       ? "In Stock"
                       : product.stock !== "N/A"
-                      ? `Only ${product.stock} in stock`
+                      ? `Only ${product.stock} left`
                       : "N/A"}
                   </li>
                   <li>
@@ -928,13 +922,18 @@ export default function ProductDetail() {
                     <strong>🚿 Flush Type:</strong> {product.flush || "N/A"}
                   </li>
                   <li>
-                    <strong>🌍 Origin:</strong> {product.origin || "N/A"}
-                  </li>
-                  <li>
                     <strong>💰 Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
                       ₹{product.price}
                     </span>
+                  </li>
+                  <li>
+                    <strong>📦 Stock:</strong>{" "}
+                    {product.stock !== "N/A" && parseInt(product.stock) > 10
+                      ? "In Stock"
+                      : product.stock !== "N/A"
+                      ? `Only ${product.stock} left`
+                      : "N/A"}
                   </li>
                 </ul>
               </div>
@@ -961,11 +960,11 @@ export default function ProductDetail() {
                   <li>
                     <strong>🌍 Origin:</strong> {product.origin}
                   </li>
-                  <strong>📦 In Stock:</strong>{" "}
+                  <strong>📦 Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
-                    ? `Only ${product.stock} in stock`
+                    ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -996,16 +995,13 @@ export default function ProductDetail() {
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
-                  </li>
-                  <li>
                     <strong>🌍 Origin:</strong> {product.origin}
                   </li>
-                  <strong>📦 In Stock:</strong>{" "}
+                  <strong>📦 Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
-                    ? `Only ${product.stock} in stock`
+                    ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -1017,11 +1013,8 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {(type === "tiles" ||
-              type === "sinks" ||
+            {(type === "sinks" ||
               type === "toilets" ||
-              type === "marble" ||
-              type === "granite" ||
               type === "bathtubs") && (
               <>
                 {/* Input Quantity */}
@@ -1047,9 +1040,7 @@ export default function ProductDetail() {
                         setStockError("");
                       } else if (product.stock !== "N/A" && val > stock) {
                         setQuantity(stock);
-                        setStockError(
-                          `Only ${stock} units available in stock.`
-                        );
+                        setStockError(`You can shop upto ${stock} item only.`);
                       } else {
                         setQuantity(val);
                         setStockError("");
@@ -1079,6 +1070,87 @@ export default function ProductDetail() {
                   <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
                       💵 Price Per Unit
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">
+                      ₹{product.price}
+                    </span>
+                  </div>
+
+                  {/* Final Price */}
+                  <div className="flex justify-between items-center bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-300 rounded-xl px-5 py-4 shadow-md">
+                    <span className="text-base font-semibold text-gray-800">
+                      Total Price
+                    </span>
+                    <span className="text-blue-700 text-lg font-bold">
+                      ₹{totalPrice}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Add to Cart Button */}
+                <button
+                  onClick={handleAddToCart}
+                  className="mt-6 w-full py-3 px-6 bg-blue-600 text-white text-base rounded-xl font-semibold shadow-md hover:bg-blue-700 transition"
+                >
+                  🛒 Add to Cart
+                </button>
+              </>
+            )}
+            {(type === "tiles" || type === "marble" || type === "granite") && (
+              <>
+                {/* Input Quantity */}
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    📦 Quantity
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={
+                      product.stock !== "N/A"
+                        ? parseInt(product.stock)
+                        : undefined
+                    }
+                    value={quantity}
+                    onInput={(e) => {
+                      const val = parseInt(e.target.value);
+                      const stock = parseInt(product.stock);
+
+                      if (isNaN(val) || val < 1) {
+                        setQuantity(1);
+                        setStockError("");
+                      } else if (product.stock !== "N/A" && val > stock) {
+                        setQuantity(stock);
+                        setStockError(`You can shop upto ${stock} items only.`);
+                      } else {
+                        setQuantity(val);
+                        setStockError("");
+                      }
+                    }}
+                    className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. 2"
+                  />
+                  {stockError && (
+                    <p className="text-red-600 text-sm mt-1">{stockError}</p>
+                  )}
+                </div>
+
+                {/* Pricing Summary Section */}
+                <div className="mt-6 grid gap-4">
+                  {/* Total Units */}
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                      🧮 Total Units
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">
+                      {totalTiles}
+                    </span>
+                  </div>
+
+                  {/* Price Per Unit */}
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                      💵 Price Per Square Foot
                     </span>
                     <span className="text-green-600 font-bold text-sm">
                       ₹{product.price}
