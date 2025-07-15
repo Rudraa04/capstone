@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-
 function getDeliveryDate() {
   const today = new Date();
   today.setDate(today.getDate() + 3);
@@ -20,6 +19,33 @@ function getDeliveryDate() {
 export default function Cart() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+    size: "normal",
+  });
+
+  const triggerToast = (
+    message,
+    type = "success",
+    size = "normal",
+    duration = 10000
+  ) => {
+    setToast({ show: true, message, type, size });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success", size: "normal" });
+    }, duration);
+  };
+
+  useEffect(() => {
+    const message = localStorage.getItem("orderSuccessMessage");
+    if (message) {
+      triggerToast(message, "success", "large", 15000);
+      localStorage.removeItem("orderSuccessMessage");
+    }
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
@@ -48,7 +74,7 @@ export default function Cart() {
     const filtered = cartItems.filter((item) => item.name !== id);
     setCartItems(filtered);
     localStorage.setItem("cart", JSON.stringify(filtered));
-    window.dispatchEvent(new Event("cartUpdated")); 
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
   const subtotal = cartItems.reduce((sum, item) => {
@@ -247,6 +273,25 @@ export default function Cart() {
           </div>
         )}
       </div>
+      {toast.show && (
+        <div
+          onClick={() => setToast({ ...toast, show: false })}
+          className={`fixed bottom-4 right-4 z-50 animate-slideIn cursor-pointer shadow-xl transition-all duration-500 ${
+            toast.size === "large"
+              ? "max-w-xs sm:max-w-sm p-6 text-xl font-bold"
+              : "p-4 text-sm"
+          } rounded-lg ${
+            toast.type === "success"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.size === "large" && (
+            <div className="text-4xl mb-2 animate-bounce">🎉</div>
+          )}
+          {toast.message}
+        </div>
+      )}
 
       <Footer />
     </div>

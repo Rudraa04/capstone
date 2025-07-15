@@ -141,7 +141,7 @@ export default function Checkout() {
 
     if (result.status !== "OK") {
       triggerToast(
-        "❌ Card tokenization failed. Please check your card details.",
+        "❌ Card failed. Please check your card details.",
         "error"
       );
       return;
@@ -229,15 +229,15 @@ export default function Checkout() {
       const data = await res.json();
 
       if (res.ok) {
-        triggerToast(
-          "🎉 Your payment was successful! Thank you for your order.",
-          "success",
-          "large",
-          15000
+        localStorage.setItem(
+          "orderSuccessMessage",
+          "🎉 Your payment was successful! Thank you for your order."
         );
 
         localStorage.removeItem("cart");
         window.dispatchEvent(new Event("cartUpdated"));
+
+        navigate("/cart");
       } else {
         triggerToast("❌ Payment failed: " + data.message, "error");
       }
