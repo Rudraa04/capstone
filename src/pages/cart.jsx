@@ -66,10 +66,10 @@ export default function Cart() {
   const total = subtotal - totalItemDiscount - (parseFloat(discount) || 0);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-gray-900 font-sans">
+    <div className="flex flex-col min-h-screen text-gray-900 font-sans bg-gray-50">
       <Header />
 
-      <div className="flex-grow px-2 py-6 sm:px-4 lg:px-10 bg-gray-100">
+      <div className="flex-grow px-2 py-6 sm:px-4 lg:px-10 ">
         <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center lg:text-left">
           🛒 Your Cart
         </h1>
