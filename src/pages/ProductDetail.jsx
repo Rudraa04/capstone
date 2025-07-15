@@ -20,6 +20,9 @@ import graniteImages from "../images/granite";
 import Footer from "../components/Footer";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "animate.css"; // For animation effects
 
 export default function ProductDetail() {
   const { type, id } = useParams();
@@ -378,7 +381,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     const cartItem = {
-      id: Date.now(), // or a UUID
+      id: Date.now(),
       ...product,
       size: customSize,
       quantity,
@@ -400,8 +403,19 @@ export default function ProductDetail() {
     }
 
     localStorage.setItem("cart", JSON.stringify(existingCart));
-    alert("✅ Added to cart!");
+
+    toast.success("🛒 Added to cart!", {
+      position: "bottom-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: true,
+      className:
+        "bg-white border border-green-400 text-green-800 text-lg font-semibold px-6 py-4 rounded-lg shadow-lg animate__animated animate__fadeInRight",
+    });
   };
+
   if (
     (type === "tiles" && !tileData) ||
     (type === "sinks" && !sinkData) ||
@@ -1178,11 +1192,13 @@ export default function ProductDetail() {
               </>
             )}
           </div>
+          
         </div>
       </main>
 
       {/* FOOTER */}
       <Footer />
+      <ToastContainer />
     </div>
   );
 }
