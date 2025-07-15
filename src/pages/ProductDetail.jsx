@@ -274,7 +274,6 @@ export default function ProductDetail() {
     product = {
       name: sinkData.Name,
       image: sinkData.Image,
-      description: sinkData.Description || "N/A",
       size: sinkData.Size || "N/A",
       price: sinkData.Price || 0,
       color: sinkData.Color || "N/A",
@@ -794,7 +793,7 @@ export default function ProductDetail() {
                     <strong>📏 Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🧱 Sub Category:</strong> {product.subcategory}
+                    <strong>🧱 Usage Type:</strong> {product.subcategory}
                   </li>
                   <li>
                     <strong>🏢 Manufacturer:</strong> {product.manufacturer}
@@ -802,11 +801,11 @@ export default function ProductDetail() {
                   <li>
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
-                  <strong>📦 In Stock:</strong>{" "}
+                  <strong>📦 Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
-                    ? `Only ${product.stock} in stock`
+                    ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -834,19 +833,19 @@ export default function ProductDetail() {
                     <strong>📏 Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🏷️ Sub Category:</strong> {product.subcategory}
+                    <strong>🏷️ Usage Type:</strong> {product.subcategory}
                   </li>
                   <li>
-                    <strong>🏢 Brand:</strong> {product.brand}
+                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
                   </li>
                   <li>
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
-                  <strong>📦 In Stock:</strong>{" "}
+                  <strong>📦 Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
-                    ? `Only ${product.stock} in stock`
+                    ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -877,17 +876,11 @@ export default function ProductDetail() {
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
-                  </li>
-                  <li>
-                    <strong>🌍 Origin:</strong> {product.origin}
-                  </li>
-                  <li>
-                    <strong>📦 In Stock:</strong>{" "}
+                    <strong>📦 Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
                       ? "In Stock"
                       : product.stock !== "N/A"
-                      ? `Only ${product.stock} in stock`
+                      ? `Only ${product.stock} left`
                       : "N/A"}
                   </li>
                   <li>
@@ -929,20 +922,17 @@ export default function ProductDetail() {
                     <strong>🚿 Flush Type:</strong> {product.flush || "N/A"}
                   </li>
                   <li>
-                    <strong>🌍 Origin:</strong> {product.origin || "N/A"}
-                  </li>
-                  <li>
                     <strong>💰 Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
                       ₹{product.price}
                     </span>
                   </li>
                   <li>
-                    <strong>📦 In Stock:</strong>{" "}
+                    <strong>📦 Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
                       ? "In Stock"
                       : product.stock !== "N/A"
-                      ? `Only ${product.stock} in stock`
+                      ? `Only ${product.stock} left`
                       : "N/A"}
                   </li>
                 </ul>
@@ -970,11 +960,11 @@ export default function ProductDetail() {
                   <li>
                     <strong>🌍 Origin:</strong> {product.origin}
                   </li>
-                  <strong>📦 In Stock:</strong>{" "}
+                  <strong>📦 Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
-                    ? `Only ${product.stock} in stock`
+                    ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -1005,16 +995,13 @@ export default function ProductDetail() {
                     <strong>🎨 Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
-                  </li>
-                  <li>
                     <strong>🌍 Origin:</strong> {product.origin}
                   </li>
-                  <strong>📦 In Stock:</strong>{" "}
+                  <strong>📦 Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
-                    ? `Only ${product.stock} in stock`
+                    ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
                     <strong>💰 Price:</strong>{" "}
@@ -1053,9 +1040,7 @@ export default function ProductDetail() {
                         setStockError("");
                       } else if (product.stock !== "N/A" && val > stock) {
                         setQuantity(stock);
-                        setStockError(
-                          `You can shop upto ${stock} item only.`
-                        );
+                        setStockError(`You can shop upto ${stock} item only.`);
                       } else {
                         setQuantity(val);
                         setStockError("");
@@ -1136,9 +1121,7 @@ export default function ProductDetail() {
                         setStockError("");
                       } else if (product.stock !== "N/A" && val > stock) {
                         setQuantity(stock);
-                        setStockError(
-                          `You can shop upto ${stock} items only.`
-                        );
+                        setStockError(`You can shop upto ${stock} items only.`);
                       } else {
                         setQuantity(val);
                         setStockError("");
