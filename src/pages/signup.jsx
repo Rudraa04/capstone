@@ -74,9 +74,6 @@ export default function Signup() {
       );
       const user = userCredential.user;
 
-      await sendEmailVerification(user);
-      await auth.signOut();
-
       await updateProfile(user, {
         displayName: fullName,
       });
@@ -86,6 +83,9 @@ export default function Signup() {
         fullName: fullName,
         role: "customer",
       });
+
+      await sendEmailVerification(user);
+      await auth.signOut();
 
       setMessage(
         "Signup successful! A verification email has been sent. Please verify before logging in."
@@ -218,9 +218,11 @@ export default function Signup() {
                   placeholder="Re-enter your password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
+                  onPaste={(e) => e.preventDefault()} // 👈 Prevent paste
                   required
                   className="w-full border-b-2 border-black py-2 pl-10 pr-10 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
+
                 <MdLock className="absolute left-2 top-2.5 text-gray-600 text-lg" />
                 <button
                   type="button"
