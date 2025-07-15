@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import productRoutes from './routes/productRoutes.js';  // Keep this here (route import)
+import squareRestRoutes from "./routes/squareRestRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,8 @@ app.use("/", productRoutes);
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI;
+
+app.use("/api/square", squareRestRoutes);
 
 if (!MONGO_URI) {
   console.error("❌ Missing MONGO_URI in .env file");

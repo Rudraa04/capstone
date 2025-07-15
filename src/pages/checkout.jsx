@@ -12,6 +12,7 @@ import {
 } from "react-icons/fa";
 import { auth } from "../firebase/firebase";
 
+
 export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,6 +45,9 @@ export default function Checkout() {
   });
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [cardLoaded, setCardLoaded] = useState(false);
+  const cardRef = useRef();
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -68,6 +72,41 @@ export default function Checkout() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+  const loadSquareCard = async () => {
+    // ✅ Wait until the Square SDK is available
+    let attempts = 0;
+    while (!window.Square && attempts < 10) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      attempts++;
+    }
+
+    if (!window.Square) {
+      console.error("Square SDK not loaded.");
+      return;
+    }
+
+    try {
+      const payments = window.Square.payments(
+        "sandbox-sq0idb-84Wv_eCeWbSX-fotdJL4-Q", // ✅ your actual sandbox App ID
+        "sandbox"
+      );
+
+      const card = await payments.card();
+      await card.attach("#card-container");
+      cardRef.current = card;
+      setCardLoaded(true);
+    } catch (error) {
+      console.error("Error setting up Square card:", error);
+    }
+  };
+
+  if (paymentMethod === "card") {
+    loadSquareCard();
+  }
+}, [paymentMethod]); // ✅ re-run when paymentMethod is 'card'
+
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -101,21 +140,68 @@ export default function Checkout() {
     });
   };
 
-  const handlePlaceOrder = () => {
-    if (!selectedAddress) return alert("Please select or add an address.");
-    const address = addressList.find((a) => a.id === selectedAddress);
-    localStorage.setItem(
-      "orderDetails",
-      JSON.stringify({ address, paymentMethod, cartItems })
-    );
-    localStorage.removeItem("cartItems");
-    navigate("/thank-you");
-  };
+  const handlePlaceOrder = async () => {
+  if (!selectedAddress) return alert("Please select or add an address.");
 
-  const totalAmount = cartItems.reduce(
-    (sum, item) => sum + (item.price - item.discount) * item.quantity,
-    0
-  );
+  const address = addressList.find((a) => a.id === selectedAddress);
+
+  if (paymentMethod === "card") {
+    if (!cardRef.current) return alert("Card form not ready yet");
+
+    // 1. Tokenize the card
+    const result = await cardRef.current.tokenize();
+
+    if (result.status !== "OK") {
+      return alert("Card tokenization failed. Please check your card details.");
+    }
+
+    const sourceId = result.token;
+
+    try {
+      // 2. Send token to backend
+      const res = await fetch("http://localhost:5000/api/square/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceId,
+          amount: totalAmount*100, // Use the total from cart
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Payment successful!");
+        localStorage.removeItem("cart");
+        window.dispatchEvent(new Event("cartUpdated"));
+        navigate("/thank-you");
+      } else {
+        console.error(data);
+        alert("Payment failed: " + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Payment request failed. Please try again.");
+    }
+
+    return; // Exit the function so it doesn’t continue to COD flow
+  }
+
+  // 👇 For COD or UPI — keep existing logic
+  localStorage.setItem("orderDetails", JSON.stringify({ address, paymentMethod, cartItems }));
+  localStorage.removeItem("cartItems");
+  navigate("/thank-you");
+};
+
+const totalAmount = cartItems.reduce((sum, item) => {
+  const price = parseFloat(item.price) || 0;
+  const discount = parseFloat(item.discount) || 0;
+  const quantity = parseInt(item.quantity) || 1;
+
+  const itemTotal = (price - discount) * quantity;
+  return sum + itemTotal;
+}, 0);
+
 
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
@@ -231,6 +317,12 @@ export default function Checkout() {
           </div>
 
           {/* Payment Method */}
+          {paymentMethod === "card" && (
+  <div className="mt-4">
+    <div id="card-container" className="border rounded p-4"></div>
+  </div>
+)}
+
           <div className="bg-white p-6 rounded-2xl shadow">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
               💳 Payment Method
@@ -309,7 +401,7 @@ export default function Checkout() {
                     </p>
                   </div>
                   <div className="text-right font-medium">
-                    ₹{(item.price - item.discount) * item.quantity}
+                    ₹{(parseFloat(item.price || 0) - parseFloat(item.discount || 0)) * parseInt(item.quantity || 1)}
                   </div>
                 </div>
               ))}
