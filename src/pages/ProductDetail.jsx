@@ -36,6 +36,7 @@ export default function ProductDetail() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const [suggestions, setSuggestions] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
@@ -703,9 +704,9 @@ export default function ProductDetail() {
       {/* MAIN BODY */}
       <main className="max-w-7xl mx-auto px-4 sm:px-8 py-12 bg-white text-gray-900">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-          {/* Image with Zoom */}
           <div
-            className={`relative rounded-2xl overflow-hidden shadow-lg ${
+            onClick={() => setIsImageModalOpen(true)}
+            className={`relative rounded-2xl overflow-hidden shadow-lg cursor-pointer ${
               type === "marble"
                 ? "border border-gray-200 bg-white p-1 shadow-[0_4px_20px_rgba(218,165,32,0.3)]"
                 : "border"
@@ -1192,9 +1193,34 @@ export default function ProductDetail() {
               </>
             )}
           </div>
-          
-        </div>
+        </div>{" "}
+        {/* closes the grid */}
       </main>
+
+      {isImageModalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+          onClick={() => setIsImageModalOpen(false)}
+        >
+          <div
+            className="relative max-w-[90%] max-h-[90%]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsImageModalOpen(false)}
+              className="absolute top-0 right-0 m-3 text-white text-3xl font-bold z-50 hover:text-red-400"
+            >
+              &times;
+            </button>
+
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-auto max-h-[90vh] object-contain rounded-lg border-4 border-white shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
 
       {/* FOOTER */}
       <Footer />
