@@ -144,7 +144,7 @@ export default function SinkInventory() {
   };
 
   const handleEdit = (item) => {
-    const [length, width, height] = (item.Size || "").split("x").map((s) => s.trim().replace("mm", ""));
+  const sizeParts = item.Size?.replace("mm", "").split("x").map(s => s.trim()) || [];
     setFormData({
       ProductName: item.Name,
       ProductDescription: item.Description,
@@ -154,11 +154,11 @@ export default function SinkInventory() {
       Category: item.Category,
       SubCategory: item.SubCategory,
       Quantity: item.Stock_admin,
-      Manufacturer: item.Manufacturer,
-      customBrand: "",
-      length,
-      width,
-      height,
+      Manufacturer: isCustomBrand ? "Other" : item.Manufacturer,
+      customBrand: isCustomBrand ? item.Manufacturer : "",
+      length: sizeParts[0] || "",
+      width: sizeParts[1] || "",
+      height: sizeParts[2] || "",
     });
     setImage(item.Image);
     setSelectedProduct(item);
@@ -483,6 +483,8 @@ export default function SinkInventory() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
+                                const sizeParts = item.Size?.replace("mm", "").split("x").map(s => s.trim()) || [];
+
                               setFormData({
                                 ProductName: item.Name || "",
                                 ProductDescription: item.Description || "",
@@ -492,10 +494,11 @@ export default function SinkInventory() {
                                 Category: item.Category || "Sink",
                                 SubCategory: item.SubCategory || "",
                                 Quantity: item.Stock_admin || "",
-                                Manufacturer: item.Manufacturer || "",
-                                customBrand: "",
-                                length: item.Size?.split("x")[0] || "",
-                                width: item.Size?.split("x")[1] || "",
+                                Manufacturer: brands.includes(item.Manufacturer) ? item.Manufacturer : "Other",
+                                customBrand: brands.includes(item.Manufacturer) ? "" : item.Manufacturer,
+                                length: sizeParts[0] || "",
+                                width: sizeParts[1] || "",
+                                height: sizeParts[2] || "",
                               });
 
                               setImage(item.Image);

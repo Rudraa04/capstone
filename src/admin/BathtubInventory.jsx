@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaBath, FaPlus } from "react-icons/fa";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { storage } from "../firebase/firebase";
+import axios from "axios";
+
 import {
   FiBox,
   FiPackage,
@@ -45,12 +49,11 @@ function Modal({ isOpen, onClose, children }) {
 export default function BathtubInventory() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAdminLoggedIn");
-    navigate("/login");
-  };
-
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [image, setImage] = useState(null);
+
   const [formData, setFormData] = useState({
     ProductName: "",
     ProductDescription: "",
@@ -58,103 +61,164 @@ export default function BathtubInventory() {
     Price: "",
     Image: "",
     Category: "Bathtub",
-    SubCategory: "",
     Quantity: "",
     Manufacturer: "",
     customBrand: "",
     length: "",
     width: "",
+    height: "",
   });
 
-  const [image, setImage] = useState(null);
-
-  const brands = [
-    "Jaquar",
-    "Hindware",
-    "Cera",
-    "Parryware",
-    "Imported",
-    "Other",
-  ];
-
-  const handleChange = (e) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) setImage(URL.createObjectURL(file));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const Size = `${formData.length}x${formData.width}`;
-    const ManufacturerFinal =
-      formData.Manufacturer === "Other"
-        ? formData.customBrand
-        : formData.Manufacturer;
-
-    const bathtubData = {
-      ProductName: formData.ProductName,
-      ProductDescription: formData.ProductDescription,
-      Color: formData.Color,
-      Price: formData.Price,
-      Image: image || "",
-      Category: formData.Category,
-      SubCategory: formData.SubCategory,
-      Quantity: formData.Quantity,
-      Manufacturer: ManufacturerFinal,
-      Size: Size,
-    };
-
-    if (selectedIndex !== null) {
-      const updated = [...products];
-      updated[selectedIndex] = bathtubData;
-      setProducts(updated);
-      alert("Bathtub product updated successfully!");
-    } else {
-      setProducts([...products, bathtubData]);
-      alert("Bathtub product added successfully!");
-    }
-
-    setFormData({});
-    setImage(null);
-    setSelectedIndex(null);
-    setShowModal(false);
-  };
-
-  const [products, setProducts] = useState([
-    {
-      ProductName: "Elegant Bathtub",
-      ProductDescription: "Luxurious soaking bathtub.",
-      Color: "White",
-      Price: 450,
-      Category: "Bathtub",
-      SubCategory: "Freestanding",
-      Quantity: 12,
-      Manufacturer: "Jaquar",
-      Origin: "India",
-      Size: "60x30",
-      Image: "",
-    },
-    {
-      ProductName: "Compact Soaker",
-      ProductDescription: "Small size bathtub for compact spaces.",
-      Color: "Gray",
-      Price: 390,
-      Category: "Bathtub",
-      SubCategory: "Corner",
-      Quantity: 8,
-      Manufacturer: "Cera",
-      Origin: "India",
-      Size: "48x28",
-      Image: "",
-    },
-  ]);
-
-  const [selectedIndex, setSelectedIndex] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [colorFilter, setColorFilter] = useState("");
   const [sizeFilter, setSizeFilter] = useState("");
+  const [originFilter, setOriginFilter] = useState("");
+  const brands = [
+  "KOHLER",
+  "TOTO",
+  "American Standard",
+  "Duravit",
+  "Jaquar",
+  "Hansgrohe",
+  "Delta",
+  "Other"
+];
+
+  const handleLogout = () => {
+  localStorage.removeItem("isAdminLoggedIn");
+  navigate("/login");
+};
+  const fetchBathtubs = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/products/bathtubs");
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Error fetching bathtubs:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBathtubs();
+  }, []);
+
+  const handleImageChange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const fileRef = ref(storage, `Inventory/Bathtubs/${file.name}-${Date.now()}`);
+      try {
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        setImage(url);
+        setFormData((prev) => ({ ...prev, Image: url }));
+      } catch (err) {
+        alert("Image upload failed.");
+      }
+    };
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const Size = `${formData.length} x ${formData.width} x ${formData.height}mm`;
+    const ManufacturerFinal = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+
+    const data = {
+      Name: formData.ProductName,
+      Description: formData.ProductDescription,
+      Color: formData.Color,
+      Price: parseFloat(formData.Price),
+      Image: image || formData.Image,
+      Category: formData.Category,
+      SubCategory: formData.SubCategory,
+      Stock_admin: parseInt(formData.Quantity),
+      Manufacturer: ManufacturerFinal,
+      Size,
+    };
+
+    try {
+      if (selectedProduct) {
+        await axios.put(`http://localhost:5000/api/products/bathtubs/${selectedProduct._id}`, data);
+        alert("Bathtub updated successfully!");
+      } else {
+        await axios.post("http://localhost:5000/api/products/bathtubs", data);
+        alert("Bathtub added successfully!");
+      }
+      fetchBathtubs();
+      resetForm();
+    } catch (err) {
+      console.error("Error submitting bathtub:", err);
+      alert("Failed to save bathtub.");
+    }
+  };
+
+  const handleEdit = (item) => {
+    const sizeParts = item.Size?.replace("mm", "").split("x").map(s => s.trim()) || [];
+    const brandExists = brands.some(
+    (b) => b.toLowerCase() === (item.Manufacturer || "").toLowerCase()
+  );
+    setFormData({
+      ProductName: item.Name || "",
+      ProductDescription: item.Description || "",
+      Color: item.Color || "",
+      Price: item.Price || "",
+      Image: item.Image || "",
+      Category: item.Category || "Bathtub",
+      Quantity: item.Stock_admin || "",
+      Manufacturer: brandExists ? item.Manufacturer : "Other",
+    customBrand: brandExists ? "" : item.Manufacturer || "",
+      length: sizeParts[0] || "",
+      width: sizeParts[1] || "",
+      height: sizeParts[2] || "",
+    });
+
+    setImage(item.Image);
+    setSelectedProduct(item);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+  const product = products.find((p) => p._id === id);
+  if (!product || !window.confirm("Delete this bathtub?")) return;
+  try {
+    // Delete image from Firebase
+    if (product.Image?.includes("firebasestorage")) {
+      const path = decodeURIComponent(product.Image.split("/o/")[1].split("?")[0]);
+      await deleteObject(ref(storage, path));
+    }
+
+    // Delete product from backend
+    await axios.delete(`http://localhost:5000/api/products/bathtubs/${id}`);
+    fetchBathtubs(); // Refresh the list after deletion
+    alert("Deleted successfully");
+  } catch (err) {
+    console.error("Delete Error:", err);
+    alert("Failed to delete");
+  }
+};
+
+
+  const resetForm = () => {
+    setFormData({
+      ProductName: "",
+      ProductDescription: "",
+      Color: "",
+      Price: "",
+      Image: "",
+      Category: "Bathtub",
+      SubCategory: "",
+      Quantity: "",
+      Manufacturer: "",
+      customBrand: "",
+      length: "",
+      width: "",
+      height: "",
+    });
+    setImage(null);
+    setSelectedProduct(null);
+    setShowModal(false);
+  };
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -243,8 +307,9 @@ export default function BathtubInventory() {
                   customBrand: "",
                   length: "",
                   width: "",
+                  height: "",
                 });
-                setSelectedIndex(null);
+                setSelectedProduct(null);
                 setImage(null);
                 setShowModal(true);
               }}
@@ -306,46 +371,6 @@ export default function BathtubInventory() {
               </select>
             </div>
 
-            {/* Size Filter */}
-            <div className="flex flex-col bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-              <label className="text-sm font-semibold text-gray-600 mb-1">
-                Size
-              </label>
-              <select
-                value={sizeFilter}
-                onChange={(e) => setSizeFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md text-sm"
-              >
-                <option value="">All Sizes</option>
-                <option value="48 x 30 H 15">48 x 30 H 15</option>
-                <option value="54 x 28 H 15">54 x 28 H 15</option>
-                <option value="60/66 x 35 H 15">60/66 x 35 H 15</option>
-                <option value="60 x 30 H 13">60 x 30 H 13</option>
-                <option value="66 x 30 H 14">66 x 30 H 14</option>
-                <option value="72 x 36 H 16">72 x 36 H 16</option>
-                <option value="58 x 48 H 21">58 x 48 H 21</option>
-                <option value="60/48 x 48 H 18">60/48 x 48 H 18</option>
-                <option value="66 x 30 H 21">66 x 30 H 21</option>
-                <option value="48 x 48 H 24 Round 78">
-                  48 x 48 H 24 Round 78
-                </option>
-                <option value="48 x 48 H 16 Round 78">
-                  48 x 48 H 16 Round 78
-                </option>
-                <option value="70 x 30 H 16">70 x 30 H 16</option>
-                <option value="66 x 30 - 36">66 x 30 - 36</option>
-                <option value="72 x 72 H 18">72 x 72 H 18</option>
-                <option value="66x 30 H 21">66x 30 H 21</option>
-                <option value="72 x 48 H 16">72 x 48 H 16</option>
-                <option value="72 x 48 H 21">72 x 48 H 21</option>
-                <option value="72 x 48 H 18">72 x 48 H 18</option>
-                <option value="33 x 21 H 9">33 x 21 H 9</option>
-                <option value="56 x 56 H 24 Round 88">
-                  56 x 56 H 24 Round 88
-                </option>
-              </select>
-            </div>
-
             {/* Reset Button */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-center p-2">
               <button
@@ -387,47 +412,33 @@ export default function BathtubInventory() {
               </thead>
               <tbody>
                 {products
-                  .filter(
-                    (item) =>
-                      item.ProductName.toLowerCase().includes(
-                        searchTerm.toLowerCase()
-                      ) &&
-                      (colorFilter === "" || item.Color === colorFilter) &&
-                      (sizeFilter === "" || item.Size === sizeFilter)
-                  )
+                  .filter((item) => {
+                    const name = item?.Name?.toLowerCase() || "";
+                    const search = searchTerm.toLowerCase();
+                  
+                    return name.includes(search) &&
+                      (colorFilter === "" || item.Color === colorFilter);
+                  })
+                
                   .map((item, index) => (
                     <tr key={index} className="border-b">
-                      <td className="px-6 py-4">{item.ProductName}</td>
+                      <td className="px-6 py-4">{item.Name}</td>
                       <td className="px-6 py-4">{item.Category}</td>
                       <td className="px-6 py-4">₹{item.Price}</td>
-                      <td className="px-6 py-4">{item.Quantity}</td>
+                      <td className="px-6 py-4">{item.Stock_admin}</td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
-                            onClick={() => {
-                              setFormData({
-                                ProductName: item.ProductName,
-                                ProductDescription: item.ProductDescription,
-                                Color: item.Color,
-                                Price: item.Price,
-                                Category: item.Category,
-                                Quantity: item.Quantity,
-                                Manufacturer: item.Manufacturer,
-                                SubCategory: item.SubCategory,
-                                length: item.Size?.split("x")[0] || "",
-                                width: item.Size?.split("x")[1] || "",
-                                customBrand: "",
-                              });
-                              setImage(item.Image || null);
-                              setSelectedIndex(index);
-                              setShowModal(true);
-                            }}
+                            onClick={() => handleEdit(item)}
                             className="px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
                           >
                             Edit
                           </button>
 
-                          <button className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          <button
+                            onClick={() => handleDelete(item._id)}
+                            className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition"
+                          >
                             Delete
                           </button>
                         </div>
@@ -440,9 +451,7 @@ export default function BathtubInventory() {
         </div>
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
           <h2 className="text-2xl font-semibold text-blue-800 mb-6 border-b pb-2">
-            {selectedIndex !== null
-              ? "Edit Bathtub Product"
-              : "Add Bathtub Product"}
+            {selectedProduct ? "Edit Bathtub Product" : "Add Bathtub Product"}
           </h2>
 
           <form
@@ -486,17 +495,7 @@ export default function BathtubInventory() {
                     className="w-full px-3 py-2 border rounded-md"
                   />
                 </div>
-                <div>
-                  <label className="block font-medium mb-1">Sub Category</label>
-                  <input
-                    type="text"
-                    name="SubCategory"
-                    value={formData.SubCategory}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
-                </div>
+                
               </div>
             </div>
 
@@ -535,35 +534,36 @@ export default function BathtubInventory() {
                 />
               </div>
               <div>
-                <label className="block font-medium mb-1">
-                  Brand / Manufacturer
-                </label>
-                <select
-                  name="Manufacturer"
-                  value={formData.Manufacturer}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md"
-                >
-                  <option value="">Select Brand</option>
-                  {brands.map((brand) => (
-                    <option key={brand} value={brand}>
-                      {brand}
-                    </option>
-                  ))}
-                </select>
+  <label className="block font-medium mb-1">Brand / Manufacturer</label>
+  <select
+  name="Manufacturer"
+  value={formData.Manufacturer}
+  onChange={handleChange}
+  className="w-full px-3 py-2 border rounded-md"
+>
+  <option value="">Select Brand</option>
+  {[...new Set([...brands, formData.Manufacturer])]
+    .filter(Boolean)
+    .map((brand) => (
+      <option key={brand} value={brand}>
+        {brand}
+      </option>
+    ))}
+</select>
 
-                {formData.Manufacturer === "Other" && (
-                  <input
-                    type="text"
-                    name="customBrand"
-                    value={formData.customBrand}
-                    onChange={handleChange}
-                    placeholder="Enter Brand Name"
-                    className="mt-2 w-full px-3 py-2 border rounded-md"
-                  />
-                )}
-              </div>
+
+  {formData.Manufacturer === "Other" && (
+    <input
+      type="text"
+      name="customBrand"
+      value={formData.customBrand}
+      onChange={handleChange}
+      placeholder="Enter Brand Name"
+      className="mt-2 w-full px-3 py-2 border rounded-md"
+    />
+  )}
+</div>
+
 
               <div>
                 <label className="block font-medium mb-1">
@@ -588,6 +588,18 @@ export default function BathtubInventory() {
                     value={formData.width}
                     onChange={handleChange}
                     placeholder="Width"
+                    min="0"
+                    step="any"
+                    required
+                    className="w-1/2 px-3 py-2 border rounded-md"
+                  />
+                  <span className="font-bold text-lg leading-none">X</span>
+                  <input
+                    type="number"
+                    name="height"
+                    value={formData.height}
+                    onChange={handleChange}
+                    placeholder="Height"
                     min="0"
                     step="any"
                     required
@@ -621,7 +633,7 @@ export default function BathtubInventory() {
                 type="submit"
                 className="px-6 py-2 bg-blue-700 text-white font-semibold rounded"
               >
-                {selectedIndex !== null ? "Update Product" : "Save Product"}
+                {selectedProduct !== null ? "Update Product" : "Save Product"}
               </button>
             </div>
           </form>

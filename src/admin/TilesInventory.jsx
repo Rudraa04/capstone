@@ -76,10 +76,11 @@ export default function TilesInventory() {
     "Johnson",
     "Asian Granito",
     "Nitco",
+    "Tirupati Tiles",
     "Other",
   ];
   const usageTypes = ["Interior", "Exterior", "Sanitaryware"];
-  const usageCategories = ["Wall", "Floor"];
+  const Categories = ["Wall", "Floor"];
 
   // ✅ Fetch data
   useEffect(() => {
@@ -165,8 +166,9 @@ export default function TilesInventory() {
       Category: product.Category,
       SubCategory: product.SubCategory,
       Quantity: product.Stock_admin,
-      Manufacturer: product.Manufacturer,
-      customBrand: "",
+      Manufacturer: brands.includes(product.Manufacturer) ? product.Manufacturer : "Other",
+      customBrand: brands.includes(product.Manufacturer) ? "" : product.Manufacturer,
+
       length,
       width,
     });
@@ -367,12 +369,9 @@ export default function TilesInventory() {
                 className="px-3 py-2 border rounded-md text-sm"
               >
                 <option value="">All Brands</option>
-                <option value="Kajaria">Kajaria</option>
-                <option value="Somany">Somany</option>
-                <option value="Johnson">Johnson</option>
-                <option value="Asian Granito">Asian Granito</option>
-                <option value="Nitco">Nitco</option>
-                <option value="Other">Other</option>
+                {brands.map((brand) => (
+                  <option key={brand} value={brand}>{brand}</option>
+                ))}
               </select>
             </div>
 
@@ -401,7 +400,9 @@ export default function TilesInventory() {
                 onClick={() => {
                   setSearchTerm("");
                   setColorFilter("");
-                  setOriginFilter("");
+                  setBrandFilter("");
+                  setUsageTypeFilter("");
+
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
               >
@@ -444,10 +445,8 @@ export default function TilesInventory() {
                       .includes(searchTerm.toLowerCase()
                       ) &&
                       (colorFilter === "" || item.Color === colorFilter) &&
-                      (brandFilter === "" ||
-                        item.Manufacturer === brandFilter) &&
-                      (usageTypeFilter === "" ||
-                        item.SubCategory === usageTypeFilter)
+                      (brandFilter === "" || item.Manufacturer?.toLowerCase() === brandFilter.toLowerCase()) &&
+                      (usageTypeFilter === "" || item.SubCategory?.toLowerCase() === usageTypeFilter.toLowerCase())
                   )
                   .map((item, index) => (
                     <tr key={index} className="border-b">
@@ -466,11 +465,11 @@ export default function TilesInventory() {
                                 Price: item.Price,
                                 Category: item.Category,
                                 Quantity: item.Stock_admin,
-                                Manufacturer: item.Manufacturer,
+                                Manufacturer: brands.includes(item.Manufacturer) ? item.Manufacturer : "Other",
+                                customBrand: brands.includes(item.Manufacturer) ? "" : item.Manufacturer,
                                 SubCategory: item.SubCategory,
                                 length: item.Size?.split("x")[0] || "",
                                 width: item.Size?.split("x")[1] || "",
-                                customBrand: "",
                               });
                               setImage(item.Image || null);
                               setSelectedProduct(item);
@@ -482,11 +481,11 @@ export default function TilesInventory() {
                           </button>
 
                           <button
-  onClick={() => handleDelete(item._id)}
-  className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition"
->
-  Delete
-</button>
+                            onClick={() => handleDelete(item._id)}
+                            className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition"
+                          >
+                            Delete
+                          </button>
 
                         </div>
                       </td>
