@@ -17,47 +17,45 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
 
- const handleSearch = () => {
-  const trimmed = query.trim().toLowerCase();
-  if (!trimmed) return;
+ const handleSearch = (input) => {
+  const rawQuery = input || query;
+  const trimmedQuery = rawQuery.trim().toLowerCase().replace(/[^\w\s]/gi, "");
+  const routeMap = [
+  // Specific phrases FIRST
+  { keywords: ["exterior wall tiles", "exterior wall"], route: "/exterior?sub=Exterior%20Wall%20Tiles" },
+  { keywords: ["exterior floor tiles", "exterior floor"], route: "/exterior?sub=Exterior%20Floor%20Tiles" },
+  { keywords: ["interior floor tiles", "interior floor"], route: "/interior?sub=Interior%20Floor%20Tiles" },
+  { keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"], route: "/interior?sub=Bathroom%20Wall%20Tiles" },
+  { keywords: ["kitchen wall tiles", "kitchen tiles", "kitchen"], route: "/interior?sub=Kitchen%20Wall%20Tiles" },
 
-  //  Direct Category Matching
-  if (trimmed.includes("marble")) {
-    navigate("/slabs?type=marble");
-  } else if (trimmed.includes("granite")) {
-    navigate("/slabs?type=granite");
-  } else if (trimmed.includes("tile") || trimmed.includes("tiles")) {
-    navigate("/ceramics?type=tiles");
-  } else if (trimmed.includes("bathtub")) {
-    navigate("/ceramics?type=bathtub");
-  } else if (trimmed.includes("sink")) {
-    navigate("/ceramics?type=sinks");
-  } else if (trimmed.includes("toilet")) {
-    navigate("/ceramics?type=toilets");
+  // General categories
+  { keywords: ["interior", "interior tiles"], route: "/interior" },
+  { keywords: ["exterior", "exterior tiles"], route: "/exterior" },
+  { keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"], route: "/sanitary" },
+  { keywords: ["slab", "slabs", "granite", "marble"], route: "/slabs" },
+  { keywords: ["ceramic", "ceramics"], route: "/ceramics?type=tiles" },
+  { keywords: ["tile", "tiles"], route: "/ceramics?type=tiles" },
 
-  // SubCategory Handling
-  } else if (trimmed.includes("interior floor")) {
-    navigate("/interior?sub=Interior Floor Tiles");
-  } else if (trimmed.includes("interior wall")) {
-    navigate("/interior?sub=Interior Wall Tiles");
-  } else if (trimmed.includes("bathroom wall")) {
-    navigate("/interior?sub=Bathroom Wall Tiles");
-  } else if (trimmed.includes("kitchen wall")) {
-    navigate("/interior?sub=Kitchen Wall Tiles");
-  } else if (trimmed.includes("exterior wall")) {
-    navigate("/exterior?sub=Exterior Wall Tiles");
-  } else if (trimmed.includes("exterior floor")) {
-    navigate("/exterior?sub=Exterior Floor Tiles");
+  // Suggestions
+  { keywords: ["bathroom", "washroom"], suggest: ["tiles", "bathtubs", "sinks", "toilets"] },
+];
 
-  // Fallback
-  } else {
-    alert("No matching category found.");
-    
+
+  for (const entry of routeMap) {
+    if (entry.route && entry.keywords.some(k => trimmedQuery.includes(k))) {
+      navigate(entry.route);
+      return;
+    }
+
+    if (entry.suggest && entry.keywords.some(k => trimmedQuery.includes(k))) {
+      alert(`You might be looking for: ${entry.suggest.join(", ")}`);
+      return;
+    }
   }
 
+  alert("No matching category found.");
   setSuggestions([]);
 };
-
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
