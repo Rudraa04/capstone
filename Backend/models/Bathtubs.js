@@ -12,7 +12,8 @@ const BathtubsSchema = new mongoose.Schema({
   Image: String,
   Stock_admin: Number,
   Category: String,
-  Size: String
+  Size: String,
+  Manufacturer: String,
 });
 
 export default ceramicsConnection.model('Bathtubs_Model', BathtubsSchema, 'Bathtubs_Collection' );

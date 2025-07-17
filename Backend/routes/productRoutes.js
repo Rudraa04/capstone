@@ -90,7 +90,7 @@ router.post("/api/products/sinks", async (req, res) => {
   }
 });
 
-router.post("api/products/bathtubs", async (req, res) => {
+router.post("/api/products/bathtubs", async (req, res) => {
   try {
     const newBathtub = new Bathtubs_Model(req.body);
     const saved = await newBathtub.save();
@@ -287,4 +287,14 @@ router.put("/api/products/toilets/:id", async (req, res) => {
     res.status(500).json({ message: "Failed to update sink", error: err.message });
   }
 });
+
+router.put("/api/products/bathtubs/:id", async (req, res) => {
+  try {
+    const updated = await Bathtubs_Model.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Bathtub updated", product: updated });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update bathtub", error: err.message });
+  }
+});
+
 export default router;

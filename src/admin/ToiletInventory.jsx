@@ -363,19 +363,16 @@ export default function ToiletInventory() {
                 Flush Type
               </label>
               <select
-                value={formData.FlushType}
-                onChange={handleChange}
+                value={flushTypeFilter}
+                onChange={(e) => setFlushTypeFilter(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md"
               >
-                <option value="">Select Flush Type</option>
-                <option value="Single Flush">Single Flush</option>
-                <option value="Dual Flush">Dual Flush</option>
-                <option value="Pressure Assisted">Pressure Assisted</option>
-                <option value="5D Vortex Siphonic Flushing">5D Vortex Siphonic Flushing</option>
-                <option value="Siphonic Flushing">Siphonic Flushing</option>
-                <option value="Washdown Flushing">Washdown Flushing</option>
-                <option value="with jet / without jet">with jet / without jet</option>
-                <option value="4D Vortex Flushing">4D Vortex Flushing</option>
+                <option value="">All Flush Type</option>
+                {flushTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -416,8 +413,9 @@ export default function ToiletInventory() {
               <button
                 onClick={() => {
                   setSearchTerm("");
-                  setColorFilter("");
-                  setOriginFilter("");
+                  setUsageTypeFilter("");
+                  setFlushTypeFilter(""); 
+                  setSizeFilter("");
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition"
               >

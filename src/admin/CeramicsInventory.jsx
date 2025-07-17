@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaTh, FaBath, FaSink, FaToilet } from "react-icons/fa";
 import {
@@ -15,6 +15,43 @@ import {
 
 export default function CeramicsInventory() {
   const navigate = useNavigate();
+  const [counts, setCounts] = useState({
+    tiles: 0,
+    bathtubs: 0,
+    sinks: 0,
+    toilets: 0,
+  });
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [tilesRes, bathtubsRes, sinksRes, toiletsRes] = await Promise.all([
+          fetch("http://localhost:5000/api/products/tiles"),
+          fetch("http://localhost:5000/api/products/bathtubs"),
+          fetch("http://localhost:5000/api/products/sinks"),
+          fetch("http://localhost:5000/api/products/toilets"),
+        ]);
+
+        const [tiles, bathtubs, sinks, toilets] = await Promise.all([
+          tilesRes.json(),
+          bathtubsRes.json(),
+          sinksRes.json(),
+          toiletsRes.json(),
+        ]);
+
+        setCounts({
+          tiles: tiles.length,
+          bathtubs: bathtubs.length,
+          sinks: sinks.length,
+          toilets: toilets.length,
+        });
+      } catch (error) {
+        console.error("Failed to fetch counts:", error);
+      }
+    };
+
+    fetchCounts();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("isAdminLoggedIn");
@@ -27,28 +64,28 @@ export default function CeramicsInventory() {
       description: "Browse and manage tile inventory",
       path: "/admin/inventory/tiles",
       icon: <FaTh size={20} className="text-blue-600" />,
-      count: 2,
+      count: counts.tiles,
     },
     {
       label: "Bathtubs Inventory",
       description: "Manage bathtub products",
       path: "/admin/inventory/bathtubs",
       icon: <FaBath size={20} className="text-blue-600" />,
-      count: 2,
+      count: counts.bathtubs,
     },
     {
       label: "Sinks Inventory",
       description: "Manage sink styles and inventory",
       path: "/admin/inventory/sinks",
       icon: <FaSink size={20} className="text-blue-600" />,
-      count: 2,
+      count: counts.sinks,
     },
     {
       label: "Toilets Inventory",
       description: "Edit and view toilet stock",
       path: "/admin/inventory/toilets",
       icon: <FaToilet size={20} className="text-blue-600" />,
-      count: 2,
+      count: counts.toilets,
     },
   ];
 
@@ -58,12 +95,11 @@ export default function CeramicsInventory() {
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <div>
           <button
-  onClick={() => navigate("/admin")}
-  className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
->
-  <FiHome /> Admin Panel
-</button>
-
+            onClick={() => navigate("/admin")}
+            className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
+          >
+            <FiHome /> Admin Panel
+          </button>
         </div>
         <nav className="space-y-4 text-sm">
           <button
@@ -96,7 +132,6 @@ export default function CeramicsInventory() {
           >
             <FiTrendingUp /> Sales & Reports
           </button>
-         
           <button
             onClick={() => navigate("/", { state: { fromAdmin: true } })}
             className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"
@@ -115,7 +150,6 @@ export default function CeramicsInventory() {
       {/* Main Content */}
       <main className="flex-1 px-6 sm:px-10 py-6 sm:py-8">
         <h1 className="text-3xl font-bold text-blue-800 mb-6">Ceramics Inventory</h1>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           {items.map((item, index) => (
             <div
