@@ -1,3 +1,4 @@
+//importing mongoose models
 import Tiles_Model from "../models/Tiles.js";
 import Bathtubs_Model from "../models/Bathtubs.js";
 import Granite_Model from "../models/Granite.js";
@@ -7,7 +8,9 @@ import Toilets_Model from "../models/Toilets.js";
 
 export const getTiles = async (req, res) => {
   try {
+    //fetch data from database?
     const tiles = await Tiles_Model.find();
+    //sending tiles data in response?
     res.json(tiles);
   } catch (err) {
     console.error(err);
@@ -64,48 +67,4 @@ export const getToilets = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-
-
-
-
-export const updateTile = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const updated = await Tiles_Model.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!updated) {
-      return res.status(404).json({ message: "Tile product not found" });
-    }
-
-    res.status(200).json(updated);
-  } catch (err) {
-    console.error("Error updating tile:", err);
-    res.status(500).json({ message: "Failed to update tile", error: err.message });
-  }
-};
-
-export const updateGranite = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const updated = await Tiles_Model.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!updated) {
-      return res.status(404).json({ message: "Tile product not found" });
-    }
-
-    res.status(200).json(updated);
-  } catch (err) {
-    console.error("Error updating tile:", err);
-    res.status(500).json({ message: "Failed to update tile", error: err.message });
-  }
-};
-
 
