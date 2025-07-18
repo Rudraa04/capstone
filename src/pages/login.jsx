@@ -1,20 +1,26 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+//firebase auth methods
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+// Firestore methods
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
+//react icons
 import { FaArrowLeft } from "react-icons/fa";
 import { MdEmail, MdLock } from "react-icons/md";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+//recaptcha 
 import ReCAPTCHA from "react-google-recaptcha";
 
+//component starts
 export default function Login() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState(""); //state variable for email
+  const [password, setPassword] = useState(""); //for password
+  const [showPassword, setShowPassword] = useState(false); //toggle password visibility
+  //feedback message to user (success or error)
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   //stores captcha value when user solves it
@@ -36,17 +42,17 @@ export default function Login() {
 
   // Forgot Password Function
   const handleForgotPassword = async () => {
-    if (!email || !email.includes("@")) {
+    if (!email || !email.includes("@")) { //for valid email address
       alert("Please enter a valid email address first.");
       return;
     }
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email); //for email verification
       alert("Password reset email sent! Check your inbox.");
     } catch (error) {
       console.error("Reset error:", error.message);
-
+        //Error handling based on Firebase error codes
       if (error.code === "auth/user-not-found") {
         alert("No account found with this email.");
       } else if (error.code === "auth/invalid-email") {
@@ -59,19 +65,21 @@ export default function Login() {
 
   // Login Handler
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setMessage("");
+    e.preventDefault(); //prevent page reload
+    setMessage(""); //clears previous messages
 
     try {
+      //Firebase auth login
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
+      //check if user has verified email
       if (!user.emailVerified) {
         setMessage("Please verify your email before logging in.");
         setMessageType("error");
         return;
       }
 
+      //check role from firestore
       const userDocRef = doc(db, "users", user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
@@ -85,7 +93,7 @@ export default function Login() {
         setFailedAttempts(0); //sets to 0
         setShowCaptcha(false); //hides captcha
         setCaptchaValue(null); //clear captcha token
-
+        //redirects user based on role
         setTimeout(() => {
           if (role === "admin") navigate("/admin");
           else navigate("/");
@@ -102,7 +110,7 @@ export default function Login() {
       localStorage.setItem("failedAttempts", newFailed.toString());
       //If the user has failed 5 or more times, show the captcha
       if (newFailed >= 5) setShowCaptcha(true);
-
+      //handle common auth errors
       if (
         error.code === "auth/user-not-found" ||
         error.code === "auth/invalid-credential" ||
