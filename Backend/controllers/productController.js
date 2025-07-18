@@ -5,7 +5,7 @@ import Granite_Model from "../models/Granite.js";
 import Marble_Model from "../models/Marble.js";
 import Sinks_Model from "../models/Sinks.js";
 import Toilets_Model from "../models/Toilets.js";
-
+//object naming product type strings to their mongoose models for easy to use
 const models = {
   tiles: Tiles_Model,
   bathtubs: Bathtubs_Model,
@@ -15,15 +15,16 @@ const models = {
   toilets: Toilets_Model,
 };
 
-// Get all products by type
+// controller to get all products of a specific type
 export const getProductsByType = async (req, res) => {
-  const type = req.params.type;
-  const Model = models[type];
+  const type = req.params.type; // extracts product type from url
+  const Model = models[type]; //get a model according to type
+  //if it doesnt exists - error
   if (!Model) return res.status(400).json({ message: "Invalid product type" });
 
   try {
-    const products = await Model.find();
-    res.json(products);
+    const products = await Model.find(); //fetch all documents model from upper models.
+    res.json(products); //returns data as JSON
   } catch (err) {
     res.status(500).json({ message: `Failed to fetch ${type}`, error: err.message });
   }
