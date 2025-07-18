@@ -80,11 +80,11 @@ export default function Login() {
 
         setMessage("Login successful!");
         setMessageType("success");
-
-        localStorage.removeItem("failedAttempts");
-        setFailedAttempts(0);
-        setShowCaptcha(false);
-        setCaptchaValue(null);
+        //resets all captcha value after successful login
+        localStorage.removeItem("failedAttempts"); //removes failed attempts count
+        setFailedAttempts(0); //sets to 0
+        setShowCaptcha(false); //hides captcha
+        setCaptchaValue(null); //clear captcha token
 
         setTimeout(() => {
           if (role === "admin") navigate("/admin");
@@ -192,6 +192,7 @@ export default function Login() {
               <div className="mt-4 flex justify-center">
                 <ReCAPTCHA
                   sitekey="6LeBK2crAAAAAK3gxLQybTs7s7c5f4_-KTQ3uPWK"
+                  //this runs after user solves captcha
                   onChange={handleCaptchaChange}
                 />
               </div>
