@@ -120,9 +120,17 @@ export default function Slabs() {
   };
 
   useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalCount);
+    const updateCartCount = () => {
+      const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+      setCartCount(storedCart.length); // Just count distinct products
+    };
+
+    updateCartCount();
+
+    window.addEventListener("cartUpdated", updateCartCount);
+    return () => {
+      window.removeEventListener("cartUpdated", updateCartCount);
+    };
   }, []);
 
   useEffect(() => {

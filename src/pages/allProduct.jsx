@@ -42,6 +42,20 @@ const AllProducts = () => {
   }, []);
 
   useEffect(() => {
+    const updateCartCount = () => {
+      const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+      setCartCount(storedCart.length);
+    };
+
+    updateCartCount(); // Initial check
+
+    window.addEventListener("cartUpdated", updateCartCount);
+    return () => {
+      window.removeEventListener("cartUpdated", updateCartCount);
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchAllProducts = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/products/all");
@@ -51,12 +65,6 @@ const AllProducts = () => {
       }
     };
     fetchAllProducts();
-  }, []);
-
-  useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalCount);
   }, []);
 
   const handleLogout = async () => {
@@ -272,7 +280,6 @@ const AllProducts = () => {
                 >
                   Profile
                 </Link>
-
                 <button
                   onClick={handleLogout}
                   className={`uppercase text-red-500 hover:text-red-600 ${underlineHover}`}

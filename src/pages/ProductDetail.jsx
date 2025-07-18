@@ -64,10 +64,19 @@ export default function ProductDetail() {
 
 
   useEffect(() => {
+  const updateCartCount = () => {
     const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalCount);
-  }, []);
+    setCartCount(storedCart.length); // Just count distinct products
+  };
+
+  updateCartCount();
+
+  window.addEventListener("cartUpdated", updateCartCount);
+  return () => {
+    window.removeEventListener("cartUpdated", updateCartCount);
+  };
+}, []);
+
 
   useEffect(() => {
     const fetchAllProducts = async () => {

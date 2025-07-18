@@ -33,10 +33,19 @@ export default function Exterior() {
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
   useEffect(() => {
+  const updateCartCount = () => {
     const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalCount);
-  }, []);
+    setCartCount(storedCart.length); // Just count distinct products
+  };
+
+  updateCartCount();
+
+  window.addEventListener("cartUpdated", updateCartCount);
+  return () => {
+    window.removeEventListener("cartUpdated", updateCartCount);
+  };
+}, []);
+
 
   useEffect(() => {
     const fetchAllProducts = async () => {

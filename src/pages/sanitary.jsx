@@ -28,16 +28,23 @@ export default function Sanitary() {
 
   const [cartCount, setCartCount] = useState(0);
 
-
   const dropdownRef = useRef();
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
-    useEffect(() => {
-  const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-  const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-  setCartCount(totalCount);
-}, []);
+  useEffect(() => {
+    const updateCartCount = () => {
+      const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+      setCartCount(storedCart.length); // Just count distinct products
+    };
+
+    updateCartCount();
+
+    window.addEventListener("cartUpdated", updateCartCount);
+    return () => {
+      window.removeEventListener("cartUpdated", updateCartCount);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchAllProducts = async () => {
@@ -260,40 +267,40 @@ export default function Sanitary() {
                     ))}
                   </div>
                   <div>
-                                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
-                                      WALL / FLOOR TILES
-                                    </h3>
-                                    {[
-                                      {
-                                        name: "Exterior Floor Tiles",
-                                        to: "/exterior?sub=Exterior Floor Tiles",
-                                      },
-                                      {
-                                        name: "Exterior Wall Tiles",
-                                        to: "/exterior?sub=Exterior Wall Tiles",
-                                      },
-                                      {
-                                        name: "Kitchen Wall Tiles",
-                                        to: "/interior?sub=Kitchen Wall Tiles",
-                                      },
-                                      {
-                                        name: "Bathroom Wall Tiles",
-                                        to: "/interior?sub=Bathroom Wall Tiles",
-                                      },
-                                      {
-                                        name: "Interior Floor Tiles",
-                                        to: "/interior?sub=Interior Floor Tiles",
-                                      },
-                                    ].map((item) => (
-                                      <Link
-                                        key={item.name}
-                                        to={item.to}
-                                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                                      >
-                                        {item.name}
-                                      </Link>
-                                    ))}
-                                  </div>
+                    <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
+                      WALL / FLOOR TILES
+                    </h3>
+                    {[
+                      {
+                        name: "Exterior Floor Tiles",
+                        to: "/exterior?sub=Exterior Floor Tiles",
+                      },
+                      {
+                        name: "Exterior Wall Tiles",
+                        to: "/exterior?sub=Exterior Wall Tiles",
+                      },
+                      {
+                        name: "Kitchen Wall Tiles",
+                        to: "/interior?sub=Kitchen Wall Tiles",
+                      },
+                      {
+                        name: "Bathroom Wall Tiles",
+                        to: "/interior?sub=Bathroom Wall Tiles",
+                      },
+                      {
+                        name: "Interior Floor Tiles",
+                        to: "/interior?sub=Interior Floor Tiles",
+                      },
+                    ].map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -301,15 +308,17 @@ export default function Sanitary() {
             {user ? (
               <>
                 <Link
-  to="/cart"
-  className={`uppercase ${underlineHover} flex items-center gap-1`}
->
-  <FaShoppingCart />
-  Cart
-  {cartCount > 0 && (
-    <span className="ml-1 font-bold text-blue-600">({cartCount})</span>
-  )}
-</Link>
+                  to="/cart"
+                  className={`uppercase ${underlineHover} flex items-center gap-1`}
+                >
+                  <FaShoppingCart />
+                  Cart
+                  {cartCount > 0 && (
+                    <span className="ml-1 font-bold text-blue-600">
+                      ({cartCount})
+                    </span>
+                  )}
+                </Link>
 
                 <Link
                   to="/profile"

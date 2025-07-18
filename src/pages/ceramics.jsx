@@ -143,7 +143,6 @@ export default function Ceramics() {
     return "";
   };
 
- 
   const filterOptions = {
     tiles: {
       size: ["12x18", "48x24", "32x32"],
@@ -165,9 +164,15 @@ export default function Ceramics() {
 
     bathtub: {
       color: ["White", "White + Dark Pink", "Light Blue"],
-      size: ["54 x 28 H 15", "60 x 30 H 14", "66 x 30 H 14", "72 x 36 H 18", "Round, 54” Dia x 22 H"],
-      priceRange: ["Below ₹15,000", "₹15,000–₹30,000", "Above ₹30,000"]
-},
+      size: [
+        "54 x 28 H 15",
+        "60 x 30 H 14",
+        "66 x 30 H 14",
+        "72 x 36 H 18",
+        "Round, 54” Dia x 22 H",
+      ],
+      priceRange: ["Below ₹15,000", "₹15,000–₹30,000", "Above ₹30,000"],
+    },
 
     toilets: {
       type: ["One Piece", "Wall Hung"],
@@ -178,9 +183,17 @@ export default function Ceramics() {
   };
 
   useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
-    setCartCount(totalCount);
+    const updateCartCount = () => {
+      const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
+      setCartCount(storedCart.length); // Just count distinct products
+    };
+
+    updateCartCount();
+
+    window.addEventListener("cartUpdated", updateCartCount);
+    return () => {
+      window.removeEventListener("cartUpdated", updateCartCount);
+    };
   }, []);
 
   useEffect(() => {
@@ -394,25 +407,26 @@ export default function Ceramics() {
 
     return typeMatch && flushMatch && colorMatch && manufacturerMatch;
   });
-const filteredBathtubs = bathtubs.filter((tub) => {
-  const colorMatch =
-    !filters?.color?.length || filters.color.includes(tub.Color);
+  const filteredBathtubs = bathtubs.filter((tub) => {
+    const colorMatch =
+      !filters?.color?.length || filters.color.includes(tub.Color);
 
-  const sizeMatch =
-    !filters?.size?.length || filters.size.includes(tub.Size);
+    const sizeMatch = !filters?.size?.length || filters.size.includes(tub.Size);
 
-  const price = parseFloat(tub.Price || 0);
-  const priceRange = Array.isArray(filters?.priceRange) ? filters.priceRange : [];
-  const priceMatch =
-  priceRange.length === 0 ||
-  (priceRange.includes("Below ₹15,000") && price < 15000) ||
-  (priceRange.includes("₹15,000–₹30,000") && price >= 15000 && price <= 30000) ||
-  (priceRange.includes("Above ₹30,000") && price > 30000);
+    const price = parseFloat(tub.Price || 0);
+    const priceRange = Array.isArray(filters?.priceRange)
+      ? filters.priceRange
+      : [];
+    const priceMatch =
+      priceRange.length === 0 ||
+      (priceRange.includes("Below ₹15,000") && price < 15000) ||
+      (priceRange.includes("₹15,000–₹30,000") &&
+        price >= 15000 &&
+        price <= 30000) ||
+      (priceRange.includes("Above ₹30,000") && price > 30000);
 
-
-  return colorMatch && sizeMatch && priceMatch;
-});
-
+    return colorMatch && sizeMatch && priceMatch;
+  });
 
   const handleSearch = () => {
     let combined = [];
@@ -838,7 +852,7 @@ const filteredBathtubs = bathtubs.filter((tub) => {
                 ))}
 
               {activeTab === "bathtub" &&
-                 filteredBathtubs.map((tub, i) => (
+                filteredBathtubs.map((tub, i) => (
                   <div
                     key={tub._id || i}
                     className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
