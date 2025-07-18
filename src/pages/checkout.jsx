@@ -4,6 +4,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -159,7 +161,7 @@ export default function Checkout() {
   const { name, value } = e.target;
   setNewAddress((prev) => ({ ...prev, [name]: value }));
 };
-  const handleAddAddress = () => {
+  const handleAddAddress = async () => {
   const filled = Object.values(newAddress).every((val) => val.trim() !== "");
   if (!filled) return alert("Please fill all address fields.");
 
@@ -182,11 +184,29 @@ export default function Checkout() {
   });
 
   if (user) {
+    // Save to localStorage
     localStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedList));
+
+    // Save first address + phone to user profile in Firestore
+    const primaryAddress = updatedList[0];
+    const formattedAddress = `${primaryAddress.street}, ${primaryAddress.city}, ${primaryAddress.country} - ${primaryAddress.postalCode}`;
+
+    try {
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          phone: primaryAddress.phone,
+          address: formattedAddress,
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.error("Failed to update profile with address:", err.message);
+    }
   }
 };
 
-const handleDeleteAddress = (idToDelete) => {
+const handleDeleteAddress = async (idToDelete) => {
   const updated = addressList.filter((addr) => addr.id !== idToDelete);
   setAddressList(updated);
 
@@ -196,6 +216,40 @@ const handleDeleteAddress = (idToDelete) => {
 
   if (user) {
     localStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updated));
+
+    // If the deleted one was the first address used in profile, update Firestore
+    if (idToDelete === addressList[0]?.id) {
+      if (updated.length > 0) {
+        const nextPrimary = updated[0];
+        const formatted = `${nextPrimary.street}, ${nextPrimary.city}, ${nextPrimary.country} - ${nextPrimary.postalCode}`;
+        try {
+          await setDoc(
+            doc(db, "users", user.uid),
+            {
+              phone: nextPrimary.phone,
+              address: formatted,
+            },
+            { merge: true }
+          );
+        } catch (err) {
+          console.error("Error updating profile after deletion:", err.message);
+        }
+      } else {
+        // No address left, so clear from profile
+        try {
+          await setDoc(
+            doc(db, "users", user.uid),
+            {
+              phone: "",
+              address: "",
+            },
+            { merge: true }
+          );
+        } catch (err) {
+          console.error("Error clearing profile:", err.message);
+        }
+      }
+    }
   }
 };
 
@@ -314,19 +368,14 @@ const handleDeleteAddress = (idToDelete) => {
         Delete  
       </button>
     </div>
-  ))}
-  {addressError && (
-    <p className="text-red-600 text-sm mt-1">
-      Please select or add an address.
-    </p>
-  )}
-</div>
-
+          ))}
               {addressError && (
-                <p className="text-red-600 text-sm mt-1">
-                  Please select or add an address.
-                </p>
-              )}
+            <p className="text-red-600 text-sm mt-1">
+            Please select or add an address.
+           </p>
+         )}
+            </div>
+
             </div>
 
             <button
