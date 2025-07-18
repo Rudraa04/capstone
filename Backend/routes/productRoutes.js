@@ -6,8 +6,8 @@ import {
   getProductById, //fetching a single product by id and type
   addProduct, // creating a new product for a given type
   updateProduct, // updating product for a given type and id
-  deleteProduct, // deleting
-  getAllProducts, // fetching all produts across all types
+  deleteProduct, 
+  getAllProducts,
 } from "../controllers/productController.js";
 // creating a new router instance
 const router = express.Router();
@@ -16,7 +16,6 @@ const router = express.Router();
 router.get("/api/products/all", getAllProducts);
 
 // route to fetch all products of a specific type /api/products/tiles
-//:type - a placeholder to match any value (Parameter)
 router.get("/api/products/:type", getProductsByType);
 //fetch a single product of a specific type /api/products/tiles/01234
 router.get("/api/products/:type/:id", getProductById);
