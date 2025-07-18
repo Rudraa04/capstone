@@ -335,7 +335,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
   if (!user) {
-    toast.error("⚠️ You must be logged in to add items to your cart.", {
+    toast.error("You must be logged in to add items to your cart.", {
       position: "bottom-right",
       autoClose: 3000,
       hideProgressBar: false,
