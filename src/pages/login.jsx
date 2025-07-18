@@ -37,22 +37,22 @@ export default function Login() {
   // Forgot Password Function
   const handleForgotPassword = async () => {
     if (!email || !email.includes("@")) {
-      alert("⚠️ Please enter a valid email address first.");
+      alert("Please enter a valid email address first.");
       return;
     }
 
     try {
       await sendPasswordResetEmail(auth, email);
-      alert("📧 Password reset email sent! Check your inbox.");
+      alert("Password reset email sent! Check your inbox.");
     } catch (error) {
       console.error("Reset error:", error.message);
 
       if (error.code === "auth/user-not-found") {
-        alert("❌ No account found with this email.");
+        alert("No account found with this email.");
       } else if (error.code === "auth/invalid-email") {
-        alert("❌ Invalid email format.");
+        alert("Invalid email format.");
       } else {
-        alert("❌ Something went wrong. Please try again.");
+        alert("Something went wrong. Please try again.");
       }
     }
   };
