@@ -4,6 +4,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
+import { motion } from "framer-motion";
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -43,6 +44,7 @@ export default function Home() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
+  const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -139,16 +141,15 @@ export default function Home() {
                     : "Choose from a premium range of marble, floor & wall tiles."}
                 </p>
                 <button
-  onClick={() => navigate('/products')}
-  className="bg-white text-black px-6 sm:px-8 py-2 sm:py-4 rounded shadow hover:bg-gray-100 text-sm sm:text-lg font-semibold"
->
-  {i === 0
-    ? "Shop Now"
-    : i === 1
-    ? "Explore Collection"
-    : "Browse Now"}
-</button>
-
+                  onClick={() => navigate("/products")}
+                  className="bg-white text-black px-6 sm:px-8 py-2 sm:py-4 rounded shadow hover:bg-gray-100 text-sm sm:text-lg font-semibold"
+                >
+                  {i === 0
+                    ? "Shop Now"
+                    : i === 1
+                    ? "Explore Collection"
+                    : "Browse Now"}
+                </button>
               </div>
             </div>
           </div>
@@ -233,7 +234,10 @@ export default function Home() {
             </Link>
 
             {/* Ceramics */}
-            <Link to="/ceramics" className="flex-1 min-w-[180px] sm:min-w-[240px]">
+            <Link
+              to="/ceramics"
+              className="flex-1 min-w-[180px] sm:min-w-[240px]"
+            >
               <div className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition h-full overflow-hidden flex flex-col rounded-lg">
                 <div className="h-40 overflow-hidden">
                   <img
@@ -308,20 +312,61 @@ export default function Home() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {[
-            { title: "25+ Years Experience", icon: "⏳" },
-            { title: "1000+ Designs", icon: "🎨" },
-            { title: "Certified Quality", icon: "✅" },
-            { title: "Global Reach", icon: "🌎" },
+            {
+              title: "25+ Years Experience",
+              icon: "⏳",
+              description:
+                "Patel Ceramics has over two decades of industry excellence, pioneering ceramic innovation with trusted craftsmanship and legacy.",
+            },
+            {
+              title: "1000+ Designs",
+              icon: "🎨",
+              description:
+                "Explore a vast library of modern, elegant, and timeless ceramic and slab designs tailored for every space and style.",
+            },
+            {
+              title: "Certified Quality",
+              icon: "✅",
+              description:
+                "We meet international standards with certifications ensuring long-lasting durability and superior product quality.",
+            },
+            {
+              title: "Global Reach",
+              icon: "🌎",
+              description:
+                "With partners and customers across 20+ countries, our network expands globally, delivering trust and excellence worldwide.",
+            },
           ].map((item, i) => (
-            <div
+            <motion.div
               key={i}
-              className="bg-gray-100 px-6 py-8 border-l-4 border-blue-500 shadow-sm rounded-lg hover:shadow-md transition text-left"
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              className="relative bg-gray-100 px-6 py-8 border-l-4 border-blue-500 shadow-sm rounded-lg transition text-left cursor-pointer overflow-hidden min-h-[22px]"
+              whileHover={{ scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
+              {/* Icon and Title always visible */}
               <div className="text-3xl mb-4">{item.icon}</div>
               <h3 className="text-lg font-semibold text-gray-800">
                 {item.title}
               </h3>
-            </div>
+
+              {/* Show this only on hover - ABSOLUTELY POSITIONED */}
+              {hoveredIndex === i && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 bg-white bg-opacity-95 p-4 rounded-lg shadow-xl z-10"
+                >
+                  <h4 className="text-md font-bold text-blue-600 mb-2">
+                    {item.title}
+                  </h4>
+                  <p className="text-sm text-gray-700">{item.description}</p>
+                </motion.div>
+              )}
+            </motion.div>
           ))}
         </div>
         <div className="absolute inset-0 opacity-5 pointer-events-none bg-[url('/images/pattern-light.png')] bg-center bg-cover"></div>
