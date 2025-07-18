@@ -19,14 +19,11 @@ import Checkout from "./pages/checkout.jsx";
 import Interior from "./pages/interior.jsx";
 import Exterior from "./pages/exterior.jsx";
 import Sanitary from "./pages/sanitary.jsx";
-import BedroomWall from "./pages/BedroomWall";
-import BedroomFloor from "./pages/BedroomFloor";
 import ProductDetail from "./pages/ProductDetail";
 import AllProducts from "./pages/allProduct.jsx";
 
 
 // Admin pages
-import AdminLogin from "./pages/adminLogin.jsx";
 import AdminHome from "./pages/adminHome.jsx";
 import AddProduct from "./admin/AddProduct";
 import AddMarble from "./admin/AddMarble";
@@ -86,16 +83,13 @@ export default function App() {
         <Route path="/interior" element={<Interior />} />
         <Route path="/exterior" element={<Exterior />} />
         <Route path="/sanitary" element={<Sanitary />} />
-        <Route path="/bedroomwall" element={<BedroomWall />} />
-        <Route path="/bedroomfloor" element={<BedroomFloor />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product/:type/:id" element={<ProductDetail />} />
         <Route path="/products" element={<AllProducts />} />
         
 
-        {/* Admin login (not protected) */}
-        <Route path="/adminLogin" element={<AdminLogin />} />
+
 
         {/* Protected Admin Routes */}
         <Route
