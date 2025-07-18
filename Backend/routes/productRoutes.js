@@ -1,5 +1,4 @@
 // express import to create router
-//
 import express from "express";
 //all controller logic for handling product logic
 import {
