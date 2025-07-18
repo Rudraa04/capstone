@@ -17,18 +17,23 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
-
+  //stores captcha value when user solves it
+  //if is it null the log in button will be disabled
   const [captchaValue, setCaptchaValue] = useState(null);
+  //tracks the number of failed attempts
+  //Count how many times the user failed to log in
+    //We get this number from the browser's local storage
   const [failedAttempts, setFailedAttempts] = useState(() => {
     return parseInt(localStorage.getItem("failedAttempts") || "0", 10);
   });
+  //captcha will be appeared after 5 failed attempts
   const [showCaptcha, setShowCaptcha] = useState(failedAttempts >= 5);
-
+  //function is called when user solves the captcha
   const handleCaptchaChange = (value) => {
-    setCaptchaValue(value);
+    setCaptchaValue(value); //save captcha value
   };
 
-  // ✅ Forgot Password Function
+  // Forgot Password Function
   const handleForgotPassword = async () => {
     if (!email || !email.includes("@")) {
       alert("⚠️ Please enter a valid email address first.");
@@ -51,7 +56,7 @@ export default function Login() {
     }
   };
 
-  // ✅ Login Handler
+  // Login Handler
   const handleLogin = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -89,10 +94,12 @@ export default function Login() {
         setMessageType("error");
       }
     } catch (error) {
+      //If login fails, increase the count by 1
       const newFailed = failedAttempts + 1;
       setFailedAttempts(newFailed);
+      //Save the new count to local storage so it's remembered
       localStorage.setItem("failedAttempts", newFailed.toString());
-
+      //If the user has failed 5 or more times, show the captcha
       if (newFailed >= 5) setShowCaptcha(true);
 
       if (
@@ -179,7 +186,7 @@ export default function Login() {
                 </span>
               </div>
             </div>
-
+              
             {showCaptcha && (
               <div className="mt-4 flex justify-center">
                 <ReCAPTCHA
@@ -191,6 +198,7 @@ export default function Login() {
 
             <button
               type="submit"
+              //if captcha is not solved the button will be disabled
               disabled={showCaptcha && !captchaValue}
               className="bg-blue-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow disabled:opacity-50"
             >
