@@ -63,7 +63,7 @@ export default function SalesReports() {
     key: "",
     direction: "ascending",
   }); //control sorting of sales table
-  const [selectedCategory, setSelectedCategory] = useState("All"); // filer sales data by category
+  const [selectedCategory, setSelectedCategory] = useState("All"); // filter sales data by category
 
   const handleSort = (key) => {
     // sorting in direction

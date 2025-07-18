@@ -77,15 +77,70 @@ const AllProducts = () => {
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
 
-  const handleSearch = () => {
-    if (query.length > 1) {
-      const filtered = products.filter((product) =>
-        product.Name?.toLowerCase().includes(query.toLowerCase())
-      );
-      setSuggestions(filtered);
-    } else {
-      setSuggestions([]);
+  const handleSearch = (input) => {
+    const rawQuery = input || query;
+    const trimmedQuery = rawQuery
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s]/gi, "");
+    const routeMap = [
+      // Specific phrases FIRST
+      {
+        keywords: ["exterior wall tiles", "exterior wall"],
+        route: "/exterior?sub=Exterior%20Wall%20Tiles",
+      },
+      {
+        keywords: ["exterior floor tiles", "exterior floor"],
+        route: "/exterior?sub=Exterior%20Floor%20Tiles",
+      },
+      {
+        keywords: ["interior floor tiles", "interior floor"],
+        route: "/interior?sub=Interior%20Floor%20Tiles",
+      },
+      {
+        keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"],
+        route: "/interior?sub=Bathroom%20Wall%20Tiles",
+      },
+      {
+        keywords: ["kitchen wall tiles", "kitchen tiles", "kitchen"],
+        route: "/interior?sub=Kitchen%20Wall%20Tiles",
+      },
+
+      // General categories
+      { keywords: ["interior", "interior tiles"], route: "/interior" },
+      { keywords: ["exterior", "exterior tiles"], route: "/exterior" },
+      {
+        keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"],
+        route: "/sanitary",
+      },
+      { keywords: ["slab", "slabs", "granite", "marble"], route: "/slabs" },
+      { keywords: ["ceramic", "ceramics"], route: "/ceramics?type=tiles" },
+      { keywords: ["tile", "tiles"], route: "/ceramics?type=tiles" },
+
+      // Suggestions
+      {
+        keywords: ["bathroom", "washroom"],
+        suggest: ["tiles", "bathtubs", "sinks", "toilets"],
+      },
+    ];
+
+    for (const entry of routeMap) {
+      if (entry.route && entry.keywords.some((k) => trimmedQuery.includes(k))) {
+        navigate(entry.route);
+        return;
+      }
+
+      if (
+        entry.suggest &&
+        entry.keywords.some((k) => trimmedQuery.includes(k))
+      ) {
+        alert(`You might be looking for: ${entry.suggest.join(", ")}`);
+        return;
+      }
     }
+
+    alert("No matching category found.");
+    setSuggestions([]);
   };
 
   const filteredProducts =
@@ -98,8 +153,6 @@ const AllProducts = () => {
   return (
     <div className="bg-white text-gray-900">
       {/* HEADER */}
-      {/* ... [Header code remains unchanged] ... */}
-
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -117,7 +170,7 @@ const AllProducts = () => {
             </Link>
           </div>
 
-          <div className="relative w-full max-w-md">
+          <div className="hidden md:block relative w-full max-w-md">
             <div className="flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full">
               <input
                 type="text"
@@ -126,6 +179,7 @@ const AllProducts = () => {
                 onChange={(e) => {
                   const value = e.target.value;
                   setQuery(value);
+
                   if (value.length > 1) {
                     const filtered = products.filter((product) =>
                       product.Name?.toLowerCase().includes(value.toLowerCase())
@@ -140,14 +194,16 @@ const AllProducts = () => {
                 }}
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
+
               <button
-                onClick={handleSearch}
+                onClick={() => handleSearch()}
                 className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
               >
                 <FaSearch size={18} />
               </button>
             </div>
 
+            {/* 🔍 Search Suggestions with Image */}
             {suggestions.length > 0 && (
               <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
                 {suggestions.map((product, index) => (
@@ -304,20 +360,75 @@ const AllProducts = () => {
 
         {menuOpen && (
           <div className="md:hidden px-6 pb-4">
-            <div className="flex items-center border rounded-full px-4 py-2 bg-gray-100 shadow-sm my-4">
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-base px-2"
-              />
-              <button
-                onClick={() => console.log("Search query:", query)}
-                className="text-blue-600 hover:text-blue-800 p-1"
-              >
-                <FaSearch size={18} />
-              </button>
+            <div className="block md:hidden relative w-full max-w-md mb-4">
+              <div className="flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={query}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setQuery(value);
+
+                    if (value.length > 1) {
+                      const filtered = products.filter((product) =>
+                        product.Name?.toLowerCase().includes(
+                          value.toLowerCase()
+                        )
+                      );
+                      setSuggestions(filtered);
+                    } else {
+                      setSuggestions([]);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
+                  className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
+                />
+
+                <button
+                  onClick={() => handleSearch()}
+                  className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+                >
+                  <FaSearch size={18} />
+                </button>
+              </div>
+
+              {/* 🔍 Search Suggestions with Image */}
+              {suggestions.length > 0 && (
+                <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
+                  {suggestions.map((product, index) => (
+                    <li
+                      key={index}
+                      className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => {
+                        navigate(
+                          `/product/${product.category.toLowerCase()}/${
+                            product._id
+                          }`
+                        );
+                        setSuggestions([]);
+                        setQuery("");
+                      }}
+                    >
+                      <img
+                        src={
+                          product.Image || "https://via.placeholder.com/40x40"
+                        }
+                        alt={product.Name}
+                        className="w-10 h-10 object-cover rounded border"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold">{product.Name}</p>
+                        <p className="text-xs text-gray-500">
+                          {product.category}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="flex flex-col gap-4 text-[16px] font-medium text-gray-700">
               <Link to="/" className="uppercase">
