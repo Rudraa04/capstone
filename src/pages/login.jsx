@@ -23,8 +23,9 @@ export default function Login() {
   //tracks the number of failed attempts
   //Count how many times the user failed to log in
     //We get this number from the browser's local storage
+    //when page loads for the first time we still check the failed attempts before.
   const [failedAttempts, setFailedAttempts] = useState(() => {
-    return parseInt(localStorage.getItem("failedAttempts") || "0", 10);
+    return parseInt(localStorage.getItem("failedAttempts") || "0", 10); //if null then default is 0 , and we convert string to int using parseint10
   });
   //captcha will be appeared after 5 failed attempts
   const [showCaptcha, setShowCaptcha] = useState(failedAttempts >= 5);
