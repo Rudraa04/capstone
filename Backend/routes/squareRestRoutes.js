@@ -1,4 +1,4 @@
-import express from "express";
+import express from "express"; /// Express helps us create routes (APIs)
 import axios from "axios"; //to call square API
 import { v4 as uuidv4 } from "uuid"; //this generates a unique id for each payment (prevent duplicate payments)
 import dotenv from "dotenv"; //to use environment variables
@@ -22,9 +22,9 @@ router.post("/payment", async (req, res) => { // handle payment requests from th
           currency: "CAD", 
         },
       },
-      {
+      { //extra information for the request to Square to avoid errors
         headers: {
-          "Square-Version": "2023-12-13",
+          "Square-Version": "2023-12-13", // exact version of Square API we are using
           Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`, // use the Square access token for authorization
           "Content-Type": "application/json",//tell Square that we are sending JSON data
         },

@@ -1,5 +1,6 @@
+//import functions from firebase SDK
 import { initializeApp } from "firebase/app"; //start firebase in website
-import { getAuth } from "firebase/auth"; //handles login/signup
+import { getAuth } from "firebase/auth"; //handles login/signup/logut
 import { getFirestore } from "firebase/firestore"; //read/write data in the Firestore database
 import { getStorage } from "firebase/storage"; //upload and get product images
 
@@ -15,8 +16,6 @@ const firebaseConfig = {
 //start firebase
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
-//firestore database to store roles, products
-export const db = getFirestore(app);
-//to sotre images
-export const storage = getStorage(app);
+export const auth = getAuth(app); // Export auth so you can use it to log in / sign up in other files
+export const db = getFirestore(app); // Export Firestore to read/write user data
+export const storage = getStorage(app); // Export Storage to upload and get product images
