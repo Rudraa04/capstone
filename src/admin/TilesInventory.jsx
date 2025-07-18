@@ -168,7 +168,6 @@ export default function TilesInventory() {
       Quantity: product.Stock_admin,
       Manufacturer: brands.includes(product.Manufacturer) ? product.Manufacturer : "Other",
       customBrand: brands.includes(product.Manufacturer) ? "" : product.Manufacturer,
-
       length,
       width,
     });

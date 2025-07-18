@@ -1,4 +1,5 @@
 // Updated productController.js
+//comes from frontend
 import Tiles_Model from "../models/Tiles.js";
 import Bathtubs_Model from "../models/Bathtubs.js";
 import Granite_Model from "../models/Granite.js";

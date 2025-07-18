@@ -15,8 +15,6 @@ import {
   FaLink,
   FaEye,
 } from "react-icons/fa";
-import marbleImages from "../images/marble";
-import graniteImages from "../images/granite";
 import Footer from "../components/Footer";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
