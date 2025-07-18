@@ -22,7 +22,6 @@ import Sanitary from "./pages/sanitary.jsx";
 import ProductDetail from "./pages/ProductDetail";
 import AllProducts from "./pages/allProduct.jsx";
 
-
 // Admin pages
 import AdminHome from "./pages/adminHome.jsx";
 import AddProduct from "./admin/AddProduct";
@@ -43,6 +42,28 @@ import ToiletInventory from "./admin/ToiletInventory.jsx";
 import OrderManagement from "./admin/OrderManagement";
 import CustomerSupport from "./admin/CustomerSupport.jsx";
 import SalesReports from "./admin/SalesReports.jsx";
+
+// Footer Pages
+import About from "./pages/About.jsx";
+import Projects from "./pages/Projects.jsx";
+import Contact from "./pages/Contact.jsx";
+import Blog from "./pages/BLog.jsx";
+import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
+import TermsOfUse from "./pages/TermsOfUse";
+import Sitemap from "./pages/Sitemap";
+
+// Who We Serve
+import Homeowners from "./pages/serve/Homeowners.jsx";
+import Architects from "./pages/serve/Architects.jsx";
+import Designers from "./pages/serve/Designers.jsx";
+import Builders from "./pages/serve/Builders.jsx";
+import Commercial from "./pages/serve/Commercial.jsx";
+
+// What We Do
+import CustomDesign from "./pages/services/CustomDesign.jsx";
+import BulkOrders from "./pages/services/BulkOrders.jsx";
+import QualityAssurance from "./pages/services/QualityAssurance.jsx";
+import NationwideDelivery from "./pages/services/NationwideDelivery.jsx";
 
 export default function App() {
   //store the user's role (like "admin" or "customer")
@@ -87,9 +108,26 @@ export default function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product/:type/:id" element={<ProductDetail />} />
         <Route path="/products" element={<AllProducts />} />
-        
+        {/* Company */}
+        <Route path="/about" element={<About />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/blog" element={<Blog />} />
 
-
+        {/* Who We Serve */}
+        <Route path="/serve/homeowners" element={<Homeowners />} />
+        <Route path="/serve/architects" element={<Architects />} />
+        <Route path="/serve/designers" element={<Designers />} />
+        <Route path="/serve/builders" element={<Builders />} />
+        <Route path="/serve/commercial" element={<Commercial />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfUse />} />
+        <Route path="/sitemap" element={<Sitemap />} />
+        {/* What We Do */}
+        <Route path="/services/custom-design" element={<CustomDesign />} />
+        <Route path="/services/bulk-orders" element={<BulkOrders />} />
+        <Route path="/services/quality" element={<QualityAssurance />} />
+        <Route path="/services/delivery" element={<NationwideDelivery />} />
 
         {/* Protected Admin Routes */}
         <Route
