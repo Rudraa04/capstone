@@ -49,7 +49,7 @@ export default function Login() {
 
     try {
       await sendPasswordResetEmail(auth, email); //for email verification
-      alert("Password reset email sent! Check your inbox.");
+      alert("Password reset email sent! Check your inbox or spam.");
     } catch (error) {
       console.error("Reset error:", error.message);
         //Error handling based on Firebase error codes
