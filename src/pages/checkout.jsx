@@ -3,13 +3,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import {
-  FaSearch,
-  FaShoppingCart,
-  FaBars,
-  FaTimes,
-  FaArrowLeft,
-} from "react-icons/fa";
 import { auth } from "../firebase/firebase";
 
 export default function Checkout() {
@@ -23,7 +16,6 @@ export default function Checkout() {
   const [cartItems, setCartItems] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("");
   const [addressList, setAddressList] = useState([
-  
   ]);
   const [newAddress, setNewAddress] = useState({
     fullName: "",
@@ -62,11 +54,18 @@ export default function Checkout() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
+  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    setUser(currentUser);
+    if (currentUser) {
+      const savedAddresses = localStorage.getItem(`addresses_${currentUser.uid}`);
+      if (savedAddresses) {
+        setAddressList(JSON.parse(savedAddresses));
+      }
+    }
+  });
+  return () => unsubscribe();
+}, []);
+
 
   useEffect(() => {
     const storedItems = localStorage.getItem("cartItems");
@@ -120,7 +119,7 @@ export default function Checkout() {
     if (paymentMethod === "credit" || paymentMethod === "debit") {
       loadSquareCard();
     }
-  }, [paymentMethod]); // ✅ re-run when paymentMethod is 'card'
+  }, [paymentMethod]); //  re-run when paymentMethod is 'card'
 
   const handleConfirmCard = async () => {
     if (!cardRef.current) {
@@ -156,31 +155,51 @@ export default function Checkout() {
     alert("Logged out!");
     navigate("/login");
   };
-
   const handleAddressChange = (e) => {
-    const { name, value } = e.target;
-    setNewAddress((prev) => ({ ...prev, [name]: value }));
-  };
-
+  const { name, value } = e.target;
+  setNewAddress((prev) => ({ ...prev, [name]: value }));
+};
   const handleAddAddress = () => {
-    const filled = Object.values(newAddress).every((val) => val.trim() !== "");
-    if (!filled) return alert("Please fill all address fields.");
-    const newId = Date.now();
-    setAddressList((prev) => [
-      ...prev,
-      { id: newId, label: `Address ${prev.length + 1}`, ...newAddress },
-    ]);
-    setSelectedAddress(newId);
-    setShowAddressForm(false);
-    setNewAddress({
-      fullName: "",
-      street: "",
-      city: "",
-      postalCode: "",
-      country: "",
-      phone: "",
-    });
-  };
+  const filled = Object.values(newAddress).every((val) => val.trim() !== "");
+  if (!filled) return alert("Please fill all address fields.");
+
+  const newId = Date.now();
+  const updatedList = [
+    ...addressList,
+    { id: newId, label: `Address ${addressList.length + 1}`, ...newAddress },
+  ];
+
+  setAddressList(updatedList);
+  setSelectedAddress(newId);
+  setShowAddressForm(false);
+  setNewAddress({
+    fullName: "",
+    street: "",
+    city: "",
+    postalCode: "",
+    country: "",
+    phone: "",
+  });
+
+  if (user) {
+    localStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedList));
+  }
+};
+
+const handleDeleteAddress = (idToDelete) => {
+  const updated = addressList.filter((addr) => addr.id !== idToDelete);
+  setAddressList(updated);
+
+  if (selectedAddress === idToDelete) {
+    setSelectedAddress("");
+  }
+
+  if (user) {
+    localStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updated));
+  }
+};
+
+  
 
   const handlePlaceOrder = async () => {
     // 1. Validate address
@@ -267,23 +286,42 @@ export default function Checkout() {
               🏠 Delivery Address
             </h2>
             <div className="mb-2">
-              <select
-                className={`w-full border px-4 py-2 rounded-lg ${
-                  addressError ? "border-red-500" : "border-gray-300"
-                }`}
-                value={selectedAddress}
-                onChange={(e) => {
-                  setSelectedAddress(Number(e.target.value));
-                  setAddressError(false); // clear error when user selects
-                }}
-              >
-                <option value="">-- Select Address --</option>
-                {addressList.map((addr) => (
-                  <option key={addr.id} value={addr.id}>
-                    {addr.label} ({addr.street}, {addr.city})
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-2 mb-4">
+  {addressList.map((addr) => (
+    <div
+      key={addr.id}
+      className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded"
+    >
+      <label className="flex items-center gap-2 w-full">
+        <input
+          type="radio"
+          name="selectedAddress"
+          value={addr.id}
+          checked={selectedAddress === addr.id}
+          onChange={() => {
+            setSelectedAddress(addr.id);
+            setAddressError(false);
+          }}
+        />
+        <span className="text-sm">
+          {addr.label} — {addr.street}, {addr.city}
+        </span>
+      </label>
+      <button
+        onClick={() => handleDeleteAddress(addr.id)}
+        className="text-red-500 hover:text-red-700 text-sm ml-4"
+      >
+        Delete  
+      </button>
+    </div>
+  ))}
+  {addressError && (
+    <p className="text-red-600 text-sm mt-1">
+      Please select or add an address.
+    </p>
+  )}
+</div>
+
               {addressError && (
                 <p className="text-red-600 text-sm mt-1">
                   Please select or add an address.
