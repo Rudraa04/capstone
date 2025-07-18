@@ -23,16 +23,7 @@ export default function Checkout() {
   const [cartItems, setCartItems] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("");
   const [addressList, setAddressList] = useState([
-    {
-      id: 1,
-      label: "Home",
-      fullName: "Harshil Rathod",
-      street: "1601 16 Ave NW",
-      city: "Calgary",
-      postalCode: "T29 xxx",
-      country: "Canada",
-      phone: "xxx-xxx-xxx",
-    },
+  
   ]);
   const [newAddress, setNewAddress] = useState({
     fullName: "",

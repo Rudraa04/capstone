@@ -6,15 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-function getDeliveryDate() {
-  const today = new Date();
-  today.setDate(today.getDate() + 3);
-  return today.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-}
+
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -159,9 +151,7 @@ export default function Cart() {
                               ? `Only ${item.stock} left`
                               : "In Stock"}
                           </p>
-                          <p className="text-sm text-gray-500 font-bold mt-1">
-                            Estimated delivery by {getDeliveryDate()}
-                          </p>
+                          
                         </div>
                         <div className="text-right">
                           {item.discount > 0 && (
