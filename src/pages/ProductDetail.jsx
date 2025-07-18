@@ -62,6 +62,7 @@ export default function ProductDetail() {
 
   const [stockError, setStockError] = useState("");
 
+
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
     const totalCount = storedCart.reduce((sum, item) => sum + item.quantity, 0);
@@ -209,55 +210,7 @@ export default function ProductDetail() {
 
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
-
-  const data = {
-    marble: {
-      names: [
-        "Golden Emperador Marble",
-        "Rosa Aurora Marble",
-        "Verde Alpi Marble",
-        "Crema Marfil Marble",
-        "Carrara White Marble",
-        "Jaisalmer Yellow Marble",
-        "Calacatta Gold Marble",
-        "Udaipur Green Marble",
-      ],
-      desc: [
-        "Rich golden tones with dramatic dark veins. A luxurious choice for upscale interiors.",
-        "Soft pink hue with delicate veining. Ideal for bathrooms and serene settings.",
-        "Deep green marble with white veins. Adds bold character to any space.",
-        "Creamy beige marble, classic and versatile. Matches any decor style.",
-        "Iconic white marble with soft gray veins. A timeless choice for elegant surfaces.",
-        "Warm golden-yellow tones. Popular in Indian architecture and temples.",
-        "White marble with bold gold and brown veins. Premium and eye-catching.",
-        "Bright green marble with natural white veining. Eco-inspired and unique.",
-      ],
-      images: marbleImages,
-    },
-    granite: {
-      names: [
-        "Black Galaxy Granite",
-        "Ruby Red Granite",
-        "Alaska White Granite",
-        "Steel Grey Granite",
-        "Ivory Brown Granite",
-        "Forest Green Granite",
-        "Blue Pearl Granite",
-        "Tan Brown Granite",
-      ],
-      desc: [
-        "Classic black finish with golden speckles. Perfect for countertops and vanities.",
-        "Deep red granite with dark veins. Ideal for bold, statement interiors.",
-        "Bright white granite with subtle gray patterns. Enhances modern kitchens.",
-        "Mid-tone grey with consistent grain. Suitable for both floors and facades.",
-        "A warm blend of beige and brown. Great for cozy living spaces.",
-        "Natural green with dark accents. Adds a lush, earthy feel to any setting.",
-        "Luxurious blue granite with a shimmering finish. A favorite for luxury spaces.",
-        "Dark brown with chocolate and black flecks. Durable and elegant.",
-      ],
-      images: graniteImages,
-    },
-  };
+  
 
   let product;
 
@@ -381,31 +334,8 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = () => {
-    const cartItem = {
-      id: Date.now(),
-      ...product,
-      size: customSize,
-      quantity,
-      totalTiles,
-      totalPrice,
-    };
-
-    const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const existingItemIndex = existingCart.findIndex(
-      (item) => item.name === cartItem.name && item.size === cartItem.size
-    );
-
-    if (existingItemIndex !== -1) {
-      existingCart[existingItemIndex].quantity += cartItem.quantity;
-      existingCart[existingItemIndex].totalTiles += cartItem.totalTiles;
-      existingCart[existingItemIndex].totalPrice += cartItem.totalPrice;
-    } else {
-      existingCart.push(cartItem);
-    }
-
-    localStorage.setItem("cart", JSON.stringify(existingCart));
-
-    toast.success("🛒 Added to cart!", {
+  if (!user) {
+    toast.error("⚠️ You must be logged in to add items to your cart.", {
       position: "bottom-right",
       autoClose: 3000,
       hideProgressBar: false,
@@ -413,9 +343,51 @@ export default function ProductDetail() {
       pauseOnHover: false,
       draggable: true,
       className:
-        "bg-white border border-green-400 text-green-800 text-lg font-semibold px-6 py-4 rounded-lg shadow-lg animate__animated animate__fadeInRight",
+        "bg-white border border-red-400 text-red-800 text-lg font-semibold px-6 py-4 rounded-lg shadow-lg animate__animated animate__fadeInRight",
     });
+
+    setTimeout(() => {
+      navigate("/login");
+    }, 1500);
+    return;
+  }
+
+  const cartItem = {
+    id: Date.now(),
+    ...product,
+    size: customSize,
+    quantity,
+    totalTiles,
+    totalPrice,
   };
+
+  const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
+  const existingItemIndex = existingCart.findIndex(
+    (item) => item.name === cartItem.name && item.size === cartItem.size
+  );
+
+  if (existingItemIndex !== -1) {
+    existingCart[existingItemIndex].quantity += cartItem.quantity;
+    existingCart[existingItemIndex].totalTiles += cartItem.totalTiles;
+    existingCart[existingItemIndex].totalPrice += cartItem.totalPrice;
+  } else {
+    existingCart.push(cartItem);
+  }
+
+  localStorage.setItem("cart", JSON.stringify(existingCart));
+
+  toast.success("🛒 Added to cart!", {
+    position: "bottom-right",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: false,
+    draggable: true,
+    className:
+      "bg-white border border-green-400 text-green-800 text-lg font-semibold px-6 py-4 rounded-lg shadow-lg animate__animated animate__fadeInRight",
+  });
+};
+
 
   if (
     (type === "tiles" && !tileData) ||
@@ -731,8 +703,8 @@ export default function ProductDetail() {
               </h1>
 
               <button
-                onClick={() => alert("📷 Coming Soon: Visualize in Room!")}
-                className="text-sm px-3 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                onClick={() => alert("Coming Soon: Visualize in Room!")}
+                className="text-sm px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
               >
                 <FaEye className="inline mr-1" /> View in My Room
               </button>
@@ -792,7 +764,7 @@ export default function ProductDetail() {
             <p className="text-base text-gray-600">{product.description}</p>
             {type === "tiles" && (
               <div
-                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
                 style={{ animationDuration: "0.8s" }}
               >
                 <div className="flex items-center gap-2">
@@ -805,25 +777,25 @@ export default function ProductDetail() {
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
                   <li>
-                    <strong>📏 Size:</strong> {product.size}
+                    <strong>Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🧱 Usage Type:</strong> {product.subcategory}
+                    <strong>Usage Type:</strong> {product.subcategory}
                   </li>
                   <li>
-                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
+                    <strong>Manufacturer:</strong> {product.manufacturer}
                   </li>
                   <li>
-                    <strong>🎨 Color:</strong> {product.color}
+                    <strong>Color:</strong> {product.color}
                   </li>
-                  <strong>📦 Stock:</strong>{" "}
+                  <strong>Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
                     ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
-                    <strong>💰 Price:</strong>{" "}
+                    <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
                       ₹{product.price}
                     </span>
@@ -834,7 +806,7 @@ export default function ProductDetail() {
 
             {type === "sinks" && (
               <div
-                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 "
                 style={{ animationDuration: "0.8s" }}
               >
                 <div className="flex items-center gap-2">
@@ -845,25 +817,25 @@ export default function ProductDetail() {
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
                   <li>
-                    <strong>📏 Size:</strong> {product.size}
+                    <strong>Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🏷️ Usage Type:</strong> {product.subcategory}
+                    <strong>Usage Type:</strong> {product.subcategory}
                   </li>
                   <li>
-                    <strong>🏢 Manufacturer:</strong> {product.manufacturer}
+                    <strong>Manufacturer:</strong> {product.manufacturer}
                   </li>
                   <li>
-                    <strong>🎨 Color:</strong> {product.color}
+                    <strong>Color:</strong> {product.color}
                   </li>
-                  <strong>📦 Stock:</strong>{" "}
+                  <strong>Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
                     ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
-                    <strong>💰 Price:</strong>{" "}
+                    <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
                       ₹{product.price}
                     </span>
@@ -874,7 +846,7 @@ export default function ProductDetail() {
 
             {type === "bathtubs" && (
               <div
-                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
                 style={{ animationDuration: "0.8s" }}
               >
                 <div className="flex items-center gap-2">
@@ -885,13 +857,13 @@ export default function ProductDetail() {
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
                   <li>
-                    <strong>📏 Size:</strong> {product.size}
+                    <strong>Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🎨 Color:</strong> {product.color}
+                    <strong>Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>📦 Stock:</strong>{" "}
+                    <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
                       ? "In Stock"
                       : product.stock !== "N/A"
@@ -899,7 +871,7 @@ export default function ProductDetail() {
                       : "N/A"}
                   </li>
                   <li>
-                    <strong>💰 Price:</strong>{" "}
+                    <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
                       ₹{product.price}
                     </span>
@@ -910,7 +882,7 @@ export default function ProductDetail() {
 
             {type === "toilets" && (
               <div
-                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
                 style={{ animationDuration: "0.8s" }}
               >
                 <div className="flex items-center gap-2">
@@ -921,29 +893,29 @@ export default function ProductDetail() {
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
                   <li>
-                    <strong>🚽 Type:</strong> {product.type || "N/A"}
+                    <strong>Type:</strong> {product.type || "N/A"}
                   </li>
                   <li>
-                    <strong>📏 Size:</strong> {product.size || "N/A"}
+                    <strong>Size:</strong> {product.size || "N/A"}
                   </li>
                   <li>
-                    <strong>🎨 Color:</strong> {product.color || "N/A"}
+                    <strong>Color:</strong> {product.color || "N/A"}
                   </li>
                   <li>
-                    <strong>🏢 Manufacturer:</strong>{" "}
+                    <strong>Manufacturer:</strong>{" "}
                     {product.manufacturer || "N/A"}
                   </li>
                   <li>
-                    <strong>🚿 Flush Type:</strong> {product.flush || "N/A"}
+                    <strong>Flush Type:</strong> {product.flush || "N/A"}
                   </li>
                   <li>
-                    <strong>💰 Price:</strong>{" "}
+                    <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
                       ₹{product.price}
                     </span>
                   </li>
                   <li>
-                    <strong>📦 Stock:</strong>{" "}
+                    <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
                       ? "In Stock"
                       : product.stock !== "N/A"
@@ -956,7 +928,7 @@ export default function ProductDetail() {
 
             {type === "marble" && (
               <div
-                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
                 style={{ animationDuration: "0.8s" }}
               >
                 <div className="flex items-center gap-2">
@@ -967,22 +939,22 @@ export default function ProductDetail() {
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
                   <li>
-                    <strong>🪨 Size:</strong> {product.size}
+                    <strong>Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🎨 Color:</strong> {product.color}
+                    <strong>Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>🌍 Origin:</strong> {product.origin}
+                    <strong>Origin:</strong> {product.origin}
                   </li>
-                  <strong>📦 Stock:</strong>{" "}
+                  <strong>Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
                     ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
-                    <strong>💰 Price:</strong>{" "}
+                    <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
                       ₹{product.price}
                     </span>
@@ -993,7 +965,7 @@ export default function ProductDetail() {
 
             {type === "granite" && (
               <div
-                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 animate-fadeInUp"
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
                 style={{ animationDuration: "0.8s" }}
               >
                 <div className="flex items-center gap-2">
@@ -1004,22 +976,22 @@ export default function ProductDetail() {
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
                   <li>
-                    <strong>🪨 Size:</strong> {product.size}
+                    <strong>Size:</strong> {product.size}
                   </li>
                   <li>
-                    <strong>🎨 Color:</strong> {product.color}
+                    <strong>Color:</strong> {product.color}
                   </li>
                   <li>
-                    <strong>🌍 Origin:</strong> {product.origin}
+                    <strong>Origin:</strong> {product.origin}
                   </li>
-                  <strong>📦 Stock:</strong>{" "}
+                  <strong>Stock:</strong>{" "}
                   {product.stock !== "N/A" && parseInt(product.stock) > 10
                     ? "In Stock"
                     : product.stock !== "N/A"
                     ? `Only ${product.stock} left`
                     : "N/A"}
                   <li>
-                    <strong>💰 Price:</strong>{" "}
+                    <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
                       ₹{product.price}
                     </span>
@@ -1035,7 +1007,7 @@ export default function ProductDetail() {
                 {/* Input Quantity */}
                 <div className="mt-6 space-y-2">
                   <label className="block text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    📦 Quantity
+                    Quantity
                   </label>
                   <input
                     type="number"
@@ -1074,7 +1046,7 @@ export default function ProductDetail() {
                   {/* Total Units */}
                   <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                      🧮 Total Units
+                      Total Units
                     </span>
                     <span className="text-green-600 font-bold text-sm">
                       {totalTiles}
@@ -1084,7 +1056,7 @@ export default function ProductDetail() {
                   {/* Price Per Unit */}
                   <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                      💵 Price Per Unit
+                      Price Per Unit
                     </span>
                     <span className="text-green-600 font-bold text-sm">
                       ₹{product.price}
@@ -1092,7 +1064,7 @@ export default function ProductDetail() {
                   </div>
 
                   {/* Final Price */}
-                  <div className="flex justify-between items-center bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-300 rounded-xl px-5 py-4 shadow-md">
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-base font-semibold text-gray-800">
                       Total Price
                     </span>
@@ -1116,7 +1088,7 @@ export default function ProductDetail() {
                 {/* Input Quantity */}
                 <div className="mt-6 space-y-2">
                   <label className="block text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    📦 Quantity
+                    Quantity
                   </label>
                   <input
                     type="number"
@@ -1155,7 +1127,7 @@ export default function ProductDetail() {
                   {/* Total Units */}
                   <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                      🧮 Total Units
+                      Total Units
                     </span>
                     <span className="text-green-600 font-bold text-sm">
                       {totalTiles}
@@ -1165,7 +1137,7 @@ export default function ProductDetail() {
                   {/* Price Per Unit */}
                   <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                      💵 Price Per Square Foot
+                      Price Per Square Foot
                     </span>
                     <span className="text-green-600 font-bold text-sm">
                       ₹{product.price}
@@ -1173,7 +1145,7 @@ export default function ProductDetail() {
                   </div>
 
                   {/* Final Price */}
-                  <div className="flex justify-between items-center bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-300 rounded-xl px-5 py-4 shadow-md">
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-base font-semibold text-gray-800">
                       Total Price
                     </span>
