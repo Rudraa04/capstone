@@ -92,15 +92,15 @@ export default function Sanitary() {
     const fetchSanitaryProducts = async () => {
       try {
         const [sinksRes, bathtubsRes, toiletsRes] = await Promise.all([
-          fetch("http://localhost:5000/api/products/sinks"),
-          fetch("http://localhost:5000/api/products/bathtubs"),
-          fetch("http://localhost:5000/api/products/toilets"),
+          fetch("http://localhost:5000/api/products/sinks"), // Fetch sinks
+          fetch("http://localhost:5000/api/products/bathtubs"), // Fetch bathtubs
+          fetch("http://localhost:5000/api/products/toilets"), // Fetch toilets
         ]);
 
         const [sinks, bathtubs, toilets] = await Promise.all([
-          sinksRes.json(),
-          bathtubsRes.json(),
-          toiletsRes.json(),
+          sinksRes.json(), //convert sinks response to JSON
+          bathtubsRes.json(), //convert bathtubs response to JSON
+          toiletsRes.json(), //convert toilets response to JSON
         ]);
 
         setProducts([...sinks, ...bathtubs, ...toilets]);
