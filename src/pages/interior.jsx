@@ -159,14 +159,16 @@ export default function Interior() {
     navigate("/login");
   };
 
-  const [tiles, setTiles] = useState([]);
+  const [tiles, setTiles] = useState([]); //This sets up a state variable called tiles to store filtered tiles that will be displayed.
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/products/tiles")
-      .then((res) => res.json())
+    fetch("http://localhost:5000/api/products/tiles") // This sends a GET request to your backend to get all tile products.
+      .then((res) => res.json()) // Converts the response to JSON format
       .then((data) => {
-        const filtered = data.filter((tile) => {
-          const sub = tile.SubCategory?.toLowerCase() || "";
+        const filtered = data.filter((tile) => { //This filters out only the interior-related tiles from the full data.
+          const sub = tile.SubCategory?.toLowerCase() || ""; //It tries to get the SubCategory of the tile (like "kitchen", "bathroom", etc.) and makes it lowercase (in case someone used capital letters).
+         //If a user selects a sub-category: match it exactly.
+        //If nothing is selected: include tiles that mention interior, kitchen, or bathroom.
           return selectedSubCategory
             ? sub === selectedSubCategory.toLowerCase()
             : sub.includes("interior") ||

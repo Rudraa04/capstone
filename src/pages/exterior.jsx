@@ -96,21 +96,23 @@ export default function Exterior() {
     navigate("/login");
   };
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/products/tiles")
-      .then((res) => res.json())
-      .then((data) => {
-        const filtered = data.filter((tile) => {
-          const sub = tile.SubCategory?.toLowerCase() || "";
+  useEffect(() => { //
+    fetch("http://localhost:5000/api/products/tiles") //It sends a request to your backend to get all tile products.
+      .then((res) => res.json()) //It waits for the response and converts it to JSON format.
+      .then((data) => { //Once the data is received, it filters the tiles based on the selected subcategory.
+        const filtered = data.filter((tile) => { //rabs the SubCategory of each tile (like "exterior", "interior", etc.) and makes it lowercase (in case someone used capital letters).
+          const sub = tile.SubCategory?.toLowerCase() || ""; //If it's missing, it defaults to an empty string ("").
+         // If the user selected a sub-category (like via dropdown), match exactly.
+         // If no subcategory is selected, show tiles that include "exterior" or "outdoor" in the name.
           return selectedSubCategory
             ? sub === selectedSubCategory.toLowerCase()
             : sub.includes("exterior") || sub.includes("outdoor");
         });
 
-        setTiles(filtered);
+        setTiles(filtered); //Finally, it updates the `tiles` state with the filtered tiles.
       })
       .catch((err) => console.error("Error fetching exterior tiles:", err));
-  }, [selectedSubCategory]);
+  }, [selectedSubCategory]); 
 
   const handleSearch = (input) => {
     const rawQuery = input || query;
