@@ -53,7 +53,7 @@ export default function Login() {
     } catch (error) {
       console.error("Reset error:", error.message);
         //Error handling based on Firebase error codes
-      if (error.code === "auth/user-not-found") {
+      if (error.code === "auth/user-not-found") { // if users not found  
         alert("No account found with this email.");
       } else if (error.code === "auth/invalid-email") {
         alert("Invalid email format.");
@@ -63,28 +63,28 @@ export default function Login() {
     }
   };
 
-  // Login Handler
+  // Login function
   const handleLogin = async (e) => {
     e.preventDefault(); //prevent page reload
     setMessage(""); //clears previous messages
 
     try {
       //Firebase auth login
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const userCredential = await signInWithEmailAndPassword(auth, email, password); // Use Firebase Auth to sign in the user with the provided email and password.
+      const user = userCredential.user; // get the user object which contains user details
       //check if user has verified email
       if (!user.emailVerified) {
         setMessage("Please verify your email before logging in.");
-        setMessageType("error");
-        return;
+        setMessageType("error"); //show error message
+        return; // If email is not verified, show a message and stop login here.
       }
 
       //check role from firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
+      const userDocRef = doc(db, "users", user.uid); //Create a reference to the user's document in Firestore
+      const userDocSnap = await getDoc(userDocRef); //Get the actual user document from Firestore using the reference.
 
       if (userDocSnap.exists()) {
-        const role = userDocSnap.data().role;
+        const role = userDocSnap.data().role; //get the role from user document
 
         setMessage("Login successful!");
         setMessageType("success");
@@ -95,15 +95,15 @@ export default function Login() {
         setCaptchaValue(null); //clear captcha token
         //redirects user based on role
         setTimeout(() => {
-          if (role === "admin") navigate("/admin");
-          else navigate("/");
-        }, 1000);
+          if (role === "admin") navigate("/admin"); // If the user is an admin, navigate to the admin dashboard.
+          else navigate("/"); // If the user is a regular user, navigate to the home page.
+        }, 1000); // after 1 second
       } else {
-        setMessage("No role found. Contact support.");
+        setMessage("No role found. Contact support."); // If the user document does not exist or has no role, show an error message.
         setMessageType("error");
       }
     } catch (error) {
-      //If login fails, increase the count by 1
+      //If login fails, increase the count of captcha by 1 
       const newFailed = failedAttempts + 1;
       setFailedAttempts(newFailed);
       //Save the new count to local storage so it's remembered
