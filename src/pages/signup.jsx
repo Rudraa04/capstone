@@ -1,19 +1,20 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react"; //helps to manage input values like name, email, etc.
+import { useNavigate, Link } from "react-router-dom"; // helps to redirect the user after signup. links create link to login page
 import {
   createUserWithEmailAndPassword,
   updateProfile,
   sendEmailVerification,
-} from "firebase/auth";
-import { auth } from "../firebase/firebase";
-import { setDoc, doc } from "firebase/firestore";
-import { db } from "../firebase/firebase";
+} from "firebase/auth"; // firebase service to create user, update profile and send verification email
+import { auth } from "../firebase/firebase"; // firebase service to handle authentication
+import { setDoc, doc } from "firebase/firestore"; // doc helps where to store the data in Firestore and setdoc helps to save the data in that location
+import { db } from "../firebase/firebase"; // firebase service to handle Firestore database
 import { FaArrowLeft } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
-export default function Signup() {
-  const navigate = useNavigate();
+export default function Signup() { 
+  //usestate hook to track input and state
+  const navigate = useNavigate();  //these track the user’s name, email, password, error/success messages, and password visibility toggles.
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,8 +23,9 @@ export default function Signup() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  // // Password strength text (Weak, Medium, Strong)
   const [strength, setStrength] = useState("");
-  const [validations, setValidations] = useState({
+  const [validations, setValidations] = useState({ // validations criteria for password strength set at false at first
     length: false,
     upper: false,
     lower: false,
@@ -31,70 +33,70 @@ export default function Signup() {
     special: false,
   });
 
-  const evaluatePassword = (pwd) => {
+  const evaluatePassword = (pwd) => { // function to evaluate the password strength
     const newValidations = {
-      length: pwd.length >= 8,
-      upper: /[A-Z]/.test(pwd),
-      lower: /[a-z]/.test(pwd),
-      number: /[0-9]/.test(pwd),
-      special: /[^A-Za-z0-9]/.test(pwd),
+      length: pwd.length >= 8, // has atleast 8 characters
+      upper: /[A-Z]/.test(pwd), // has atleast 1 uppercase letter
+      lower: /[a-z]/.test(pwd),// has atleast 1 lowercase letter
+      number: /[0-9]/.test(pwd),// has atleast 1 number
+      special: /[^A-Za-z0-9]/.test(pwd),// has atleast 1 special character
     };
-    setValidations(newValidations);
-    const passed = Object.values(newValidations).filter(Boolean).length;
-    setStrength(passed <= 2 ? "Weak" : passed <= 4 ? "Medium" : "Strong");
-  };
+    setValidations(newValidations); // updates the validations state with the new checks
+    const passed = Object.values(newValidations).filter(Boolean).length; // counts how many validations passed means first part giveshow many is true/false second filter true and third display lenght of true
+    setStrength(passed <= 2 ? "Weak" : passed <= 4 ? "Medium" : "Strong"); 
+  }; //0-2 Weak, 3-4 Medium, 5 Strong
 
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!isValidEmail) {
+  const handleSignup = async (e) => { // function to handle signup
+    e.preventDefault(); // prevent default form submission behavior
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);//This line checks if the entered email is in a valid format using a regular expression (RegEx)
+    if (!isValidEmail) { // if email is not valid it shows error message and sets message type to error and stops the function
       setMessage("Please enter a valid email address.");
       setMessageType("error");
       return;
     }
 
-    const allValid = Object.values(validations).every(Boolean);
-    if (!allValid) {
+    const allValid = Object.values(validations).every(Boolean); // checks for all validations to be true
+    if (!allValid) { // if any validation fails it shows error message and sets message type to error and stops the function
       setMessage("Password does not meet all criteria.");
       setMessageType("error");
       return;
     }
 
-    if (password !== confirm) {
+    if (password !== confirm) { // checks if password and confirm password match id not it shows error message and sets message type to error and stops the function
       setMessage("Passwords do not match");
       setMessageType("error");
       return;
     }
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
+// firebase signup logic 
+    try { //Call Firebase to create the user with email and password.auth is your Firebase authentication instance
+      const userCredential = await createUserWithEmailAndPassword( //Result is stored in userCredential.
         auth,
         email,
         password
       );
-      const user = userCredential.user;
+      const user = userCredential.user;  //Get the user object from the credentials so you can update profile and send verification.
 
       await updateProfile(user, {
-        displayName: fullName,
+        displayName: fullName, //Add the user's full name to their Firebase profile 
       });
 
-      await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        fullName: fullName,
-        role: "customer",
+      await setDoc(doc(db, "users", user.uid), { // saves user data in Firestore under users
+        email: user.email, // stores user email
+        fullName: fullName, // stores user full name
+        role: "customer", // sets default role as customer
       });
 
-      await sendEmailVerification(user);
-      await auth.signOut();
+      await sendEmailVerification(user); // sends verification email to the user
+      await auth.signOut(); // Log the user out after signup until they verify their email.
 
       setMessage(
         "Signup successful! A verification email has been sent. Please verify before logging in."
       );
       setMessageType("success");
-      setTimeout(() => navigate("/login"), 2500);
-    } catch (error) {
-      setMessage(error.message);
-      setMessageType("error");
+      setTimeout(() => navigate("/login"), 2500); // Redirect to login page after 2.5 seconds
+    } catch (error) { // catches any errors during signup process
+      setMessage(error.message); // sets error message
+      setMessageType("error"); // sets message type to error
     }
   };
 
@@ -218,7 +220,7 @@ export default function Signup() {
                   placeholder="Re-enter your password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  onPaste={(e) => e.preventDefault()} // 👈 Prevent paste
+                  onPaste={(e) => e.preventDefault()} //  Prevent paste
                   required
                   className="w-full border-b-2 border-black py-2 pl-10 pr-10 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
