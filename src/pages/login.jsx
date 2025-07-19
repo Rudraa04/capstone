@@ -10,7 +10,7 @@ import { db } from "../firebase/firebase";
 import { FaArrowLeft } from "react-icons/fa";
 import { MdEmail, MdLock } from "react-icons/md";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-//recaptcha 
+//recaptcha package
 import ReCAPTCHA from "react-google-recaptcha";
 
 //component starts

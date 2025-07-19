@@ -1,11 +1,10 @@
-// express import to create router
 import express from "express";
 //all controller logic for handling product logic
 import {
   getProductsByType, //fetching all items of a specific product type , comes from controller
-  getProductById, //fetching a single product by id and type
-  addProduct, // creating a new product for a given type
-  updateProduct, // updating product for a given type and id
+  getProductById, 
+  addProduct, 
+  updateProduct, 
   deleteProduct, 
   getAllProducts,
 } from "../controllers/productController.js";
