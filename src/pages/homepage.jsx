@@ -67,11 +67,11 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    setUser(null);
-    alert("Logged out!");
-    navigate("/login");
+  const handleLogout = async () => { // Logout function
+    await signOut(auth); // Sign out the user from Firebase
+    setUser(null); // Clear user data from React state
+    alert("Logged out!"); // Show logout alert
+    navigate("/login"); // navigate back to login page 
   };
 
   const underlineHover =
@@ -141,7 +141,7 @@ export default function Home() {
                     : "Choose from a premium range of marble, floor & wall tiles."}
                 </p>
                 <button
-                  onClick={() => navigate("/products")}
+                  onClick={() => navigate("/products")} // navigate to all products page 
                   className="bg-white text-black px-6 sm:px-8 py-2 sm:py-4 rounded shadow hover:bg-gray-100 text-sm sm:text-lg font-semibold"
                 >
                   {i === 0
@@ -163,11 +163,12 @@ export default function Home() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {[
-            { name: "Interior", image: interiorImage, path: "/interior" },
-            { name: "Exterior", image: exteriorImg, path: "/exterior" },
-            { name: "Sanitaryware", image: sanitaryImage, path: "/sanitary" },
-          ].map((item, i) => (
-            <Link to={item.path} key={i}>
+            { name: "Interior", image: interiorImage, path: "/interior" }, // if click takes to interior page
+            { name: "Exterior", image: exteriorImg, path: "/exterior" }, // if click takes to exterior page
+            { name: "Sanitaryware", image: sanitaryImage, path: "/sanitary" }, // if click takes to sanitary page
+          ].map((item, i) => ( // iteam means current item in the array and i is the index of the item
+            // create a link for each category
+            <Link to={item.path} key={i}> 
               <div
                 className="relative rounded-xl overflow-hidden shadow hover:shadow-lg transition transform hover:-translate-y-1 h-60 bg-cover bg-center"
                 style={{ backgroundImage: `url(${item.image})` }}
@@ -198,7 +199,7 @@ export default function Home() {
               Premium ceramics and slabs that transform any space with style and
               durability.
             </p>
-            <Link to="/products">
+            <Link to="/products">  {/* Link to all products page */}
               <button className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition text-sm sm:text-base">
                 Explore All
               </button>
@@ -207,7 +208,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-6 lg:w-2/3">
             {/* Slabs */}
-            <Link to="/slabs" className="flex-1 min-w-[180px] sm:min-w-[240px]">
+            <Link to="/slabs" className="flex-1 min-w-[180px] sm:min-w-[240px]"> {/* Link to slabs page */}
               <div className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition h-full overflow-hidden flex flex-col rounded-lg">
                 <div className="h-40 overflow-hidden">
                   <img
@@ -236,7 +237,7 @@ export default function Home() {
             {/* Ceramics */}
             <Link
               to="/ceramics"
-              className="flex-1 min-w-[180px] sm:min-w-[240px]"
+              className="flex-1 min-w-[180px] sm:min-w-[240px]" // Link to ceramics page
             >
               <div className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition h-full overflow-hidden flex flex-col rounded-lg">
                 <div className="h-40 overflow-hidden">
