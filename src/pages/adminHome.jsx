@@ -154,7 +154,7 @@ export default function AdminHome() {
           </div>
           <div className="bg-white p-5 rounded-xl shadow-md">
             <h3 className="text-sm text-gray-500">Revenue</h3>
-            <p className="text-2xl font-bold text-blue-700">$3,450</p>
+            <p className="text-2xl font-bold text-blue-700">₹3,450</p>
           </div>
         </div>
 
@@ -176,19 +176,19 @@ export default function AdminHome() {
                 <td className="py-2">#00124</td>
                 <td className="py-2">Smit Patel</td>
                 <td className="py-2 text-green-600 font-semibold">Completed</td>
-                <td className="py-2">$120.00</td>
+                <td className="py-2">₹120.00</td>
               </tr>
               <tr className="border-b">
                 <td className="py-2">#00125</td>
                 <td className="py-2">Om Patel</td>
                 <td className="py-2 text-yellow-600 font-semibold">Pending</td>
-                <td className="py-2">$85.00</td>
+                <td className="py-2">₹85.00</td>
               </tr>
               <tr>
                 <td className="py-2">#00126</td>
                 <td className="py-2">Deep Patel</td>
                 <td className="py-2 text-red-600 font-semibold">Cancelled</td>
-                <td className="py-2">$0.00</td>
+                <td className="py-2">₹0.00</td>
               </tr>
             </tbody>
           </table>
