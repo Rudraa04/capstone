@@ -55,24 +55,24 @@ export default function Checkout() {
     }, duration);
   };
 
-  useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-    setUser(currentUser);
-    if (currentUser) {
-      const savedAddresses = localStorage.getItem(`addresses_${currentUser.uid}`);
-      if (savedAddresses) {
-        setAddressList(JSON.parse(savedAddresses));
+  useEffect(() => { // This runs the enclosed code once when the component first loads
+  const unsubscribe = onAuthStateChanged(auth, (currentUser) => { // listen to user login status.If the user logs in or logs out, this function gets called.It also gives you the currentUser object if someone is logged in.
+    setUser(currentUser); // Set the user state to the current user
+    if (currentUser) { // If a user is logged in
+      const savedAddresses = localStorage.getItem(`addresses_${currentUser.uid}`); // Retrieve saved addresses from localStorage using the user's UID
+      if (savedAddresses) { // If there are saved addresses
+        setAddressList(JSON.parse(savedAddresses)); // Convert the saved address data from string to an array/object, and store it in the addressList state
       }
     }
   });
-  return () => unsubscribe();
+  return () => unsubscribe(); // Cleanup function to unsubscribe from the auth state listener when the component unmounts
 }, []);
 
 
   useEffect(() => {
-    const storedItems = localStorage.getItem("cartItems");
-    if (storedItems) {
-      setCartItems(JSON.parse(storedItems));
+    const storedItems = localStorage.getItem("cartItems"); //It tries to get any cart items that were saved in localStorage
+    if (storedItems) { // If there are items in localStorage
+      setCartItems(JSON.parse(storedItems)); // If yes, it converts it back into an array and stores it in the cartItems state, so the cart can display them.
     }
   }, []);
 
