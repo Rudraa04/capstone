@@ -17,12 +17,12 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
 
-  const handleSearch = (input) => {
-    const rawQuery = input || query;
-    const trimmedQuery = rawQuery
-      .trim()
-      .toLowerCase()
-      .replace(/[^\w\s]/gi, "");
+  const handleSearch = (input) => { //This is a function that runs when the user tries to search something
+    const rawQuery = input || query; //rawQuery will be either the input passed to the function or the current query state
+    const trimmedQuery = rawQuery // 
+      .trim() //removes extar spaces
+      .toLowerCase() // makes it lowercase for easier matching
+      .replace(/[^\w\s]/gi, ""); //removes special charecter. any character that is NOT a letter, number, underscore, or space
     const routeMap = [
       // Specific phrases FIRST
       {

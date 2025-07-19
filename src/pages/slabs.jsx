@@ -19,7 +19,7 @@ export default function Slabs() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [graniteProducts, setGraniteProducts] = useState([]);
   const [marbleProducts, setMarbleProducts] = useState([]);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState({ // filter is an object with different values given below
     category: [],
     size: [],
     color: [],
@@ -35,7 +35,7 @@ export default function Slabs() {
   const [allProducts, setAllProducts] = useState([]);
 
   const [cartCount, setCartCount] = useState(0);
-
+// Filter options for marble and granite
   const filterOptions = {
     marble: {
       size: ["75 x 38", "72 x 36", "80 x 38", "75 x 36"],
@@ -58,78 +58,79 @@ export default function Slabs() {
       origin: ["South India", "North India", "West India"],
     },
   };
-  //mapping for granite
-  const mapGraniteColor = (color) => {
-    if (!color) return "";
-    const c = color.toLowerCase();
-    if (c.includes("black")) return "Black";
-    if (c.includes("red")) return "Red";
-    if (c.includes("grey") || c.includes("gray")) return "Grey";
-    if (c.includes("white")) return "White";
-    return "";
-  };
+  //mapping for granite we have done mapping beacause our data in the database is not consistent and we have to map it to a standard format
+  // so that we can filter it easily
+  const mapGraniteColor = (color) => { //This function takes in a color string and returns a standardized color label like "Black" or "Red".
+    if (!color) return ""; // If no color is provided, return an empty string
+    const c = color.toLowerCase(); //Converts the input color to lowercase for case-insensitive matching.
+    if (c.includes("black")) return "Black"; // If the color includes "black", return "Black"
+    if (c.includes("red")) return "Red"; // If the color includes "red", return "Red"
+    if (c.includes("grey") || c.includes("gray")) return "Grey"; // If the color includes "grey" or "gray", return "Grey"
+    if (c.includes("white")) return "White"; // If the color includes "white", return "White"
+    return ""; // if no match is found, return an empty string
+  }; 
 
-  const mapGraniteOrigin = (origin) => {
-    if (!origin) return "";
-    const o = origin.toLowerCase();
-    if (o.includes("south")) return "South India";
-    if (o.includes("north")) return "North India";
-    if (o.includes("west")) return "West India";
-    return "";
+  const mapGraniteOrigin = (origin) => { // This function takes in an origin string and returns a standardized origin label like "South India" or "North India".
+    if (!origin) return ""; // If no origin is provided, return an empty string
+    const o = origin.toLowerCase(); // Converts the input origin to lowercase for case-insensitive matching.
+    if (o.includes("south")) return "South India"; // If the origin includes "south", return "South India"
+    if (o.includes("north")) return "North India"; // If the origin includes "north", return "North India"
+    if (o.includes("west")) return "West India"; // If the origin includes "west", return "West India"
+    return ""; // if no match is found, return an empty string
   };
-  const mapGraniteSize = (size) => {
-    if (!size) return "";
-    const s = size.toLowerCase().replace(/\s/g, "");
-    if (s.includes("104x38")) return "104x38";
-    if (s.includes("108x40")) return "108x40";
-    if (s.includes("108x42")) return "108x42";
-    if (s.includes("110x42")) return "110x42";
-    if (s.includes("110x44")) return "110x44";
-    return "";
+  const mapGraniteSize = (size) => { // This function takes in a size string and returns a standardized size label like "104x38" or "108x40".
+    if (!size) return ""; // If no size is provided, return an empty string
+    const s = size.toLowerCase().replace(/\s/g, ""); // Converts the input size to lowercase and removes any spaces for consistent matching.
+    if (s.includes("104x38")) return "104x38"; // If the size includes "104x38", return "104x38"
+    if (s.includes("108x40")) return "108x40"; //same
+    if (s.includes("108x42")) return "108x42";// same
+    if (s.includes("110x42")) return "110x42"; //same
+    if (s.includes("110x44")) return "110x44"; //same
+    return ""; // if no match is found, return an empty string
   };
 
   //mapping for marble
   const mapMarbleSize = (size) => {
-    if (!size) return "";
-    const s = size.toLowerCase().replace(/\s/g, "");
-    if (s.includes("75x38")) return "75 x 38";
-    if (s.includes("72x36")) return "72 x 36";
-    if (s.includes("80x38")) return "80 x 38";
-    if (s.includes("75x36")) return "75 x 36";
-    return "";
+    if (!size) return ""; // If no size is provided, return an empty string
+    const s = size.toLowerCase().replace(/\s/g, ""); // Converts the input size to lowercase and removes any spaces for consistent matching.
+    if (s.includes("75x38")) return "75 x 38"; // If the size includes "75x38", return "75 x 38"
+    if (s.includes("72x36")) return "72 x 36"; // If the size includes "72x36", return "72 x 36"
+    if (s.includes("80x38")) return "80 x 38"; // If the size includes "80x38", return "80 x 38"
+    if (s.includes("75x36")) return "75 x 36"; // If the size includes "75x36", return "75 x 36"
+    return ""; // if no match is found, return an empty string
   };
 
   const mapMarbleColor = (color) => {
-    if (!color) return "";
-    const c = color.toLowerCase();
-    if (c.includes("milky")) return "Milky White";
-    if (c.includes("green")) return "Green";
-    if (c.includes("gold")) return "Gold";
-    if (c.includes("pink")) return "Light Pink";
-    if (c.includes("beige")) return "Beige";
-    return "";
+    if (!color) return ""; // If no color is provided, return an empty string
+    const c = color.toLowerCase();// Converts the input color to lowercase for case-insensitive matching.
+    if (c.includes("milky")) return "Milky White"; // If the color includes "milky", return "Milky White"
+    if (c.includes("green")) return "Green";// If the color includes "green", return "Green"
+    if (c.includes("gold")) return "Gold"; // If the color includes "gold", return "Gold"
+    if (c.includes("pink")) return "Light Pink"; // If the color includes "pink", return "Light Pink"
+    if (c.includes("beige")) return "Beige"; // If the color includes "beige", return "Beige"
+    return ""; // if no match is found, return an empty string  
   };
 
   const mapMarbleOrigin = (origin) => {
-    if (!origin) return "";
-    const o = origin.toLowerCase();
-    if (o.includes("west")) return "West India";
-    if (o.includes("south")) return "South India";
-    if (o.includes("north")) return "North India";
-    return "";
+    if (!origin) return ""; // If no origin is provided, return an empty string
+    const o = origin.toLowerCase(); // Converts the input origin to lowercase for case-insensitive matching.
+    if (o.includes("west")) return "West India"; // If the origin includes "west", return "West India"
+    if (o.includes("south")) return "South India"; // If the origin includes "south", return "South India"
+    if (o.includes("north")) return "North India"; // If the origin includes "north", return "North India"
+    return ""; // if no match is found, return an empty string
   };
 
   useEffect(() => {
-    const updateCartCount = () => {
-      const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-      setCartCount(storedCart.length); // Just count distinct products
+    const updateCartCount = () => { // This function updates the cart count based on localStorage
+      const storedCart = JSON.parse(localStorage.getItem("cart")) || []; // Get the cart from localStorage and parses it from json to array 
+      setCartCount(storedCart.length); // Updates the cartCount state by counting the number of products in the cart array
     };
 
     updateCartCount();
 
-    window.addEventListener("cartUpdated", updateCartCount);
+    window.addEventListener("cartUpdated", updateCartCount); // This adds an event listener that listens for the "cartUpdated" event and calls updateCartCount when the event is triggered
     return () => {
-      window.removeEventListener("cartUpdated", updateCartCount);
+      window.removeEventListener("cartUpdated", updateCartCount); // This cleans up the event listener when the component unmounts
     };
   }, []);
 
@@ -291,46 +292,46 @@ export default function Slabs() {
     }));
   };
   //filter granite products based on selected filters
-  const filteredGranite = graniteProducts.filter((product) => {
-    const sizeValue = mapGraniteSize(product.Size || "");
-    const colorValue = mapGraniteColor(product.Color || "");
-    const originValue = mapGraniteOrigin(product.Origin || "");
+  const filteredGranite = graniteProducts.filter((product) => { //Loop through all graniteProducts, and for each product, apply filter conditions to decide if it should be shown.
+    const sizeValue = mapGraniteSize(product.Size || ""); //  gets cleaned size using mapGranitesize(mapping) if Size is missing, it uses an empty string ("") to avoid errors.
+    const colorValue = mapGraniteColor(product.Color || "");// same as size
+    const originValue = mapGraniteOrigin(product.Origin || ""); // same as size
 
     const sizeMatch =
-      !filters.size ||
-      filters.size.length === 0 ||
-      filters.size.includes(sizeValue);
+      !filters.size || //No size filter selected 
+      filters.size.length === 0 || //filter size is empty
+      filters.size.includes(sizeValue); //the product’s size (sizeValue) is in the selected sizes
     const colorMatch =
-      !filters.color ||
-      filters.color.length === 0 ||
-      filters.color.includes(colorValue);
+      !filters.color || //No color filter selected
+      filters.color.length === 0 || //filter color is empty
+      filters.color.includes(colorValue); //the product’s color (colorValue) is in the selected colors
     const originMatch =
-      !filters.origin ||
-      filters.origin.length === 0 ||
-      filters.origin.includes(originValue);
+      !filters.origin ||//No origin filter selected
+      filters.origin.length === 0 || //filter origin is empty
+      filters.origin.includes(originValue); //the product’s origin (originValue) is in the selected origins
 
-    return sizeMatch && colorMatch && originMatch;
+    return sizeMatch && colorMatch && originMatch; //Returns true if the product matches all selected filters. it is responsible for showing one product if it matches two filters at a time
   });
   //filter marble products based on selected filters
-  const filteredMarble = marbleProducts.filter((product) => {
-    const sizeValue = mapMarbleSize(product.Size || "");
-    const colorValue = mapMarbleColor(product.Color || "");
-    const originValue = mapMarbleOrigin(product.Origin || "");
+  const filteredMarble = marbleProducts.filter((product) => { //Loop through all marbleProducts, and for each product, apply filter conditions to decide if it should be shown.
+    const sizeValue = mapMarbleSize(product.Size || ""); // gets cleaned size using mapMarbleSize(mapping) if Size is missing, it uses an empty string ("") to avoid errors.
+    const colorValue = mapMarbleColor(product.Color || ""); // same as size
+    const originValue = mapMarbleOrigin(product.Origin || ""); // same as size
 
     const sizeMatch =
-      !filters.size ||
-      filters.size.length === 0 ||
-      filters.size.includes(sizeValue);
+      !filters.size || //No size filter selected
+      filters.size.length === 0 || //filter size is empty
+      filters.size.includes(sizeValue);// the product’s size (sizeValue) is in the selected sizes
     const colorMatch =
-      !filters.color ||
-      filters.color.length === 0 ||
-      filters.color.includes(colorValue);
+      !filters.color || //No color filter selected
+      filters.color.length === 0 || //filter color is empty
+      filters.color.includes(colorValue);// the product’s color (colorValue) is in the selected colors
     const originMatch =
-      !filters.origin ||
-      filters.origin.length === 0 ||
-      filters.origin.includes(originValue);
+      !filters.origin || //No origin filter selected
+      filters.origin.length === 0 || //filter origin is empty
+      filters.origin.includes(originValue);// the product’s origin (originValue) is in the selected origins
 
-    return sizeMatch && colorMatch && originMatch;
+    return sizeMatch && colorMatch && originMatch; // Returns true if the product matches all selected filters. it is responsible for showing one product if it matches two filters at a time
   });
 
   return (

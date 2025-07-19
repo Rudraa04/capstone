@@ -138,9 +138,12 @@ export default function Login() {
 
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
-          <h1 className="text-4xl font-bold text-center text-blue-800 mb-3">
-            Patel Ceramics
-          </h1>
+          <Link to="/" className="block text-center">
+  <h1 className="text-4xl font-bold text-blue-800 mb-3">
+    Patel Ceramics
+  </h1>
+</Link>
+
           <h2 className="text-3xl font-extrabold text-center text-blue-600 mb-6">
             Log In
           </h2>

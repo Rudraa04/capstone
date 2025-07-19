@@ -112,21 +112,6 @@ export default function Ceramics() {
     return "";
   };
   //mapping toilets
-  const mapToiletType = (subcategory) => {
-    if (!subcategory) return "";
-    const value = subcategory.toLowerCase();
-    if (value.includes("one")) return "One Piece";
-    if (value.includes("wall")) return "Wall Hung";
-    return "";
-  };
-
-  const mapToiletFlush = (flushType) => {
-    if (!flushType) return "";
-    const value = flushType.toLowerCase();
-    if (value.includes("jet")) return "With/Without Jet";
-    if (value.includes("washdown")) return "Washdown Flushing";
-    return "";
-  };
 
   const mapToiletColor = (color) => {
     if (!color) return "";
@@ -164,19 +149,10 @@ export default function Ceramics() {
 
     bathtub: {
       color: ["White", "White + Dark Pink", "Light Blue"],
-      size: [
-        "54 x 28 H 15",
-        "60 x 30 H 14",
-        "66 x 30 H 14",
-        "72 x 36 H 18",
-        "Round, 54” Dia x 22 H",
-      ],
       priceRange: ["Below ₹15,000", "₹15,000–₹30,000", "Above ₹30,000"],
     },
 
     toilets: {
-      type: ["One Piece", "Wall Hung"],
-      flush: ["With/Without Jet", "Washdown Flushing"],
       color: ["White", "Matt Black"],
       manufacturer: ["Soncera"],
     },
@@ -383,19 +359,9 @@ export default function Ceramics() {
   });
   //toilets filter
   const filteredToilets = toilets.filter((toilet) => {
-    const typeValue = mapToiletType(toilet["Sub Category"] || "");
-    const flushValue = mapToiletFlush(toilet["Flush Type"] || "");
     const colorValue = mapToiletColor(toilet.Color || "");
     const manufacturerValue = mapToiletManufacturer(toilet.Manufacturer || "");
 
-    const typeMatch =
-      !filters.type ||
-      filters.type.length === 0 ||
-      filters.type.includes(typeValue);
-    const flushMatch =
-      !filters.flush ||
-      filters.flush.length === 0 ||
-      filters.flush.includes(flushValue);
     const colorMatch =
       !filters.color ||
       filters.color.length === 0 ||
@@ -405,13 +371,11 @@ export default function Ceramics() {
       filters.manufacturer.length === 0 ||
       filters.manufacturer.includes(manufacturerValue);
 
-    return typeMatch && flushMatch && colorMatch && manufacturerMatch;
+    return colorMatch && manufacturerMatch;
   });
   const filteredBathtubs = bathtubs.filter((tub) => {
     const colorMatch =
       !filters?.color?.length || filters.color.includes(tub.Color);
-
-    const sizeMatch = !filters?.size?.length || filters.size.includes(tub.Size);
 
     const price = parseFloat(tub.Price || 0);
     const priceRange = Array.isArray(filters?.priceRange)
@@ -425,7 +389,7 @@ export default function Ceramics() {
         price <= 30000) ||
       (priceRange.includes("Above ₹30,000") && price > 30000);
 
-    return colorMatch && sizeMatch && priceMatch;
+    return colorMatch && priceMatch;
   });
 
   const handleSearch = (input) => {
