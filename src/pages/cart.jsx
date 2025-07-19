@@ -7,11 +7,9 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 
-
-export default function Cart() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-
+export default function Cart() { // export so it can be used in other files
+  const navigate = useNavigate(); // used to redirect users to othwer page in this case checkout page
+  const [user, setUser] = useState(null); // used to store the current user
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -38,40 +36,40 @@ export default function Cart() {
       localStorage.removeItem("orderSuccessMessage");
     }
   }, []);
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+// checks if the user is logged in or not and sets the user state accordingly
+  useEffect(() => { // whenever page load start the down services
+    const unsub = onAuthStateChanged(auth, (currentUser) => { // monitor firebase auth 
+      setUser(currentUser); // save the current user to state
     });
-    return () => unsub();
+    return () => unsub(); // automatically stop listening when component closes
   }, []);
 
-  const [cartItems, setCartItems] = useState(() => {
-    const storedCart = localStorage.getItem("cart");
-    return storedCart ? JSON.parse(storedCart) : [];
+  const [cartItems, setCartItems] = useState(() => { // used to store the cart items
+    const storedCart = localStorage.getItem("cart"); // checks if cart exist in local storage
+    return storedCart ? JSON.parse(storedCart) : [];// if it exists, loads it to JSON and return it, otherwise return an empty array
   });
 
-  const [discount, setDiscount] = useState(0);
+  const [discount, setDiscount] = useState(0); // used to store the discount value
 
-  const handleQuantityChange = (id, newQuantity) => {
-    const updated = cartItems.map((item) =>
-      item.name === id ? { ...item, quantity: newQuantity } : item
+  const handleQuantityChange = (id, newQuantity) => { // this function takes two things id and new quantity
+    const updated = cartItems.map((item) => // going through each item in the cart one by one 
+      item.name === id ? { ...item, quantity: newQuantity } : item // If the item's name matches the given id, Copy everything.But update the quantity to newQuantity.
     );
-    setCartItems(updated);
-    localStorage.setItem("cart", JSON.stringify(updated));
-    window.dispatchEvent(new Event("cartUpdated"));
+    setCartItems(updated); // Update the cart items state
+    localStorage.setItem("cart", JSON.stringify(updated)); // save updated cart to local storage so it doesnt changes on reload and jsonstringfy convert it into string from object as local storage can only store strings
+    window.dispatchEvent(new Event("cartUpdated")); // Notify other parts of the app that the cart has been updated
   };
 
-  const handleRemoveItem = (id) => {
-    const filtered = cartItems.filter((item) => item.name !== id);
-    setCartItems(filtered);
-    localStorage.setItem("cart", JSON.stringify(filtered));
-    window.dispatchEvent(new Event("cartUpdated"));
+  const handleRemoveItem = (id) => { // this function takes an id and removes the item with that id from the cart
+    const filtered = cartItems.filter((item) => item.name !== id);  // filters the cart items to remove the item with the given id
+    setCartItems(filtered); // Update the cart items state
+    localStorage.setItem("cart", JSON.stringify(filtered)); // save updated cart to local storage so it doesnt changes on reload and jsonstringfy convert it into string from object as local storage can only store strings
+    window.dispatchEvent(new Event("cartUpdated")); // Notify other parts of the app that the cart has been updated
   };
 
-  const subtotal = cartItems.reduce((sum, item) => {
-    const price = parseFloat(item.price) || 0;
-    const quantity = parseInt(item.quantity) || 0;
+  const subtotal = cartItems.reduce((sum, item) => { //goes to the cart one by one 
+    const price = parseFloat(item.price) || 0; // gets the price of the item convert it to float and if it is not a number then it will be 0
+    const quantity = parseInt(item.quantity) || 0; // gets the quantity of the item convert it to integer and if it is not a number then it will be 0
     return sum + price * quantity;
   }, 0);
 
