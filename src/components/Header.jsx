@@ -17,7 +17,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
 
-  const handleSearch = (input) => { //This is a function that runs when the user tries to search something
+  const handleSearch = (input) => { //This is a function that runs when the user tries to search something by pressing enter or icon
     const rawQuery = input || query; //rawQuery will be either the input passed to the function or the current query state
     const trimmedQuery = rawQuery // 
       .trim() //removes extar spaces
@@ -26,16 +26,16 @@ export default function Header() {
     const routeMap = [
       // Specific phrases FIRST
       {
-        keywords: ["exterior wall tiles", "exterior wall"],
-        route: "/exterior?sub=Exterior%20Wall%20Tiles",
+        keywords: ["exterior wall tiles", "exterior wall"], // keywords 
+        route: "/exterior?sub=Exterior%20Wall%20Tiles", // routes
       },
       {
-        keywords: ["exterior floor tiles", "exterior floor"],
-        route: "/exterior?sub=Exterior%20Floor%20Tiles",
+        keywords: ["exterior floor tiles", "exterior floor"], // keywords
+        route: "/exterior?sub=Exterior%20Floor%20Tiles", //routes
       },
       {
-        keywords: ["interior floor tiles", "interior floor"],
-        route: "/interior?sub=Interior%20Floor%20Tiles",
+        keywords: ["interior floor tiles", "interior floor"], //keywords
+        route: "/interior?sub=Interior%20Floor%20Tiles", //routes
       },
       {
         keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"],
@@ -50,31 +50,22 @@ export default function Header() {
       { keywords: ["interior", "interior tiles"], route: "/interior" },
       { keywords: ["exterior", "exterior tiles"], route: "/exterior" },
       {
-        keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"],
+        keywords: ["sanitary", "sanitaryware"],
         route: "/sanitary",
       },
-      { keywords: ["slab", "slabs", "granite", "marble"], route: "/slabs" },
-      { keywords: ["ceramic", "ceramics"], route: "/ceramics?type=tiles" },
+      { keywords: ["toilets", "toilet"], route: "/ceramics?type=toilets" },
+      { keywords: ["sinks", "sink"], route: "/ceramics?type=sinks" },
+      { keywords: ["bathtub", "bathtubs"], route: "/ceramics?type=bathtub" },
+      { keywords: ["slab", "slabs"], route: "/slabs" },
+      { keywords: ["ceramic", "ceramics"], route: "/ceramics" },
       { keywords: ["tile", "tiles"], route: "/ceramics?type=tiles" },
-
-      // Suggestions
-      {
-        keywords: ["bathroom", "washroom"],
-        suggest: ["tiles", "bathtubs", "sinks", "toilets"],
-      },
+      { keywords: ["marble", "marbles"], route: "/slabs?type=marble" },
+      { keywords: ["granite", "granites"], route: "/slabs?type=granite" },
     ];
 
-    for (const entry of routeMap) {
-      if (entry.route && entry.keywords.some((k) => trimmedQuery.includes(k))) {
-        navigate(entry.route);
-        return;
-      }
-
-      if (
-        entry.suggest &&
-        entry.keywords.some((k) => trimmedQuery.includes(k))
-      ) {
-        alert(`You might be looking for: ${entry.suggest.join(", ")}`);
+    for (const entry of routeMap) { // loop through each route entry
+      if (entry.route && entry.keywords.some((k) => trimmedQuery.includes(k))) { //If this entry has a route AND the search query contains at least one of the keywords listed for this route, then go to that page.
+        navigate(entry.route); // navigate to that route 
         return;
       }
     }
