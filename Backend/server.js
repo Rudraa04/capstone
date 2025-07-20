@@ -12,7 +12,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors()); // Allow requests from different origins (frontend/backend communication)
+app.use(cors()); // Allow requests from different origins (frontend/backend communication) //securityfeature
 app.use(express.json()); // Allow Express to parse JSON bodies in requests
 
 // API Routes (all product APIs will be prefixed with /api/products)
