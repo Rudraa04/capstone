@@ -104,8 +104,8 @@ export default function App() {
         <Route path="/interior" element={<Interior />} />
         <Route path="/exterior" element={<Exterior />} />
         <Route path="/sanitary" element={<Sanitary />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
+
+      
         <Route path="/product/:type/:id" element={<ProductDetail />} />
         <Route path="/products" element={<AllProducts />} />
         {/* Company */}
@@ -279,6 +279,24 @@ export default function App() {
           element={
             <ProtectedRoute userRole={userRole} allowedRoles={["admin"]}>
               <AddToilet />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute userRole={userRole} allowedRoles={["customer", "admin"]}>
+              <Cart/>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute userRole={userRole} allowedRoles={["customer", "admin"]}>
+              <Checkout/>
             </ProtectedRoute>
           }
         />
