@@ -89,18 +89,57 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// Get all products combined
+// Controller function to get all products from all categories
 export const getAllProducts = async (req, res) => {
   try {
-    const results = await Promise.all(
-      Object.entries(models).map(async ([type, Model]) => {
-        const items = await Model.find();
-        return items.map(item => ({ ...item._doc, category: type }));
-      })
-    );
-    const allProducts = results.flat();
+    // Initialize an empty array to store all products
+    let allProducts = [];
+
+    // Get all tiles from the database
+    const tiles = await Tiles_Model.find();
+    // Add each tile to the array and tag it with category "tiles"
+    tiles.forEach(product => {
+      allProducts.push({ ...product._doc, category: 'tiles' });
+    });
+
+    // Get all sinks from the database
+    const sinks = await Sinks_Model.find();
+    sinks.forEach(product => {
+      allProducts.push({ ...product._doc, category: 'sinks' });
+    });
+
+    // Get all bathtubs from the database
+    const bathtubs = await Bathtubs_Model.find();
+    bathtubs.forEach(product => {
+      allProducts.push({ ...product._doc, category: 'bathtubs' });
+    });
+
+    // Get all granite slabs from the database
+    const granite = await Granite_Model.find();
+    granite.forEach(product => {
+      allProducts.push({ ...product._doc, category: 'granite' });
+    });
+
+    // Get all marble slabs from the database
+    const marble = await Marble_Model.find();
+    marble.forEach(product => {
+      allProducts.push({ ...product._doc, category: 'marble' });
+    });
+
+    //  Get all toilets from the database
+    const toilets = await Toilets_Model.find();
+    toilets.forEach(product => {
+      allProducts.push({ ...product._doc, category: 'toilets' });
+    });
+
+    // Send the combined array of all products as JSON with HTTP status 200
     res.status(200).json(allProducts);
+
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch all products", error: error.message });
+    // If something goes wrong, send a 500 error with message and error details
+    res.status(500).json({ 
+      message: "Failed to fetch all products", 
+      error: error.message 
+    });
   }
 };
