@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import cors from 'cors'; //allows backend to accept reuests from different ports
+import cors from 'cors'; //security feature
 import productRoutes from './routes/productRoutes.js';  // Handles all product-related APIs
 import squareRestRoutes from "./routes/squareRestRoutes.js"; // Import squareRestRoutes
 
@@ -11,8 +11,7 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
-// Middleware
-app.use(cors()); // Allow requests from different origins (frontend/backend communication)
+app.use(cors()); // Allow requests from different origins (frontend/backend communication) 
 app.use(express.json()); // Allow Express to parse JSON bodies in requests
 
 // API Routes (all product APIs will be prefixed with /api/products)
