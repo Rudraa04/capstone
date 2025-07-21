@@ -714,6 +714,7 @@ export default function ToiletInventory() {
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
+                required
                 className="block"
               />
               {image && (

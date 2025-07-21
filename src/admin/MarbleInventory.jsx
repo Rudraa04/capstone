@@ -604,6 +604,7 @@ export default function MarbleInventory() {
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
+                required
                 className="block"
               />
               {(image || formData.Image) && (

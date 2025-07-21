@@ -699,6 +699,7 @@ export default function SinkInventory() {
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
+                required
                 className="block"
               />
               {image && (
