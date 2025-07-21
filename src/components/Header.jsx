@@ -16,7 +16,7 @@ export default function Header() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef();
-
+// this coode is only for the search and enter not suggestions 
   const handleSearch = (input) => { //This is a function that runs when the user tries to search something by pressing enter or icon
     const rawQuery = input || query; //rawQuery will be either the input passed to the function or the current query state
     const trimmedQuery = rawQuery // 
@@ -62,7 +62,7 @@ export default function Header() {
       { keywords: ["marble", "marbles"], route: "/slabs?type=marble" },
       { keywords: ["granite", "granites"], route: "/slabs?type=granite" },
     ];
-
+// logic
     for (const entry of routeMap) { // loop through each route entry
       if (entry.route && entry.keywords.some((k) => trimmedQuery.includes(k))) { //If this entry has a route AND the search query contains at least one of the keywords listed for this route, then go to that page.
         navigate(entry.route); // navigate to that route 
@@ -73,12 +73,12 @@ export default function Header() {
     alert("No matching category found.");
     setSuggestions([]);
   };
-
+// if the user logout it will clear memory to secure leaks
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => { // firebase function to track login and logout
       setUser(currentUser);
     });
-    return () => unsubscribe();
+    return () => unsubscribe(); // cleans the listener when component is destroyed.
   }, []);
 
   useEffect(() => {
@@ -91,8 +91,8 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   useEffect(() => {
-    const fetchAllCategories = async () => {
-      try {
+    const fetchAllCategories = async () => { // 
+      try { //sends get request 
         const tilesRes = await fetch(
           "http://localhost:5000/api/products/tiles"
         );
@@ -109,7 +109,7 @@ export default function Header() {
           "http://localhost:5000/api/products/toilets"
         );
 
-        const tiles = await tilesRes.json();
+        const tiles = await tilesRes.json(); // converts it into json 
         const sinks = await sinksRes.json();
         const granite = await graniteRes.json();
         const marble = await marbleRes.json();
@@ -170,51 +170,51 @@ export default function Header() {
               placeholder="Search products..."
               value={query}
               onChange={(e) => {
-                const value = e.target.value;
+                const value = e.target.value; // as user type stores the value in query state 
                 setQuery(value);
-
-                if (value.length > 1) {
-                  const filtered = allProducts.filter((product) =>
-                    product.Name?.toLowerCase().includes(value.toLowerCase())
+//logic for suggestion
+                if (value.length > 1) { // it the input has atleast 2 value 
+                  const filtered = allProducts.filter((product) => // filter all product
+                    product.Name?.toLowerCase().includes(value.toLowerCase()) // ? is for cehcking 
                   );
-                  setSuggestions(filtered);
+                  setSuggestions(filtered); // store matching item in suggestion array 
                 } else {
                   setSuggestions([]);
                 }
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleSearch();
+                if (e.key === "Enter") handleSearch(); // if press enter then call handle search
               }}
               className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
             />
 
             <button
-              onClick={() => handleSearch()}
+              onClick={() => handleSearch()} // if someone click the search icon call handle search
               className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
             >
               <FaSearch size={18} />
             </button>
           </div>
 
-          {/* 🔍 Search Suggestions with Image */}
-          {suggestions.length > 0 && (
+          {/* Search Suggestions with Image */}
+          {suggestions.length > 0 && ( // only show dropdown if suggestions 
             <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
-              {suggestions.map((product, index) => (
+              {suggestions.map((product, index) => ( // for each matching product 
                 <li
                   key={index}
                   className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
                     navigate(
-                      `/product/${product.category.toLowerCase()}/${
+                      `/product/${product.category.toLowerCase()}/${ // if click takes to the page 
                         product._id
                       }`
                     );
-                    setSuggestions([]);
+                    setSuggestions([]); // after clicking clears suggestion list 
                     setQuery("");
                   }}
                 >
                   <img
-                    src={product.Image || "https://via.placeholder.com/40x40"}
+                    src={product.Image || "https://via.placeholder.com/40x40"} // shows image preview 
                     alt={product.Name}
                     className="w-10 h-10 object-cover rounded border"
                   />
