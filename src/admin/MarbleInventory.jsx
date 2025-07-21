@@ -89,7 +89,9 @@ export default function MarbleInventory() {
   useEffect(() => {
     const fetchMarble = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/products/marble");
+        const res = await axios.get(
+          "http://localhost:5000/api/products/marble"
+        );
         setProducts(res.data);
       } catch (err) {
         console.error("Failed to fetch marble products:", err);
@@ -98,11 +100,15 @@ export default function MarbleInventory() {
     fetchMarble();
   }, []);
 
-  const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const fileRef = ref(storage, `Inventory/Marble/${file.name}-${Date.now()}`);
+      const fileRef = ref(
+        storage,
+        `Inventory/Marble/${file.name}-${Date.now()}`
+      );
       try {
         await uploadBytes(fileRef, file);
         const url = await getDownloadURL(fileRef);
@@ -118,7 +124,10 @@ export default function MarbleInventory() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const Size = `${formData.length}x${formData.width}`;
-    const finalBrand = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+    const finalBrand =
+      formData.Manufacturer === "Other"
+        ? formData.customBrand
+        : formData.Manufacturer;
     const marbleData = {
       Name: formData.ProductName,
       Description: formData.ProductDescription,
@@ -133,10 +142,16 @@ export default function MarbleInventory() {
 
     try {
       if (selectedProduct) {
-        await axios.put(`http://localhost:5000/api/products/marble/${selectedProduct._id}`, marbleData);
+        await axios.put(
+          `http://localhost:5000/api/products/marble/${selectedProduct._id}`,
+          marbleData
+        );
         alert("Product updated successfully!");
       } else {
-        await axios.post("http://localhost:5000/api/products/marble", marbleData);
+        await axios.post(
+          "http://localhost:5000/api/products/marble",
+          marbleData
+        );
         alert("Product added successfully!");
       }
       const res = await axios.get("http://localhost:5000/api/products/marble");
@@ -145,27 +160,44 @@ export default function MarbleInventory() {
       console.error("Save Error:", err.response?.data || err.message);
       alert("Error while saving product.");
     } finally {
-      setFormData({ ProductName: "", ProductDescription: "", Color: "", Price: "", Image: "", Category: "Marble", Quantity: "", Manufacturer: "", customBrand: "", Origin: "", length: "", width: "" });
+      setFormData({
+        ProductName: "",
+        ProductDescription: "",
+        Color: "",
+        Price: "",
+        Image: "",
+        Category: "Marble",
+        Quantity: "",
+        Manufacturer: "",
+        customBrand: "",
+        Origin: "",
+        length: "",
+        width: "",
+      });
       setSelectedProduct(null);
       setShowModal(false);
       setImage(null);
     }
   };
 
-
   // ✅ Delete Product
 
   const handleDelete = async (id) => {
-    const productToDelete = products.find(p => p._id === id);
+    const productToDelete = products.find((p) => p._id === id);
     if (!productToDelete) return;
 
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    if (!window.confirm("Are you sure you want to delete this product?"))
+      return;
 
     try {
       // Delete from Firebase Storage if image URL exists
-      if (productToDelete.Image && productToDelete.Image.includes("firebasestorage.googleapis.com")) {
+      if (
+        productToDelete.Image &&
+        productToDelete.Image.includes("firebasestorage.googleapis.com")
+      ) {
         try {
-          const fullEncodedPath = productToDelete.Image.split("/o/")[1].split("?")[0];
+          const fullEncodedPath =
+            productToDelete.Image.split("/o/")[1].split("?")[0];
           const decodedPath = decodeURIComponent(fullEncodedPath);
           const imgRef = storageRef(storage, decodedPath);
           await deleteObject(imgRef);
@@ -414,23 +446,31 @@ export default function MarbleInventory() {
                 {products
                   .filter(
                     (item) =>
-                      ((item.Name || "").toLowerCase().includes(searchTerm.toLowerCase())) &&
+                      (item.Name || "")
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase()) &&
                       (colorFilter === "" || item.Color === colorFilter) &&
                       (originFilter === "" || item.Origin === originFilter)
                   )
                   .map((item, index) => (
                     <tr key={index} className="border-b">
-                      <td className="px-6 py-4">{item.ProductName || item.Name}</td>
+                      <td className="px-6 py-4">
+                        {item.ProductName || item.Name}
+                      </td>
                       <td className="px-6 py-4">{item.Category}</td>
                       <td className="px-6 py-4">₹{item.Price}</td>
-                      <td className="px-6 py-4">{item.Quantity || item.Stock_admin}</td>
+                      <td className="px-6 py-4">
+                        {item.Quantity || item.Stock_admin}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
-                              const [length = "", width = ""] = (item.Size || "")
+                              const [length = "", width = ""] = (
+                                item.Size || ""
+                              )
                                 .split("x")
-                                .map(s => s.trim());
+                                .map((s) => s.trim());
                               setFormData({
                                 ProductName: item.Name,
                                 ProductDescription: item.Description,
@@ -453,8 +493,10 @@ export default function MarbleInventory() {
                             Edit
                           </button>
 
-                          <button onClick={() => handleDelete(item._id)}
-                            className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition">
+                          <button
+                            onClick={() => handleDelete(item._id)}
+                            className="px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-600 hover:text-white transition"
+                          >
                             Delete
                           </button>
                         </div>

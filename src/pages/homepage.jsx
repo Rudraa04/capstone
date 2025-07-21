@@ -267,7 +267,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* === Moved Featured Products Above === */}
+      {/* === Featured Products  === */}
       <section className="px-4 sm:px-10 py-16 bg-white" data-aos="fade-up">
         <h2 className="text-4xl sm:text-4xl font-bold mb-8 text-center">
           Featured Products
@@ -299,7 +299,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* === What Sets Us Apart (now below) === */}
+      {/* === What Sets Us Apart  === */}
       <section
         className="px-2 md:px-4 lg:px-6 py-12 bg-white text-center relative"
         data-aos="fade-up"

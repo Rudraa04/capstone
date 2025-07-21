@@ -17,8 +17,7 @@ export default function Checkout() {
   const dropdownRef = useRef();
   const [cartItems, setCartItems] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("");
-  const [addressList, setAddressList] = useState([
-  ]);
+  const [addressList, setAddressList] = useState([]);
   const [newAddress, setNewAddress] = useState({
     fullName: "",
     street: "",
@@ -55,23 +54,29 @@ export default function Checkout() {
     }, duration);
   };
 
-  useEffect(() => { // This runs the enclosed code once when the component first loads
-  const unsubscribe = onAuthStateChanged(auth, (currentUser) => { // listen to user login status.If the user logs in or logs out, this function gets called.It also gives you the currentUser object if someone is logged in.
-    setUser(currentUser); // Set the user state to the current user
-    if (currentUser) { // If a user is logged in
-      const savedAddresses = localStorage.getItem(`addresses_${currentUser.uid}`); // Retrieve saved addresses from localStorage using the user's UID
-      if (savedAddresses) { // If there are saved addresses
-        setAddressList(JSON.parse(savedAddresses)); // Convert the saved address data from string to an array/object, and store it in the addressList state
+  useEffect(() => {
+    // This runs the enclosed code once when the component first loads
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      // listen to user login status.If the user logs in or logs out, this function gets called.It also gives you the currentUser object if someone is logged in.
+      setUser(currentUser); // Set the user state to the current user
+      if (currentUser) {
+        // If a user is logged in
+        const savedAddresses = localStorage.getItem(
+          `addresses_${currentUser.uid}`
+        ); // Retrieve saved addresses from localStorage using the user's UID
+        if (savedAddresses) {
+          // If there are saved addresses
+          setAddressList(JSON.parse(savedAddresses)); // Convert the saved address data from string to an array/object, and store it in the addressList state
+        }
       }
-    }
-  });
-  return () => unsubscribe(); // Cleanup function to unsubscribe from the auth state listener when the component unmounts
-}, []);
-
+    });
+    return () => unsubscribe(); // Cleanup function to unsubscribe from the auth state listener when the component unmounts
+  }, []);
 
   useEffect(() => {
     const storedItems = localStorage.getItem("cartItems"); //It tries to get any cart items that were saved in localStorage
-    if (storedItems) { // If there are items in localStorage
+    if (storedItems) {
+      // If there are items in localStorage
       setCartItems(JSON.parse(storedItems)); // If yes, it converts it back into an array and stores it in the cartItems state, so the cart can display them.
     }
   }, []);
@@ -86,13 +91,16 @@ export default function Checkout() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => { // automatically load when component loads
-    const loadSquareCard = async () => { // Function to load Square card form input 
+  useEffect(() => {
+    // automatically load when component loads
+    const loadSquareCard = async () => {
+      // Function to load Square card form input
       let attempts = 0; // Initialize attempts to 0
-      while (!window.Square && attempts < 10) { // it Checks if window.Square is available which that means the Square SDK has loaded in the browser
+      while (!window.Square && attempts < 10) {
+        // it Checks if window.Square is available which that means the Square SDK has loaded in the browser
         await new Promise((resolve) => setTimeout(resolve, 200)); // if not it waits 200 milliseconds(0.2 sec) and tries again.
         attempts++; // it does this maximum 10 times
-      } 
+      }
 
       if (!window.Square) {
         console.error("Square SDK not loaded.");
@@ -100,25 +108,28 @@ export default function Checkout() {
       }
 
       try {
-        const payments = window.Square.payments( // Initialize Square payments with your application ID
+        const payments = window.Square.payments(
+          // Initialize Square payments with your application ID
           "sandbox-sq0idb-84Wv_eCeWbSX-fotdJL4-Q",
-          "sandbox" 
+          "sandbox"
         );
 
         // Clear previous card container if any
         const container = document.getElementById("card-container"); // it will find card by its div id of card-container
         if (container) container.innerHTML = ""; // Clear any existing content in the card container
-11
+        11;
         const card = await payments.card(); // Create a new Square card instance
         await card.attach("#card-container"); //This inserts the Square card input UI into the #card-container div on the screen.
         cardRef.current = card; // Saves the card object into a ref so we can use it later.
         setCardLoaded(true); // Set cardLoaded to true to indicate the card input is ready
-      } catch (error) { // If there is an error during setup it will logs error
+      } catch (error) {
+        // If there is an error during setup it will logs error
         console.error("Error setting up Square card:", error);
       }
     };
 
-    if (paymentMethod === "credit" || paymentMethod === "debit") { // this check if the selected payment method is credit or debit, then run the loadSquareCard() function.
+    if (paymentMethod === "credit" || paymentMethod === "debit") {
+      // this check if the selected payment method is credit or debit, then run the loadSquareCard() function.
       loadSquareCard();
     }
   }, [paymentMethod]); //  re-run when paymentMethod is 'card'
@@ -132,10 +143,7 @@ export default function Checkout() {
     const result = await cardRef.current.tokenize();
 
     if (result.status !== "OK") {
-      triggerToast(
-        "❌ Card failed. Please check your card details.",
-        "error"
-      );
+      triggerToast("❌ Card failed. Please check your card details.", "error");
       return;
     }
 
@@ -153,107 +161,117 @@ export default function Checkout() {
 
   const handleLogout = async () => {
     await signOut(auth); // Sign out the user from Firebase
-    setUser(null);// clear the user state 
+    setUser(null); // clear the user state
     alert("Logged out!"); // send an alert to the user
     navigate("/login"); // navigate back to login page
   };
-  const handleAddressChange = (e) => { // This is a function triggered when a user types into an address form input (like name, phone, etc.)
-  const { name, value } = e.target; // will take name and value from input field
-  setNewAddress((prev) => ({ ...prev, [name]: value })); // It updates the newAddress state with the new value for the specific field that was changed.
-};
+  const handleAddressChange = (e) => {
+    // This is a function triggered when a user types into an address form input (like name, phone, etc.)
+    const { name, value } = e.target; // will take name and value from input field
+    setNewAddress((prev) => ({ ...prev, [name]: value })); // It updates the newAddress state with the new value for the specific field that was changed.
+  };
   const handleAddAddress = async () => {
-  const filled = Object.values(newAddress).every((val) => val.trim() !== ""); // checks if all address fields are filled
-  if (!filled) return alert("Please fill all address fields."); // If any field is empty, it shows an alert and stops the function.
- 
-  const newId = Date.now(); //  Creates a unique ID for the address using the current timestamp.
-  const updatedList = [ //Adds the new address to the existing list. label will be like "Address 1", "Address 2", etc.
-    ...addressList,
-    { id: newId, label: `Address ${addressList.length + 1}`, ...newAddress },
-  ];
+    const filled = Object.values(newAddress).every((val) => val.trim() !== ""); // checks if all address fields are filled
+    if (!filled) return alert("Please fill all address fields."); // If any field is empty, it shows an alert and stops the function.
 
-  setAddressList(updatedList); // Updates the addressList state with the new address.
-  setSelectedAddress(newId); //Sets this new one as selected
-  setShowAddressForm(false); // Hides the address form after submission
-  setNewAddress({
-    fullName: "",
-    street: "",
-    city: "",
-    postalCode: "",
-    country: "",
-    phone: "",
-  }); // Resets the newAddress state to clear the form fields
+    const newId = Date.now(); //  Creates a unique ID for the address using the current timestamp.
+    const updatedList = [
+      //Adds the new address to the existing list. label will be like "Address 1", "Address 2", etc.
+      ...addressList,
+      { id: newId, label: `Address ${addressList.length + 1}`, ...newAddress },
+    ];
 
-  if (user) {
-    // Save to localStorage under unique key for that user 
-    localStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedList));
+    setAddressList(updatedList); // Updates the addressList state with the new address.
+    setSelectedAddress(newId); //Sets this new one as selected
+    setShowAddressForm(false); // Hides the address form after submission
+    setNewAddress({
+      fullName: "",
+      street: "",
+      city: "",
+      postalCode: "",
+      country: "",
+      phone: "",
+    }); // Resets the newAddress state to clear the form fields
 
-    // saves the first address as the primary one and formats it as a single string
-    const primaryAddress = updatedList[0];
-    const formattedAddress = `${primaryAddress.street}, ${primaryAddress.city}, ${primaryAddress.country} - ${primaryAddress.postalCode}`;
-
-    try {
-      await setDoc(
-        doc(db, "users", user.uid), //Saves the phone number and address to that user’s Firestore document.
-        {
-          phone: primaryAddress.phone,
-          address: formattedAddress,
-        },
-        { merge: true } //only update these fields, don’t erase others.
+    if (user) {
+      // Save to localStorage under unique key for that user
+      localStorage.setItem(
+        `addresses_${user.uid}`,
+        JSON.stringify(updatedList)
       );
-    } catch (err) {
-      console.error("Failed to update profile with address:", err.message);
+
+      // saves the first address as the primary one and formats it as a single string
+      const primaryAddress = updatedList[0];
+      const formattedAddress = `${primaryAddress.street}, ${primaryAddress.city}, ${primaryAddress.country} - ${primaryAddress.postalCode}`;
+
+      try {
+        await setDoc(
+          doc(db, "users", user.uid), //Saves the phone number and address to that user’s Firestore document.
+          {
+            phone: primaryAddress.phone,
+            address: formattedAddress,
+          },
+          { merge: true } //only update these fields, don’t erase others.
+        );
+      } catch (err) {
+        console.error("Failed to update profile with address:", err.message);
+      }
     }
-  }
-};
+  };
 
-const handleDeleteAddress = async (idToDelete) => { 
-  const updated = addressList.filter((addr) => addr.id !== idToDelete); // Filters out the address with the ID to delete from the addressList
-  setAddressList(updated); // Updates the addressList state with the remaining addresses
+  const handleDeleteAddress = async (idToDelete) => {
+    const updated = addressList.filter((addr) => addr.id !== idToDelete); // Filters out the address with the ID to delete from the addressList
+    setAddressList(updated); // Updates the addressList state with the remaining addresses
 
-  if (selectedAddress === idToDelete) { // If the user deleted the currently selected address, unselect it.
-    setSelectedAddress("");
-  }
+    if (selectedAddress === idToDelete) {
+      // If the user deleted the currently selected address, unselect it.
+      setSelectedAddress("");
+    }
 
-  if (user) {
-    localStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updated)); //Saves the updated address list.
+    if (user) {
+      localStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updated)); //Saves the updated address list.
 
-    // If the deleted one was the first address used in profile, update Firestore
-    if (idToDelete === addressList[0]?.id) { // If the deleted address was the primary one
-      if (updated.length > 0) { //then uses next address in the list as primary and update it to firebase
-        const nextPrimary = updated[0];
-        const formatted = `${nextPrimary.street}, ${nextPrimary.city}, ${nextPrimary.country} - ${nextPrimary.postalCode}`;
-        try {
-          await setDoc(
-            doc(db, "users", user.uid),
-            {
-              phone: nextPrimary.phone,
-              address: formatted,
-            },
-            { merge: true } //only update these fields, don’t erase others.
-          );
-        } catch (err) {
-          console.error("Error updating profile after deletion:", err.message);
-        }
-      } else {
-        // No address left, so clear from profile
-        try {
-          await setDoc(
-            doc(db, "users", user.uid),
-            {
-              phone: "",
-              address: "",
-            },
-            { merge: true } // only update these fields, don’t erase others.
-          );
-        } catch (err) {
-          console.error("Error clearing profile:", err.message);
+      // If the deleted one was the first address used in profile, update Firestore
+      if (idToDelete === addressList[0]?.id) {
+        // If the deleted address was the primary one
+        if (updated.length > 0) {
+          //then uses next address in the list as primary and update it to firebase
+          const nextPrimary = updated[0];
+          const formatted = `${nextPrimary.street}, ${nextPrimary.city}, ${nextPrimary.country} - ${nextPrimary.postalCode}`;
+          try {
+            await setDoc(
+              doc(db, "users", user.uid),
+              {
+                phone: nextPrimary.phone,
+                address: formatted,
+              },
+              { merge: true } //only update these fields, don’t erase others.
+            );
+          } catch (err) {
+            console.error(
+              "Error updating profile after deletion:",
+              err.message
+            );
+          }
+        } else {
+          // No address left, so clear from profile
+          try {
+            await setDoc(
+              doc(db, "users", user.uid),
+              {
+                phone: "",
+                address: "",
+              },
+              { merge: true } // only update these fields, don’t erase others.
+            );
+          } catch (err) {
+            console.error("Error clearing profile:", err.message);
+          }
         }
       }
     }
-  }
-};
+  };
 
-  
   const handlePlaceOrder = async () => {
     // 1. Validate address
     if (!selectedAddress) {
@@ -280,19 +298,23 @@ const handleDeleteAddress = async (idToDelete) => {
     const sourceId = cardToken; //This takes the token you got from Square (cardRef.current.tokenize()) and stores it in a variable called sourceId.
 
     try {
-      const res = await fetch("http://localhost:5000/api/square/payment", { // calls your backend API to process the payment
+      const res = await fetch("http://localhost:5000/api/square/payment", {
+        // calls your backend API to process the payment
         method: "POST", // posts the payment request
         headers: { "Content-Type": "application/json" }, //
-        body: JSON.stringify({ // sends the payment details to your backend
+        body: JSON.stringify({
+          // sends the payment details to your backend
           sourceId,
           amount: grandTotal * 100, //total amount in cents (because Square expects cents)
         }),
       });
 
-      const data = await res.json();  // parses the response from your backend
+      const data = await res.json(); // parses the response from your backend
 
-      if (res.ok) { //if the payment was successful
-        localStorage.setItem( //Save a success message in localStorage — this will be shown on the Cart page.
+      if (res.ok) {
+        //if the payment was successful
+        localStorage.setItem(
+          //Save a success message in localStorage — this will be shown on the Cart page.
           "orderSuccessMessage",
           "🎉 Your payment was successful! Thank you for your order."
         );
@@ -340,41 +362,40 @@ const handleDeleteAddress = async (idToDelete) => {
             </h2>
             <div className="mb-2">
               <div className="space-y-2 mb-4">
-  {addressList.map((addr) => (
-    <div
-      key={addr.id}
-      className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded"
-    >
-      <label className="flex items-center gap-2 w-full">
-        <input
-          type="radio"
-          name="selectedAddress"
-          value={addr.id}
-          checked={selectedAddress === addr.id}
-          onChange={() => {
-            setSelectedAddress(addr.id);
-            setAddressError(false);
-          }}
-        />
-        <span className="text-sm">
-          {addr.label} — {addr.street}, {addr.city}
-        </span>
-      </label>
-      <button
-        onClick={() => handleDeleteAddress(addr.id)}
-        className="text-red-500 hover:text-red-700 text-sm ml-4"
-      >
-        Delete  
-      </button>
-    </div>
-          ))}
-              {addressError && (
-            <p className="text-red-600 text-sm mt-1">
-            Please select or add an address.
-           </p>
-         )}
-            </div>
-
+                {addressList.map((addr) => (
+                  <div
+                    key={addr.id}
+                    className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded"
+                  >
+                    <label className="flex items-center gap-2 w-full">
+                      <input
+                        type="radio"
+                        name="selectedAddress"
+                        value={addr.id}
+                        checked={selectedAddress === addr.id}
+                        onChange={() => {
+                          setSelectedAddress(addr.id);
+                          setAddressError(false);
+                        }}
+                      />
+                      <span className="text-sm">
+                        {addr.label} — {addr.street}, {addr.city}
+                      </span>
+                    </label>
+                    <button
+                      onClick={() => handleDeleteAddress(addr.id)}
+                      className="text-red-500 hover:text-red-700 text-sm ml-4"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+                {addressError && (
+                  <p className="text-red-600 text-sm mt-1">
+                    Please select or add an address.
+                  </p>
+                )}
+              </div>
             </div>
 
             <button

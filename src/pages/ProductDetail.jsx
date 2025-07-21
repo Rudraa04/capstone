@@ -940,12 +940,14 @@ export default function ProductDetail() {
                   <li>
                     <strong>Color:</strong> {product.color}
                   </li>
-                  <strong>Stock:</strong>{" "}
-                  {product.stock !== "N/A" && parseInt(product.stock) > 10
-                    ? "In Stock"
-                    : product.stock !== "N/A"
-                    ? `Only ${product.stock} left`
-                    : "N/A"}
+                  <li>
+                    <strong>Stock:</strong>{" "}
+                    {product.stock !== "N/A" && parseInt(product.stock) > 10
+                      ? "In Stock"
+                      : product.stock !== "N/A"
+                      ? `Only ${product.stock} left`
+                      : "N/A"}
+                  </li>
                   <li>
                     <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
@@ -1059,12 +1061,14 @@ export default function ProductDetail() {
                   <li>
                     <strong>Origin:</strong> {product.origin}
                   </li>
-                  <strong>Stock:</strong>{" "}
-                  {product.stock !== "N/A" && parseInt(product.stock) > 10
-                    ? "In Stock"
-                    : product.stock !== "N/A"
-                    ? `Only ${product.stock} left`
-                    : "N/A"}
+                  <li>
+                    <strong>Stock:</strong>{" "}
+                    {product.stock !== "N/A" && parseInt(product.stock) > 10
+                      ? "In Stock"
+                      : product.stock !== "N/A"
+                      ? `Only ${product.stock} left`
+                      : "N/A"}
+                  </li>
                   <li>
                     <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
@@ -1096,12 +1100,14 @@ export default function ProductDetail() {
                   <li>
                     <strong>Origin:</strong> {product.origin}
                   </li>
-                  <strong>Stock:</strong>{" "}
-                  {product.stock !== "N/A" && parseInt(product.stock) > 10
-                    ? "In Stock"
-                    : product.stock !== "N/A"
-                    ? `Only ${product.stock} left`
-                    : "N/A"}
+                  <li>
+                    <strong>Stock:</strong>{" "}
+                    {product.stock !== "N/A" && parseInt(product.stock) > 10
+                      ? "In Stock"
+                      : product.stock !== "N/A"
+                      ? `Only ${product.stock} left`
+                      : "N/A"}
+                  </li>
                   <li>
                     <strong>Price:</strong>{" "}
                     <span className="text-green-700 font-semibold">
