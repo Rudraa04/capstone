@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaBath, FaPlus } from "react-icons/fa";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 import { storage } from "../firebase/firebase";
 import axios from "axios";
 
@@ -74,23 +79,25 @@ export default function BathtubInventory() {
   const [sizeFilter, setSizeFilter] = useState("");
   const [originFilter, setOriginFilter] = useState("");
   const brands = [
-  "KOHLER",
-  "TOTO",
-  "American Standard",
-  "Duravit",
-  "Jaquar",
-  "Hansgrohe",
-  "Delta",
-  "Other"
-];
+    "KOHLER",
+    "TOTO",
+    "American Standard",
+    "Duravit",
+    "Jaquar",
+    "Hansgrohe",
+    "Delta",
+    "Other",
+  ];
 
   const handleLogout = () => {
-  localStorage.removeItem("isAdminLoggedIn");
-  navigate("/login");
-};
+    localStorage.removeItem("isAdminLoggedIn");
+    navigate("/login");
+  };
   const fetchBathtubs = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/products/bathtubs");
+      const res = await axios.get(
+        "http://localhost:5000/api/products/bathtubs"
+      );
       setProducts(res.data);
     } catch (err) {
       console.error("Error fetching bathtubs:", err);
@@ -102,18 +109,21 @@ export default function BathtubInventory() {
   }, []);
 
   const handleImageChange = async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const fileRef = ref(storage, `Inventory/Bathtubs/${file.name}-${Date.now()}`);
-      try {
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
-        setImage(url);
-        setFormData((prev) => ({ ...prev, Image: url }));
-      } catch (err) {
-        alert("Image upload failed.");
-      }
-    };
+    const file = e.target.files[0];
+    if (!file) return;
+    const fileRef = ref(
+      storage,
+      `Inventory/Bathtubs/${file.name}-${Date.now()}`
+    );
+    try {
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      setImage(url);
+      setFormData((prev) => ({ ...prev, Image: url }));
+    } catch (err) {
+      alert("Image upload failed.");
+    }
+  };
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -122,7 +132,10 @@ export default function BathtubInventory() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const Size = `${formData.length} x ${formData.width} x ${formData.height}mm`;
-    const ManufacturerFinal = formData.Manufacturer === "Other" ? formData.customBrand : formData.Manufacturer;
+    const ManufacturerFinal =
+      formData.Manufacturer === "Other"
+        ? formData.customBrand
+        : formData.Manufacturer;
 
     const data = {
       Name: formData.ProductName,
@@ -139,7 +152,10 @@ export default function BathtubInventory() {
 
     try {
       if (selectedProduct) {
-        await axios.put(`http://localhost:5000/api/products/bathtubs/${selectedProduct._id}`, data);
+        await axios.put(
+          `http://localhost:5000/api/products/bathtubs/${selectedProduct._id}`,
+          data
+        );
         alert("Bathtub updated successfully!");
       } else {
         await axios.post("http://localhost:5000/api/products/bathtubs", data);
@@ -154,10 +170,13 @@ export default function BathtubInventory() {
   };
 
   const handleEdit = (item) => {
-    const sizeParts = item.Size?.replace("mm", "").split("x").map(s => s.trim()) || [];
+    const sizeParts =
+      item.Size?.replace("mm", "")
+        .split("x")
+        .map((s) => s.trim()) || [];
     const brandExists = brands.some(
-    (b) => b.toLowerCase() === (item.Manufacturer || "").toLowerCase()
-  );
+      (b) => b.toLowerCase() === (item.Manufacturer || "").toLowerCase()
+    );
     setFormData({
       ProductName: item.Name || "",
       ProductDescription: item.Description || "",
@@ -167,7 +186,7 @@ export default function BathtubInventory() {
       Category: item.Category || "Bathtub",
       Quantity: item.Stock_admin || "",
       Manufacturer: brandExists ? item.Manufacturer : "Other",
-    customBrand: brandExists ? "" : item.Manufacturer || "",
+      customBrand: brandExists ? "" : item.Manufacturer || "",
       length: sizeParts[0] || "",
       width: sizeParts[1] || "",
       height: sizeParts[2] || "",
@@ -179,25 +198,26 @@ export default function BathtubInventory() {
   };
 
   const handleDelete = async (id) => {
-  const product = products.find((p) => p._id === id);
-  if (!product || !window.confirm("Delete this bathtub?")) return;
-  try {
-    // Delete image from Firebase
-    if (product.Image?.includes("firebasestorage")) {
-      const path = decodeURIComponent(product.Image.split("/o/")[1].split("?")[0]);
-      await deleteObject(ref(storage, path));
+    const product = products.find((p) => p._id === id);
+    if (!product || !window.confirm("Delete this bathtub?")) return;
+    try {
+      // Delete image from Firebase
+      if (product.Image?.includes("firebasestorage")) {
+        const path = decodeURIComponent(
+          product.Image.split("/o/")[1].split("?")[0]
+        );
+        await deleteObject(ref(storage, path));
+      }
+
+      // Delete product from backend
+      await axios.delete(`http://localhost:5000/api/products/bathtubs/${id}`);
+      fetchBathtubs(); // Refresh the list after deletion
+      alert("Deleted successfully");
+    } catch (err) {
+      console.error("Delete Error:", err);
+      alert("Failed to delete");
     }
-
-    // Delete product from backend
-    await axios.delete(`http://localhost:5000/api/products/bathtubs/${id}`);
-    fetchBathtubs(); // Refresh the list after deletion
-    alert("Deleted successfully");
-  } catch (err) {
-    console.error("Delete Error:", err);
-    alert("Failed to delete");
-  }
-};
-
+  };
 
   const resetForm = () => {
     setFormData({
@@ -415,11 +435,13 @@ export default function BathtubInventory() {
                   .filter((item) => {
                     const name = item?.Name?.toLowerCase() || "";
                     const search = searchTerm.toLowerCase();
-                  
-                    return name.includes(search) &&
-                      (colorFilter === "" || item.Color === colorFilter);
+
+                    return (
+                      name.includes(search) &&
+                      (colorFilter === "" || item.Color === colorFilter)
+                    );
                   })
-                
+
                   .map((item, index) => (
                     <tr key={index} className="border-b">
                       <td className="px-6 py-4">{item.Name}</td>
@@ -495,7 +517,6 @@ export default function BathtubInventory() {
                     className="w-full px-3 py-2 border rounded-md"
                   />
                 </div>
-                
               </div>
             </div>
 
@@ -534,36 +555,36 @@ export default function BathtubInventory() {
                 />
               </div>
               <div>
-  <label className="block font-medium mb-1">Brand / Manufacturer</label>
-  <select
-  name="Manufacturer"
-  value={formData.Manufacturer}
-  onChange={handleChange}
-  className="w-full px-3 py-2 border rounded-md"
->
-  <option value="">Select Brand</option>
-  {[...new Set([...brands, formData.Manufacturer])]
-    .filter(Boolean)
-    .map((brand) => (
-      <option key={brand} value={brand}>
-        {brand}
-      </option>
-    ))}
-</select>
+                <label className="block font-medium mb-1">
+                  Brand / Manufacturer
+                </label>
+                <select
+                  name="Manufacturer"
+                  value={formData.Manufacturer}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="">Select Brand</option>
+                  {[...new Set([...brands, formData.Manufacturer])]
+                    .filter(Boolean)
+                    .map((brand) => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                </select>
 
-
-  {formData.Manufacturer === "Other" && (
-    <input
-      type="text"
-      name="customBrand"
-      value={formData.customBrand}
-      onChange={handleChange}
-      placeholder="Enter Brand Name"
-      className="mt-2 w-full px-3 py-2 border rounded-md"
-    />
-  )}
-</div>
-
+                {formData.Manufacturer === "Other" && (
+                  <input
+                    type="text"
+                    name="customBrand"
+                    value={formData.customBrand}
+                    onChange={handleChange}
+                    placeholder="Enter Brand Name"
+                    className="mt-2 w-full px-3 py-2 border rounded-md"
+                  />
+                )}
+              </div>
 
               <div>
                 <label className="block font-medium mb-1">

@@ -99,6 +99,7 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  
   useEffect(() => {
     const fetchAllCategories = async () => {
       try {
@@ -140,6 +141,7 @@ export default function Header() {
 
     fetchAllCategories();
   }, []);
+
   useEffect(() => {
     const updateCartCount = () => {
       const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -148,7 +150,7 @@ export default function Header() {
 
     updateCartCount(); // initial
 
-    window.addEventListener("cartUpdated", updateCartCount);
+    window.addEventListener("cartUpdated", updateCartCount); //window dispatch event 
     return () => {
       window.removeEventListener("cartUpdated", updateCartCount);
     };

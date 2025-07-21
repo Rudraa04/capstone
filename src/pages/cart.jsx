@@ -101,7 +101,7 @@ export default function Cart() { // export so it can be used in other files
               Cart is empty
             </h2>
             <p className="text-gray-600 mb-6">
-              Looks like you haven’t added anything yet.
+              Looks like you haven't added anything yet.
             </p>
             <button
               onClick={() => navigate("/")}
