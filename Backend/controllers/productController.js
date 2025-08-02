@@ -18,7 +18,7 @@ const models = {
   toilets: Toilets_Model,
 };
 
-// ✅ Controller to get all products of a specific type
+// Controller to get all products of a specific type
 export const getProductsByType = async (req, res) => {
   const type = req.params.type;
   const Model = models[type];
@@ -32,7 +32,7 @@ export const getProductsByType = async (req, res) => {
   }
 };
 
-// ✅ Get product by ID
+// Get product by ID
 export const getProductById = async (req, res) => {
   const { type, id } = req.params;
   const Model = models[type];
@@ -47,7 +47,7 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// ✅ Add new product
+// Add new product
 export const addProduct = async (req, res) => {
   const type = req.params.type;
   const Model = models[type];
@@ -62,7 +62,7 @@ export const addProduct = async (req, res) => {
   }
 };
 
-// ✅ Update product
+// Update product
 export const updateProduct = async (req, res) => {
   const { type, id } = req.params;
   const Model = models[type];
@@ -76,7 +76,7 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// ✅ Delete product
+// Delete product
 export const deleteProduct = async (req, res) => {
   const { type, id } = req.params;
   const Model = models[type];

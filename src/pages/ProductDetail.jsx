@@ -14,6 +14,7 @@ import {
   FaWhatsapp,
   FaLink,
   FaEye,
+  FaInfoCircle,
 } from "react-icons/fa";
 import Footer from "../components/Footer";
 import axios from "axios";
@@ -42,17 +43,16 @@ export default function ProductDetail() {
   const [cartCount, setCartCount] = useState(0);
 
   const [customSize, setCustomSize] = useState("12x12");
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState("");
   const [pricePerTile, setPricePerTile] = useState(0);
+  const [roomDimensions, setRoomDimensions] = useState({ length: "", width: "" });
+  const [boxesNeeded, setBoxesNeeded] = useState(0);
 
   const [tileData, setTileData] = useState(null);
   const [sinkData, setSinkData] = useState(null);
   const [toiletData, setToiletData] = useState(null);
-
   const [marbleData, setMarbleData] = useState(null);
-
   const [graniteData, setGraniteData] = useState(null);
-
   const [bathtubData, setBathtubData] = useState(null);
 
   const location = useLocation();
@@ -63,15 +63,12 @@ export default function ProductDetail() {
   useEffect(() => {
     const updateCartCount = () => {
       const storedCart = JSON.parse(localStorage.getItem("cart")) || [];
-      setCartCount(storedCart.length); // Just count distinct products
+      setCartCount(storedCart.length);
     };
 
     updateCartCount();
-
     window.addEventListener("cartUpdated", updateCartCount);
-    return () => {
-      window.removeEventListener("cartUpdated", updateCartCount);
-    };
+    return () => window.removeEventListener("cartUpdated", updateCartCount);
   }, []);
 
   useEffect(() => {
@@ -96,7 +93,6 @@ export default function ProductDetail() {
         console.error("Failed to fetch products for search:", err);
       }
     };
-
     fetchAllProducts();
   }, []);
 
@@ -143,6 +139,7 @@ export default function ProductDetail() {
         .then((res) => {
           setTileData(res.data);
           setPricePerTile(res.data.Price || 0);
+          setCustomSize(res.data.Size || "12x12");
         })
         .catch((err) => console.error("Failed to fetch tile:", err));
     }
@@ -202,44 +199,18 @@ export default function ProductDetail() {
       .toLowerCase()
       .replace(/[^\w\s]/gi, "");
     const routeMap = [
-      // Specific phrases FIRST
-      {
-        keywords: ["exterior wall tiles", "exterior wall"],
-        route: "/exterior?sub=Exterior%20Wall%20Tiles",
-      },
-      {
-        keywords: ["exterior floor tiles", "exterior floor"],
-        route: "/exterior?sub=Exterior%20Floor%20Tiles",
-      },
-      {
-        keywords: ["interior floor tiles", "interior floor"],
-        route: "/interior?sub=Interior%20Floor%20Tiles",
-      },
-      {
-        keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"],
-        route: "/interior?sub=Bathroom%20Wall%20Tiles",
-      },
-      {
-        keywords: ["kitchen wall tiles", "kitchen tiles", "kitchen"],
-        route: "/interior?sub=Kitchen%20Wall%20Tiles",
-      },
-
-      // General categories
+      { keywords: ["exterior wall tiles", "exterior wall"], route: "/exterior?sub=Exterior%20Wall%20Tiles" },
+      { keywords: ["exterior floor tiles", "exterior floor"], route: "/exterior?sub=Exterior%20Floor%20Tiles" },
+      { keywords: ["interior floor tiles", "interior floor"], route: "/interior?sub=Interior%20Floor%20Tiles" },
+      { keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"], route: "/interior?sub=Bathroom%20Wall%20Tiles" },
+      { keywords: ["kitchen wall tiles", "kitchen tiles", "kitchen"], route: "/interior?sub=Kitchen%20Wall%20Tiles" },
       { keywords: ["interior", "interior tiles"], route: "/interior" },
       { keywords: ["exterior", "exterior tiles"], route: "/exterior" },
-      {
-        keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"],
-        route: "/sanitary",
-      },
+      { keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"], route: "/sanitary" },
       { keywords: ["slab", "slabs", "granite", "marble"], route: "/slabs" },
       { keywords: ["ceramic", "ceramics"], route: "/ceramics?type=tiles" },
       { keywords: ["tile", "tiles"], route: "/ceramics?type=tiles" },
-
-      // Suggestions
-      {
-        keywords: ["bathroom", "washroom"],
-        suggest: ["tiles", "bathtubs", "sinks", "toilets"],
-      },
+      { keywords: ["bathroom", "washroom"], suggest: ["tiles", "bathtubs", "sinks", "toilets"] },
     ];
 
     for (const entry of routeMap) {
@@ -247,16 +218,11 @@ export default function ProductDetail() {
         navigate(entry.route);
         return;
       }
-
-      if (
-        entry.suggest &&
-        entry.keywords.some((k) => trimmedQuery.includes(k))
-      ) {
+      if (entry.suggest && entry.keywords.some((k) => trimmedQuery.includes(k))) {
         alert(`You might be looking for: ${entry.suggest.join(", ")}`);
         return;
       }
     }
-
     alert("No matching category found.");
     setSuggestions([]);
   };
@@ -354,16 +320,75 @@ export default function ProductDetail() {
     return <div className="text-center p-10">Loading Product...</div>;
   }
 
-  const parseSize = (sizeStr) => {
-    const [length, width] = sizeStr.split("x").map(Number);
-    if (!length || !width) return 1;
-    const customArea = length * width;
-    const standardArea = 12 * 12;
-    return Math.ceil((customArea * quantity) / standardArea);
+  const calculateTilesPerBox = (size) => {
+    switch (size) {
+      case "48x24":
+        return 2; // 2 tiles per box
+      case "12x18":
+        return 6; // 6 tiles per box
+      case "32x32":
+        return 2; // 2 tiles per box
+      case "12x12":
+        return 9; // 9 tiles per box
+      default:
+        return 1;
+    }
   };
 
-  const totalTiles = parseSize(customSize);
-  const totalPrice = totalTiles * (product.price || pricePerTile || 0);
+  const calculateBoxAreaInSquareInches = (size) => {
+    const [length, width] = size.split("x").map((dim) => parseInt(dim));
+    return length * width * calculateTilesPerBox(size); // Total square inches per box
+  };
+
+  const calculateBoxesNeeded = (length, width, size) => {
+    const tilesPerBox = calculateTilesPerBox(size);
+    const roomAreaInFeet = (parseFloat(length) || 0) * (parseFloat(width) || 0); // Room area in sq ft
+    const tileDimensionsInFeet = size.split("x").map((dim) => parseInt(dim) / 12); // Convert inches to feet
+    const tileAreaInFeet = tileDimensionsInFeet[0] * tileDimensionsInFeet[1]; // Area of one tile in sq ft
+    const boxAreaInFeet = tileAreaInFeet * tilesPerBox; // Total area per box in sq ft
+    return roomAreaInFeet > 0 && boxAreaInFeet > 0 ? Math.ceil(roomAreaInFeet / boxAreaInFeet) : 0;
+  };
+
+  const calculateTotalPriceFromRoom = (length, width) => {
+    if (!length || !width || !user) return 0;
+    const roomAreaInFeet = parseFloat(length) * parseFloat(width);
+    const roomAreaInInches = roomAreaInFeet * 144; // Convert sq ft to sq in
+    const tilesNeeded = Math.ceil(roomAreaInInches / (boxAreaInSquareInches / tilesPerBox)); // Tiles needed
+    const boxesNeeded = Math.ceil(tilesNeeded / tilesPerBox);
+    return boxesNeeded * boxPrice;
+  };
+
+  const parseSize = (sizeStr) => {
+    const [length, width] = sizeStr.split("x").map(Number);
+    if (!length || !width) return 0;
+    return quantity ? Math.ceil(quantity) : 0; // Simplified to just quantity
+  };
+
+  const handleDimensionsChange = (e) => {
+    const { name, value } = e.target;
+    if (!user) {
+      alert("Please log in to use the room dimensions calculator.");
+      e.target.blur();
+      return;
+    }
+    setRoomDimensions((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    const { length, width } = { ...roomDimensions, [name]: value };
+    if (length && width && type === "tiles") {
+      setBoxesNeeded(calculateBoxesNeeded(length, width, customSize));
+    } else {
+      setBoxesNeeded(0);
+    }
+  };
+
+  const tilesPerBox = calculateTilesPerBox(customSize);
+  const boxAreaInSquareInches = calculateBoxAreaInSquareInches(customSize);
+  const boxPrice = boxAreaInSquareInches * 28; // ₹28 per square inch
+
+  const totalTiles = quantity ? parseInt(quantity) * tilesPerBox : 0;
+  const totalPrice = totalTiles * pricePerTile;
 
   const handleBack = () => {
     switch (type) {
@@ -404,7 +429,6 @@ export default function ProductDetail() {
         className:
           "bg-white border border-red-400 text-red-800 text-lg font-semibold px-6 py-4 rounded-lg shadow-lg animate__animated animate__fadeInRight",
       });
-
       setTimeout(() => {
         navigate("/login");
       }, 1500);
@@ -415,7 +439,7 @@ export default function ProductDetail() {
       id: Date.now(),
       ...product,
       size: customSize,
-      quantity,
+      quantity: quantity || 1,
       totalTiles,
       totalPrice,
     };
@@ -460,25 +484,16 @@ export default function ProductDetail() {
 
   return (
     <div className="bg-white text-gray-900 font-sans">
-      {/* === HEADER === */}
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleBack}
-              className="text-blue-700 hover:text-blue-900"
-            >
+            <button onClick={handleBack} className="text-blue-700 hover:text-blue-900">
               <FaArrowLeft size={18} />
             </button>
-
-            <Link
-              to="/"
-              className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
-            >
+            <Link to="/" className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide">
               PATEL CERAMICS
             </Link>
           </div>
-
           <div className="hidden md:block relative w-full max-w-md">
             <div className="flex items-center border-2 border-gray-300 rounded-lg px-4 py-2 bg-gray-100 shadow-sm w-full">
               <input
@@ -488,7 +503,6 @@ export default function ProductDetail() {
                 onChange={(e) => {
                   const value = e.target.value;
                   setQuery(value);
-
                   if (value.length > 1) {
                     const filtered = allProducts.filter((product) =>
                       product.Name?.toLowerCase().includes(value.toLowerCase())
@@ -503,7 +517,6 @@ export default function ProductDetail() {
                 }}
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
-
               <button
                 onClick={() => handleSearch()}
                 className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
@@ -511,8 +524,6 @@ export default function ProductDetail() {
                 <FaSearch size={18} />
               </button>
             </div>
-
-            {/* 🔍 Search Suggestions with Image */}
             {suggestions.length > 0 && (
               <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
                 {suggestions.map((product, index) => (
@@ -520,11 +531,7 @@ export default function ProductDetail() {
                     key={index}
                     className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
                     onClick={() => {
-                      navigate(
-                        `/product/${product.category.toLowerCase()}/${
-                          product._id
-                        }`
-                      );
+                      navigate(`/product/${product.category.toLowerCase()}/${product._id}`);
                       setSuggestions([]);
                       setQuery("");
                     }}
@@ -536,9 +543,7 @@ export default function ProductDetail() {
                     />
                     <div>
                       <p className="text-sm font-semibold">{product.Name}</p>
-                      <p className="text-xs text-gray-500">
-                        {product.category}
-                      </p>
+                      <p className="text-xs text-gray-500">{product.category}</p>
                     </div>
                   </li>
                 ))}
@@ -549,7 +554,6 @@ export default function ProductDetail() {
             <Link to="/" className={`uppercase ${underlineHover}`}>
               Home
             </Link>
-
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setShowProductDropdown(!showProductDropdown)}
@@ -559,7 +563,6 @@ export default function ProductDetail() {
               </button>
               {showProductDropdown && (
                 <div className="absolute top-full right-0 mt-8 bg-white border border-gray-300 shadow-xl rounded-xl p-8 grid grid-cols-2 gap-8 w-[600px] z-50 text-base font-sans translate-x-[100px]">
-                  {" "}
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-5 text-lg tracking-wide border-b border-gray-300 pb-2">
                       CATEGORY
@@ -586,26 +589,11 @@ export default function ProductDetail() {
                       WALL / FLOOR TILES
                     </h3>
                     {[
-                      {
-                        name: "Exterior Floor Tiles",
-                        to: "/exterior?sub=Exterior Floor Tiles",
-                      },
-                      {
-                        name: "Exterior Wall Tiles",
-                        to: "/exterior?sub=Exterior Wall Tiles",
-                      },
-                      {
-                        name: "Kitchen Wall Tiles",
-                        to: "/interior?sub=Kitchen Wall Tiles",
-                      },
-                      {
-                        name: "Bathroom Wall Tiles",
-                        to: "/interior?sub=Bathroom Wall Tiles",
-                      },
-                      {
-                        name: "Interior Floor Tiles",
-                        to: "/interior?sub=Interior Floor Tiles",
-                      },
+                      { name: "Exterior Floor Tiles", to: "/exterior?sub=Exterior Floor Tiles" },
+                      { name: "Exterior Wall Tiles", to: "/exterior?sub=Exterior Wall Tiles" },
+                      { name: "Kitchen Wall Tiles", to: "/interior?sub=Kitchen Wall Tiles" },
+                      { name: "Bathroom Wall Tiles", to: "/interior?sub=Bathroom Wall Tiles" },
+                      { name: "Interior Floor Tiles", to: "/interior?sub=Interior Floor Tiles" },
                     ].map((item) => (
                       <Link
                         key={item.name}
@@ -619,34 +607,20 @@ export default function ProductDetail() {
                 </div>
               )}
             </div>
-
             {user ? (
               <>
-                <Link
-                  to="/cart"
-                  className={`uppercase ${underlineHover} flex items-center gap-1`}
-                >
+                <Link to="/cart" className={`uppercase ${underlineHover} flex items-center gap-1`}>
                   <FaShoppingCart />
                   Cart
-                  {cartCount > 0 && (
-                    <span className="ml-1 font-bold text-blue-600">
-                      ({cartCount})
-                    </span>
-                  )}
+                  {cartCount > 0 && <span className="ml-1 font-bold text-blue-600">({cartCount})</span>}
                 </Link>
-
                 <Link
                   to="/profile"
-                  state={
-                    localStorage.getItem("fromAdmin") === "true"
-                      ? { fromAdmin: true }
-                      : {}
-                  }
+                  state={localStorage.getItem("fromAdmin") === "true" ? { fromAdmin: true } : {}}
                   className={`uppercase ${underlineHover} flex items-center gap-1`}
                 >
                   Profile
                 </Link>
-
                 <button
                   onClick={handleLogout}
                   className={`uppercase text-red-500 hover:text-red-600 ${underlineHover}`}
@@ -660,15 +634,10 @@ export default function ProductDetail() {
               </Link>
             )}
           </nav>
-
-          <button
-            className="md:hidden text-xl"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
+          <button className="md:hidden text-xl" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <FaTimes /> : <FaBars />}
           </button>
         </div>
-
         {menuOpen && (
           <div className="md:hidden px-6 pb-4">
             <div className="block md:hidden relative w-full max-w-md mb-4">
@@ -680,12 +649,9 @@ export default function ProductDetail() {
                   onChange={(e) => {
                     const value = e.target.value;
                     setQuery(value);
-
                     if (value.length > 1) {
                       const filtered = allProducts.filter((product) =>
-                        product.Name?.toLowerCase().includes(
-                          value.toLowerCase()
-                        )
+                        product.Name?.toLowerCase().includes(value.toLowerCase())
                       );
                       setSuggestions(filtered);
                     } else {
@@ -697,7 +663,6 @@ export default function ProductDetail() {
                   }}
                   className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
                 />
-
                 <button
                   onClick={() => handleSearch()}
                   className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
@@ -705,8 +670,6 @@ export default function ProductDetail() {
                   <FaSearch size={18} />
                 </button>
               </div>
-
-              {/* 🔍 Search Suggestions with Image */}
               {suggestions.length > 0 && (
                 <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
                   {suggestions.map((product, index) => (
@@ -714,27 +677,19 @@ export default function ProductDetail() {
                       key={index}
                       className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
                       onClick={() => {
-                        navigate(
-                          `/product/${product.category.toLowerCase()}/${
-                            product._id
-                          }`
-                        );
+                        navigate(`/product/${product.category.toLowerCase()}/${product._id}`);
                         setSuggestions([]);
                         setQuery("");
                       }}
                     >
                       <img
-                        src={
-                          product.Image || "https://via.placeholder.com/40x40"
-                        }
+                        src={product.Image || "https://via.placeholder.com/40x40"}
                         alt={product.Name}
                         className="w-10 h-10 object-cover rounded border"
                       />
                       <div>
                         <p className="text-sm font-semibold">{product.Name}</p>
-                        <p className="text-xs text-gray-500">
-                          {product.category}
-                        </p>
+                        <p className="text-xs text-gray-500">{product.category}</p>
                       </div>
                     </li>
                   ))}
@@ -758,20 +713,12 @@ export default function ProductDetail() {
                   </Link>
                   <Link
                     to="/profile"
-                    state={
-                      localStorage.getItem("fromAdmin") === "true"
-                        ? { fromAdmin: true }
-                        : {}
-                    }
+                    state={localStorage.getItem("fromAdmin") === "true" ? { fromAdmin: true } : {}}
                     className={`uppercase ${underlineHover} flex items-center gap-1`}
                   >
                     Profile
                   </Link>
-
-                  <button
-                    onClick={handleLogout}
-                    className="uppercase text-left text-red-500"
-                  >
+                  <button onClick={handleLogout} className="uppercase text-left text-red-500">
                     Logout
                   </button>
                 </>
@@ -784,16 +731,12 @@ export default function ProductDetail() {
           </div>
         )}
       </header>
-
-      {/* MAIN BODY */}
       <main className="max-w-7xl mx-auto px-4 sm:px-8 py-12 bg-white text-gray-900">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
           <div
             onClick={() => setIsImageModalOpen(true)}
             className={`relative rounded-2xl overflow-hidden shadow-lg cursor-pointer ${
-              type === "marble"
-                ? "border border-gray-200 bg-white p-1 shadow-[0_4px_20px_rgba(218,165,32,0.3)]"
-                : "border"
+              type === "marble" ? "border border-gray-200 bg-white p-1 shadow-[0_4px_20px_rgba(218,165,32,0.3)]" : "border"
             }`}
           >
             <img
@@ -802,8 +745,6 @@ export default function ProductDetail() {
               className="w-full h-[420px] object-cover rounded-xl transition-transform duration-300 hover:scale-105"
             />
           </div>
-
-          {/* Product Details */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1
@@ -813,7 +754,6 @@ export default function ProductDetail() {
               >
                 {product.name}
               </h1>
-
               <button
                 onClick={() => alert("Coming Soon: Visualize in Room!")}
                 className="text-sm px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
@@ -827,13 +767,10 @@ export default function ProductDetail() {
                 >
                   <FaShareAlt size={20} />
                 </button>
-
                 {showShareMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border shadow-lg rounded-md p-3 z-50 space-y-2 text-sm">
                     <a
-                      href={`https://wa.me/?text=${encodeURIComponent(
-                        productURL
-                      )}`}
+                      href={`https://wa.me/?text=${encodeURIComponent(productURL)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-green-600 hover:underline"
@@ -841,9 +778,7 @@ export default function ProductDetail() {
                       <FaWhatsapp /> Share on WhatsApp
                     </a>
                     <a
-                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                        productURL
-                      )}`}
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productURL)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-blue-600 hover:underline"
@@ -851,9 +786,7 @@ export default function ProductDetail() {
                       <FaFacebook /> Share on Facebook
                     </a>
                     <a
-                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                        productURL
-                      )}`}
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(productURL)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-sky-600 hover:underline"
@@ -883,9 +816,7 @@ export default function ProductDetail() {
                   <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold">
                     Ceramic Tile
                   </span>
-                  <span className="text-xs text-gray-500">
-                    (Category: Tiles)
-                  </span>
+                  <span className="text-xs text-gray-500">(Category: Tiles)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
                   <li>
@@ -900,25 +831,30 @@ export default function ProductDetail() {
                   <li>
                     <strong>Color:</strong> {product.color}
                   </li>
-                  <strong>Stock:</strong>{" "}
-                  {product.stock !== "N/A" && parseInt(product.stock) > 10
-                    ? "In Stock"
-                    : product.stock !== "N/A"
-                    ? `Only ${product.stock} left`
-                    : "N/A"}
                   <li>
+                    <strong>Stock:</strong>{" "}
+                    {product.stock !== "N/A" && parseInt(product.stock) > 10
+                      ? "In Stock"
+                      : product.stock !== "N/A"
+                      ? `Only ${product.stock} left`
+                      : "N/A"}
+                  </li>
+                  <li className="flex items-center gap-2">
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
+                    <span className="text-green-700 font-semibold">₹{boxPrice.toFixed(2)}</span>
+                    <span
+                      className="text-blue-500 hover:text-blue-700 cursor-pointer"
+                      title="Price is calculated at ₹28 per square inch."
+                    >
+                      <FaInfoCircle />
                     </span>
                   </li>
                 </ul>
               </div>
             )}
-
             {type === "sinks" && (
               <div
-                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 "
+                className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
                 style={{ animationDuration: "0.8s" }}
               >
                 <div className="flex items-center gap-2">
@@ -950,14 +886,11 @@ export default function ProductDetail() {
                   </li>
                   <li>
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                 </ul>
               </div>
             )}
-
             {type === "bathtubs" && (
               <div
                 className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
@@ -986,14 +919,11 @@ export default function ProductDetail() {
                   </li>
                   <li>
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                 </ul>
               </div>
             )}
-
             {type === "toilets" && (
               <div
                 className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
@@ -1016,17 +946,14 @@ export default function ProductDetail() {
                     <strong>Color:</strong> {product.color || "N/A"}
                   </li>
                   <li>
-                    <strong>Manufacturer:</strong>{" "}
-                    {product.manufacturer || "N/A"}
+                    <strong>Manufacturer:</strong> {product.manufacturer || "N/A"}
                   </li>
                   <li>
                     <strong>Flush Type:</strong> {product.flush || "N/A"}
                   </li>
                   <li>
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                   <li>
                     <strong>Stock:</strong>{" "}
@@ -1039,7 +966,6 @@ export default function ProductDetail() {
                 </ul>
               </div>
             )}
-
             {type === "marble" && (
               <div
                 className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
@@ -1071,14 +997,11 @@ export default function ProductDetail() {
                   </li>
                   <li>
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                 </ul>
               </div>
             )}
-
             {type === "granite" && (
               <div
                 className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4"
@@ -1110,19 +1033,13 @@ export default function ProductDetail() {
                   </li>
                   <li>
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                 </ul>
               </div>
             )}
-
-            {(type === "sinks" ||
-              type === "toilets" ||
-              type === "bathtubs") && (
+            {(type === "sinks" || type === "toilets" || type === "bathtubs") && (
               <>
-                {/* Input Quantity */}
                 <div className="mt-6 space-y-2">
                   <label className="block text-sm font-semibold text-gray-800 flex items-center gap-2">
                     Quantity
@@ -1130,101 +1047,23 @@ export default function ProductDetail() {
                   <input
                     type="number"
                     min="1"
-                    max={
-                      product.stock !== "N/A"
-                        ? parseInt(product.stock)
-                        : undefined
-                    }
+                    max={product.stock !== "N/A" ? parseInt(product.stock) : undefined}
                     value={quantity}
-                    onInput={(e) => {
-                      const val = parseInt(e.target.value);
-                      const stock = parseInt(product.stock);
-
-                      if (isNaN(val) || val < 1) {
-                        setQuantity(1);
-                        setStockError("");
-                      } else if (product.stock !== "N/A" && val > stock) {
-                        setQuantity(stock);
-                        setStockError(`You can shop upto ${stock} item only.`);
-                      } else {
-                        setQuantity(val);
-                        setStockError("");
-                      }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuantity(val === "" ? "" : Math.max(1, parseInt(val) || 1));
+                      setStockError("");
                     }}
-                    className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g. 2"
-                  />
-                  {stockError && (
-                    <p className="text-red-600 text-sm mt-1">{stockError}</p>
-                  )}
-                </div>
-
-                {/* Pricing Summary Section */}
-                <div className="mt-6 grid gap-4">
-                  {/* Total Units */}
-                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                      Total Units
-                    </span>
-                    <span className="text-green-600 font-bold text-sm">
-                      {totalTiles}
-                    </span>
-                  </div>
-
-                  {/* Price Per Unit */}
-                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                    <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                      Price Per Unit
-                    </span>
-                    <span className="text-green-600 font-bold text-sm">
-                      ₹{product.price}
-                    </span>
-                  </div>
-
-                  {/* Final Price */}
-                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                    <span className="text-base font-semibold text-gray-800">
-                      Total Price
-                    </span>
-                    <span className="text-blue-700 text-lg font-bold">
-                      ₹{totalPrice}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Add to Cart Button */}
-                <button
-                  onClick={handleAddToCart}
-                  className="mt-6 w-full py-3 px-6 bg-blue-600 text-white text-base rounded-xl font-semibold shadow-md hover:bg-blue-700 transition"
-                >
-                  🛒 Add to Cart
-                </button>
-              </>
-            )}
-            {(type === "tiles" || type === "marble" || type === "granite") && (
-              <>
-                {/* Input Quantity */}
-                <div className="mt-6 space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    Quantity
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={
-                      product.stock !== "N/A"
-                        ? parseInt(product.stock)
-                        : undefined
-                    }
-                    value={quantity}
                     onInput={(e) => {
                       const val = parseInt(e.target.value);
-                      const stock = parseInt(product.stock);
-
-                      if (isNaN(val) || val < 1) {
+                      const stock = parseInt(product.stock) || Infinity;
+                      if (e.target.value === "") {
+                        setQuantity("");
+                        setStockError("");
+                      } else if (isNaN(val)) {
                         setQuantity(1);
                         setStockError("");
-                      } else if (product.stock !== "N/A" && val > stock) {
+                      } else if (val > stock) {
                         setQuantity(stock);
                         setStockError(`You can shop upto ${stock} items only.`);
                       } else {
@@ -1235,45 +1074,153 @@ export default function ProductDetail() {
                     className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g. 2"
                   />
-                  {stockError && (
-                    <p className="text-red-600 text-sm mt-1">{stockError}</p>
-                  )}
+                  {stockError && <p className="text-red-600 text-sm mt-1">{stockError}</p>}
                 </div>
-
-                {/* Pricing Summary Section */}
                 <div className="mt-6 grid gap-4">
-                  {/* Total Units */}
                   <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
                       Total Units
                     </span>
-                    <span className="text-green-600 font-bold text-sm">
-                      {totalTiles}
-                    </span>
+                    <span className="text-green-600 font-bold text-sm">{totalTiles}</span>
                   </div>
-
-                  {/* Price Per Unit */}
                   <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
-                      Price Per Square Foot
+                      Price Per Unit
                     </span>
-                    <span className="text-green-600 font-bold text-sm">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-600 font-bold text-sm">₹{product.price}</span>
                   </div>
-
-                  {/* Final Price */}
                   <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                     <span className="text-base font-semibold text-gray-800">
                       Total Price
                     </span>
-                    <span className="text-blue-700 text-lg font-bold">
-                      ₹{totalPrice}
-                    </span>
+                    <span className="text-blue-700 text-lg font-bold">₹{totalPrice}</span>
                   </div>
                 </div>
-
-                {/* Add to Cart Button */}
+                <button
+                  onClick={handleAddToCart}
+                  className="mt-6 w-full py-3 px-6 bg-blue-600 text-white text-base rounded-xl font-semibold shadow-md hover:bg-blue-700 transition"
+                >
+                  🛒 Add to Cart
+                </button>
+              </>
+            )}
+            {(type === "tiles" || type === "marble" || type === "granite") && (
+              <>
+                <div className="mt-6 space-y-2">
+                  <label className="block text-sm font-semibold text-gray-800">
+                    Total Box(es)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={product.stock !== "N/A" ? parseInt(product.stock) : undefined}
+                    value={quantity}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setQuantity(val === "" ? "" : Math.max(1, parseInt(val) || 1));
+                      setStockError("");
+                    }}
+                    onInput={(e) => {
+                      const val = parseInt(e.target.value);
+                      const stock = parseInt(product.stock) || Infinity;
+                      if (e.target.value === "") {
+                        setQuantity("");
+                        setStockError("");
+                      } else if (isNaN(val)) {
+                        setQuantity(1);
+                        setStockError("");
+                      } else if (val > stock) {
+                        setQuantity(stock);
+                        setStockError(`You can shop upto ${stock} items only.`);
+                      } else {
+                        setQuantity(val);
+                        setStockError("");
+                      }
+                    }}
+                    className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. 2"
+                  />
+                  {stockError && <p className="text-red-600 text-sm mt-1">{stockError}</p>}
+                </div>
+                {type === "tiles" && (
+                  <div className="mt-6 space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800">
+                      Room Dimensions (Length x Width in ft)
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        name="length"
+                        min="1"
+                        value={roomDimensions.length}
+                        onChange={handleDimensionsChange}
+                        onFocus={(e) => {
+                          if (!user) {
+                            alert("Please log in to use the room dimensions calculator.");
+                            e.target.blur();
+                          }
+                        }}
+                        className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                        placeholder="Length"
+                      />
+                      <span className="text-sm font-semibold mt-2">x</span>
+                      <input
+                        type="number"
+                        name="width"
+                        min="1"
+                        value={roomDimensions.width}
+                        onChange={handleDimensionsChange}
+                        onFocus={(e) => {
+                          if (!user) {
+                            alert("Please log in to use the room dimensions calculator.");
+                            e.target.blur();
+                          }
+                        }}
+                        className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                        placeholder="Width"
+                      />
+                    </div>
+                    {roomDimensions.length && roomDimensions.width && user && (
+                      <div className="mt-2 p-3 bg-gray-100 border border-gray-200 rounded-xl">
+                        <p className="text-sm text-gray-800">
+                          Room Area: {(parseFloat(roomDimensions.length) * parseFloat(roomDimensions.width)).toFixed(2)} sq ft
+                        </p>
+                        <p className="text-sm text-gray-800">
+                          Boxes Needed: {boxesNeeded} (excluding wastage)
+                        </p>
+                        <p className="text-sm text-gray-800">
+                          Estimated Total Price: ₹{calculateTotalPriceFromRoom(roomDimensions.length, roomDimensions.width).toFixed(2)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="mt-6 grid gap-4">
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium">
+                      Total number of Tiles
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">{totalTiles}</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium">
+                      Tiles per Box
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">{tilesPerBox}</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-sm text-gray-600 font-medium">
+                      Price Per Tile
+                    </span>
+                    <span className="text-green-600 font-bold text-sm">₹{pricePerTile.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                    <span className="text-base font-semibold text-gray-800">
+                      Total Price
+                    </span>
+                    <span className="text-blue-700 text-lg font-bold">₹{totalPrice.toFixed(2)}</span>
+                  </div>
+                </div>
                 <button
                   onClick={handleAddToCart}
                   className="mt-6 w-full py-3 px-6 bg-blue-600 text-white text-base rounded-xl font-semibold shadow-md hover:bg-blue-700 transition"
@@ -1283,10 +1230,8 @@ export default function ProductDetail() {
               </>
             )}
           </div>
-        </div>{" "}
-        {/* closes the grid */}
+        </div>
       </main>
-
       {isImageModalOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
@@ -1302,7 +1247,6 @@ export default function ProductDetail() {
             >
               &times;
             </button>
-
             <img
               src={product.image}
               alt={product.name}
@@ -1311,8 +1255,6 @@ export default function ProductDetail() {
           </div>
         </div>
       )}
-
-      {/* FOOTER */}
       <Footer />
       <ToastContainer />
     </div>

@@ -24,7 +24,6 @@ export default function Login() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   //stores captcha value when user solves it
-  //if is it null the log in button will be disabled
   const [captchaValue, setCaptchaValue] = useState(null);
   //tracks the number of failed attempts
   //Count how many times the user failed to log in
