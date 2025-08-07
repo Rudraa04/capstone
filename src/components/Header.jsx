@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { FaSearch, FaShoppingCart, FaBars, FaTimes } from "react-icons/fa";
+import { FaSearch, FaShoppingCart, FaBars, FaTimes, FaMicrophone  } from "react-icons/fa";
 import { auth } from "../firebase/firebase";
+import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -15,7 +16,9 @@ export default function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState('');
   const dropdownRef = useRef();
+  const recognizerRef = useRef(null);
 // this coode is only for the search and enter not suggestions 
   const handleSearch = (input) => { //This is a function that runs when the user tries to search something by pressing enter or icon
     const rawQuery = input || query; //rawQuery will be either the input passed to the function or the current query state
@@ -47,8 +50,8 @@ export default function Header() {
       },
 
       // General categories
-      { keywords: ["interior", "interior tiles"], route: "/interior" },
-      { keywords: ["exterior", "exterior tiles"], route: "/exterior" },
+      { keywords: ["interior", "interior tiles","interior tile"], route: "/interior" },
+      { keywords: ["exterior", "exterior tiles", "exterior tile"], route: "/exterior" },
       {
         keywords: ["sanitary", "sanitaryware"],
         route: "/sanitary",
@@ -64,15 +67,52 @@ export default function Header() {
     ];
 // logic
     for (const entry of routeMap) { // loop through each route entry
-      if (entry.route && entry.keywords.some((k) => trimmedQuery.includes(k))) { //If this entry has a route AND the search query contains at least one of the keywords listed for this route, then go to that page.
-        navigate(entry.route); // navigate to that route 
-        return;
-      }
+      if (entry.route && entry.keywords.some((k) => trimmedQuery === k)) {
+  navigate(entry.route);
+  return;
+}
+
     }
 
     alert("No matching category found.");
     setSuggestions([]);
   };
+  const handleVoiceInput = () => {
+  if (!recognizerRef.current) {
+    setVoiceStatus('Speech recognizer not initialized. Please check your credentials.');
+    return;
+  }
+
+  setVoiceStatus('Listening... Speak now.');
+  recognizerRef.current.startContinuousRecognitionAsync();
+
+  recognizerRef.current.recognized = (s, e) => {
+    if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+      let transcribedText = e.result.text;
+transcribedText = transcribedText
+  .trim()
+  .toLowerCase()
+  .replace(/[^\w\s]/gi, ""); // remove punctuation
+
+setQuery(transcribedText);
+setVoiceStatus(`Transcription: ${transcribedText}`);
+
+// Call the same search logic as regular text input
+handleSearch(transcribedText);
+
+    }
+  };
+
+  recognizerRef.current.canceled = (s, e) => {
+    setVoiceStatus(`Error: ${e.errorDetails}`);
+    recognizerRef.current.stopContinuousRecognitionAsync();
+  };
+
+  recognizerRef.current.sessionStopped = (s, e) => {
+    setVoiceStatus('Voice input stopped.');
+    recognizerRef.current.stopContinuousRecognitionAsync();
+  };
+};
 // if the user logout it will clear memory to secure leaks
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => { // firebase function to track login and logout
@@ -146,7 +186,26 @@ export default function Header() {
       window.removeEventListener("cartUpdated", updateCartCount);
     };
   }, []);
+useEffect(() => {
+  try {
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+      import.meta.env.VITE_AZURE_SPEECH_KEY,
+      import.meta.env.VITE_AZURE_SPEECH_REGION
+    );
+    speechConfig.speechRecognitionLanguage = 'en-US';
+    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+    recognizerRef.current = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+  } catch (error) {
+    console.error('Failed to initialize Speech SDK:', error);
+    setVoiceStatus('Failed to initialize speech recognition. Please check your credentials.');
+  }
 
+  return () => {
+    if (recognizerRef.current) {
+      recognizerRef.current.close();
+    }
+  };
+}, []);
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/login");
@@ -189,6 +248,13 @@ export default function Header() {
               }}
               className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
             />
+            <button
+             onClick={handleVoiceInput}
+             className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+             title="Voice Search"
+            >
+            <FaMicrophone size={18} />
+           </button>
 
             <button
               onClick={() => handleSearch()} // if someone click the search icon call handle search
@@ -228,6 +294,7 @@ export default function Header() {
               ))}
             </ul>
           )}
+          
         </div>
         <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
           <Link to="/" className={`uppercase ${underlineHover}`}>
@@ -380,6 +447,13 @@ export default function Header() {
                 }}
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
+              <button
+  onClick={handleVoiceInput}
+  className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+  title="Voice Search"
+>
+  <FaMicrophone size={18} />
+</button>
 
               <button
                 onClick={() => handleSearch()}
@@ -421,6 +495,7 @@ export default function Header() {
                 ))}
               </ul>
             )}
+            
           </div>
           <div className="flex flex-col gap-4 text-[16px] font-medium text-gray-700">
             <Link to="/" className="uppercase">

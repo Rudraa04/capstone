@@ -9,7 +9,10 @@ import {
   FaBars,
   FaTimes,
   FaArrowLeft,
+  FaMicrophone
 } from "react-icons/fa";
+import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+
 
 const AllProducts = () => {
   const [products, setProducts] = useState([]);
@@ -20,8 +23,9 @@ const AllProducts = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [cartCount, setCartCount] = useState(0);
   const [suggestions, setSuggestions] = useState([]);
-
+  const [voiceStatus, setVoiceStatus] = useState('');
   const dropdownRef = useRef(null);
+  const recognizerRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,6 +70,26 @@ const AllProducts = () => {
     };
     fetchAllProducts();
   }, []);
+useEffect(() => {
+  try {
+    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+      import.meta.env.VITE_AZURE_SPEECH_KEY,
+      import.meta.env.VITE_AZURE_SPEECH_REGION
+    );
+    speechConfig.speechRecognitionLanguage = 'en-US';
+    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+    recognizerRef.current = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+  } catch (error) {
+    console.error('Failed to initialize Speech SDK:', error);
+    setVoiceStatus('Failed to initialize speech recognition. Please check your credentials.');
+  }
+
+  return () => {
+    if (recognizerRef.current) {
+      recognizerRef.current.close();
+    }
+  };
+}, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -125,22 +149,50 @@ const AllProducts = () => {
     ];
 
     for (const entry of routeMap) {
-      if (entry.route && entry.keywords.some((k) => trimmedQuery.includes(k))) {
-        navigate(entry.route);
-        return;
-      }
-
-      if (
-        entry.suggest &&
-        entry.keywords.some((k) => trimmedQuery.includes(k))
-      ) {
-        alert(`You might be looking for: ${entry.suggest.join(", ")}`);
-        return;
+      if (entry.route && entry.keywords.some((k) => trimmedQuery === k)) {
+  navigate(entry.route);
+  return;
       }
     }
 
     alert("No matching category found.");
     setSuggestions([]);
+  };
+   const handleVoiceInput = () => {
+    if (!recognizerRef.current) {
+      setVoiceStatus('Speech recognizer not initialized. Please check your credentials.');
+      return;
+    }
+  
+    setVoiceStatus('Listening... Speak now.');
+    recognizerRef.current.startContinuousRecognitionAsync();
+  
+    recognizerRef.current.recognized = (s, e) => {
+      if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+        let transcribedText = e.result.text;
+  transcribedText = transcribedText
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s]/gi, ""); // remove punctuation
+  
+  setQuery(transcribedText);
+  setVoiceStatus(`Transcription: ${transcribedText}`);
+  
+  // Call the same search logic as regular text input
+  handleSearch(transcribedText);
+  
+      }
+    };
+  
+    recognizerRef.current.canceled = (s, e) => {
+      setVoiceStatus(`Error: ${e.errorDetails}`);
+      recognizerRef.current.stopContinuousRecognitionAsync();
+    };
+  
+    recognizerRef.current.sessionStopped = (s, e) => {
+      setVoiceStatus('Voice input stopped.');
+      recognizerRef.current.stopContinuousRecognitionAsync();
+    };
   };
 
   const filteredProducts =
@@ -194,6 +246,14 @@ const AllProducts = () => {
                 }}
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
+              <button
+  onClick={handleVoiceInput}
+  className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+  title="Voice Search"
+>
+  <FaMicrophone size={18} />
+</button>
+
 
               <button
                 onClick={() => handleSearch()}
