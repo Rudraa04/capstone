@@ -578,7 +578,7 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            {/* 🔍 Search Suggestions with Image */}
+            {/*Search Suggestions with Image */}
             {suggestions.length > 0 && (
               <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
                 {suggestions.map((product, index) => (
