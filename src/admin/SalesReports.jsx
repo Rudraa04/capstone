@@ -40,9 +40,14 @@ export default function SalesReports() {
   });
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // NEW: how far back to show monthly sales in the bottom chart
-  // can be 6, 12, 24, or "all"
+  // how far back for bottom chart
   const [monthsBack, setMonthsBack] = useState(6);
+
+  // 🔹 NEW: range selector for top-3-by-category ("month" | "all")
+  const [topRange, setTopRange] = useState("month");
+
+  // 🔹 Your 6 fixed product categories
+  const CATEGORIES = ["Tiles", "Sinks", "Toilets", "Bathtubs", "Granite", "Marble"];
 
   // INR formatter
   const INR = (n) =>
@@ -58,7 +63,6 @@ export default function SalesReports() {
       .get("http://localhost:5000/api/reports/all-orders")
       .then((res) => {
         const transformed = [];
-
         (res.data || []).forEach((order) => {
           (order.items || []).forEach((item) => {
             transformed.push({
@@ -70,7 +74,6 @@ export default function SalesReports() {
             });
           });
         });
-
         setSalesData(transformed);
       })
       .catch((err) => console.error("Failed to fetch order data:", err))
@@ -160,21 +163,42 @@ export default function SalesReports() {
     }));
   };
 
+  // Top sellers THIS MONTH (by units). Shows top 5.
+  const getTopSellersThisMonth = (limit = 5) => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const agg = new Map(); // key: product name + category
+    salesData.forEach((row) => {
+      const d = new Date(row.date);
+      if (d >= startOfMonth) {
+        const key = `${row.product}__${row.category}`;
+        if (!agg.has(key)) {
+          agg.set(key, {
+            product: row.product,
+            category: row.category,
+            units: 0,
+            revenue: 0,
+          });
+        }
+        const rec = agg.get(key);
+        rec.units += Number(row.unitsSold || 0);
+        rec.revenue += Number(row.revenue || 0);
+      }
+    });
+
+    const list = Array.from(agg.values())
+      .sort((a, b) => b.units - a.units || b.revenue - a.revenue)
+      .slice(0, limit);
+
+    return list;
+  };
+
   // Monthly revenue (configurable range, or all time)
   const getMonthlyRevenueData = () => {
     const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "Jan","Feb","Mar","Apr","May","Jun",
+      "Jul","Aug","Sep","Oct","Nov","Dec",
     ];
 
     // Find earliest date if "all"
@@ -188,14 +212,9 @@ export default function SalesReports() {
     const start =
       monthsBack === "all"
         ? new Date(earliest || end)
-        : new Date(
-            end.getFullYear(),
-            end.getMonth() - (Number(monthsBack) - 1),
-            1
-          );
+        : new Date(end.getFullYear(), end.getMonth() - (Number(monthsBack) - 1), 1);
 
-    // bucket by YYYY-M
-    const bucket = {};
+    const bucket = {}; // YYYY-M -> revenue
     salesData.forEach((row) => {
       const d = new Date(row.date);
       if (d >= start && d <= end) {
@@ -204,24 +223,48 @@ export default function SalesReports() {
       }
     });
 
-    // fill months from start..end
     const out = [];
     const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
-    // guard: if earliest is after end (no data), return empty
     if (cursor > end) return out;
 
     while (cursor <= end) {
       const key = `${cursor.getFullYear()}-${cursor.getMonth() + 1}`;
       out.push({
-        month: `${monthNames[cursor.getMonth()]} ${String(
-          cursor.getFullYear()
-        ).slice(-2)}`,
+        month: `${monthNames[cursor.getMonth()]} ${String(cursor.getFullYear()).slice(-2)}`,
         sales: bucket[key] || 0,
       });
       cursor.setMonth(cursor.getMonth() + 1);
     }
     return out;
   };
+
+  // 🔷 NEW: Top 3 products per category (by units), scoped to this month or all time
+  const getTop3ForCategory = (category) => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const agg = new Map(); // key: product -> {units, revenue}
+    salesData.forEach((row) => {
+      if (row.category !== category) return;
+      if (topRange === "month") {
+        const d = new Date(row.date);
+        if (d < startOfMonth) return;
+      }
+      const key = row.product;
+      if (!agg.has(key)) {
+        agg.set(key, { product: row.product, units: 0, revenue: 0 });
+      }
+      const rec = agg.get(key);
+      rec.units += Number(row.unitsSold || 0);
+      rec.revenue += Number(row.revenue || 0);
+    });
+
+    return Array.from(agg.values())
+      .sort((a, b) => b.units - a.units || b.revenue - a.revenue)
+      .slice(0, 3);
+  };
+
+  const topSellers = getTopSellersThisMonth();
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -234,28 +277,16 @@ export default function SalesReports() {
         </button>
 
         <nav className="space-y-4 text-sm">
-          <button
-            onClick={() => navigate("/admin/slabs")}
-            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
-          >
+          <button onClick={() => navigate("/admin/slabs")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md">
             <FiBox /> Slabs Inventory
           </button>
-          <button
-            onClick={() => navigate("/admin/ceramics")}
-            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
-          >
+          <button onClick={() => navigate("/admin/ceramics")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md">
             <FiPackage /> Ceramics Inventory
           </button>
-          <button
-            onClick={() => navigate("/admin/orders")}
-            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
-          >
+          <button onClick={() => navigate("/admin/orders")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md">
             <FiSettings /> Orders
           </button>
-          <button
-            onClick={() => navigate("/admin/support")}
-            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
-          >
+          <button onClick={() => navigate("/admin/support")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md">
             <FiHeadphones /> Customer Support
           </button>
           <button className="w-full flex items-center gap-3 px-4 py-2 bg-gray-200 rounded-md font-semibold">
@@ -287,12 +318,7 @@ export default function SalesReports() {
           <div className="flex gap-3">
             <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow cursor-pointer hover:bg-blue-700 transition">
               <FiUpload />
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleUploadCSV}
-                className="hidden"
-              />
+              <input type="file" accept=".csv" onChange={handleUploadCSV} className="hidden" />
               Upload CSV
             </label>
             <button
@@ -301,12 +327,10 @@ export default function SalesReports() {
             >
               <FiDownload /> Export CSV
             </button>
-            {/*<button
-              onClick={handleExportPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700 transition"
-            >
+            {/* If you want PDF back, re-enable this */}
+            {/* <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700 transition">
               <FiDownload /> Export PDF
-            </button>*/}
+            </button> */}
           </div>
 
           <div className="flex items-center gap-2">
@@ -319,13 +343,11 @@ export default function SalesReports() {
               className="px-3 py-2 border rounded-md shadow-sm bg-white text-sm"
             >
               <option value="All">All</option>
-              {[...new Set(salesData.map((item) => item.category))].map(
-                (category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                )
-              )}
+              {[...new Set(salesData.map((item) => item.category))].map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -335,22 +357,20 @@ export default function SalesReports() {
           <table className="w-full text-sm text-left text-gray-600">
             <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
               <tr>
-                {["product", "category", "unitsSold", "revenue", "date"].map(
-                  (key) => (
-                    <th
-                      key={key}
-                      onClick={() => handleSort(key)}
-                      className="py-3 px-4 cursor-pointer hover:bg-blue-200 transition"
-                    >
-                      {key.charAt(0).toUpperCase() + key.slice(1)}
-                      {sortConfig.key === key && (
-                        <span className="ml-2">
-                          {sortConfig.direction === "ascending" ? "⬆️" : "⬇️"}
-                        </span>
-                      )}
-                    </th>
-                  )
-                )}
+                {["product", "category", "unitsSold", "revenue", "date"].map((key) => (
+                  <th
+                    key={key}
+                    onClick={() => handleSort(key)}
+                    className="py-3 px-4 cursor-pointer hover:bg-blue-200 transition"
+                  >
+                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                    {sortConfig.key === key && (
+                      <span className="ml-2">
+                        {sortConfig.direction === "ascending" ? "⬆️" : "⬇️"}
+                      </span>
+                    )}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -369,12 +389,8 @@ export default function SalesReports() {
               ) : (
                 sortedData.map((item, idx) => (
                   <tr key={idx} className="border-b">
-                    <td className="py-2 px-4 whitespace-normal">
-                      {item.product}
-                    </td>
-                    <td className="py-2 px-4 whitespace-normal">
-                      {item.category}
-                    </td>
+                    <td className="py-2 px-4 whitespace-normal">{item.product}</td>
+                    <td className="py-2 px-4 whitespace-normal">{item.category}</td>
                     <td className="py-2 px-4">{item.unitsSold}</td>
                     <td className="py-2 px-4">{INR(item.revenue)}</td>
                     <td className="py-2 px-4">{item.date}</td>
@@ -385,53 +401,78 @@ export default function SalesReports() {
           </table>
         </div>
 
+        {/* 🔷 NEW: Top 3 by Category (six cards) */}
+        <div className="bg-white rounded-xl p-6 shadow">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-blue-700">Top Sellers</h2>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Range:</label>
+              <select
+                value={topRange}
+                onChange={(e) => setTopRange(e.target.value)}
+                className="px-3 py-2 border rounded-md bg-white text-sm"
+              >
+                <option value="month">This month</option>
+                <option value="all">All time</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            {CATEGORIES.map((cat) => {
+              const top3 = getTop3ForCategory(cat);
+              return (
+                <div key={cat} className="border rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-blue-700">{cat}</h3>
+                    <span className="text-xs text-gray-500">
+                      {topRange === "month" ? "This month" : "All time"}
+                    </span>
+                  </div>
+
+                  {top3.length === 0 ? (
+                    <div className="text-sm text-gray-500">No sales data.</div>
+                  ) : (
+                    <ol className="space-y-2 list-decimal list-inside">
+                      {top3.map((p, i) => (
+                        <li key={i} className="flex items-center justify-between">
+                          <div className="pr-2 truncate">{p.product}</div>
+                          <div className="text-xs text-gray-600 text-right">
+                            <div>Units: <span className="font-medium">{p.units}</span></div>
+                            <div>Rev: <span className="font-medium">{INR(p.revenue)}</span></div>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Top row: two charts side-by-side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-6">
           <div className="bg-white rounded-xl p-6 shadow min-h-[350px]">
-            <h2 className="text-lg font-bold mb-4 text-blue-700">
-              Revenue Over Time
-            </h2>
-            {/* Revenue Over Time */}
+            <h2 className="text-lg font-bold mb-4 text-blue-700">Revenue Over Time</h2>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={filteredData}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              >
+              <LineChart data={filteredData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  minTickGap={20}
-                  interval="preserveStartEnd"
-                />
+                <XAxis dataKey="date" minTickGap={20} interval="preserveStartEnd" />
                 <YAxis domain={[0, (max) => (Number(max) || 0) + 50]} />
                 <Tooltip formatter={(v) => INR(v)} />
                 <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#2563eb"
-                  strokeWidth={2}
-                  dot
-                />
+                <Line type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} dot />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow min-h-[350px]">
-            <h2 className="text-lg font-bold mb-4 text-blue-700">
-              Units Sold by Category
-            </h2>
+            <h2 className="text-lg font-bold mb-4 text-blue-700">Units Sold by Category</h2>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={getCategoryData()}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              >
+              <BarChart data={getCategoryData()} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="category"
-                  minTickGap={20}
-                  interval="preserveStartEnd"
-                />
+                <XAxis dataKey="category" minTickGap={20} interval="preserveStartEnd" />
                 <YAxis domain={[0, (max) => (Number(max) || 0) + 1]} />
                 <Tooltip />
                 <Legend />
@@ -443,19 +484,13 @@ export default function SalesReports() {
 
         {/* Bottom row: Sales Overview full width */}
         <div className="bg-white rounded-xl p-6 shadow min-h-[350px] mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-blue-700">
-              Sales Overview (Monthly Revenue)
-            </h2>
+          <div className="flex items-center justify_between mb-4">
+            <h2 className="text-lg font-bold text-blue-700">Sales Overview (Monthly Revenue)</h2>
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600">Range:</label>
               <select
                 value={monthsBack}
-                onChange={(e) =>
-                  setMonthsBack(
-                    e.target.value === "all" ? "all" : Number(e.target.value)
-                  )
-                }
+                onChange={(e) => setMonthsBack(e.target.value === "all" ? "all" : Number(e.target.value))}
                 className="px-3 py-2 border rounded-md bg-white text-sm"
               >
                 <option value={6}>Last 6 months</option>
@@ -467,10 +502,7 @@ export default function SalesReports() {
           </div>
 
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={getMonthlyRevenueData()}
-              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-            >
+            <BarChart data={getMonthlyRevenueData()} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />

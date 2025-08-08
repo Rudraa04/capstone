@@ -13,6 +13,10 @@ import {
   FiGlobe,
 } from "react-icons/fi";
 
+// 🔥 Firestore
+import { db } from "../firebase/firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+
 /* ---------- Small helper: hover popover card with breakdown ---------- */
 function HoverBreakdownCard({ title, value, breakdown, formatter }) {
   const [open, setOpen] = React.useState(false);
@@ -67,9 +71,15 @@ export default function AdminHome() {
   const [byCategory, setByCategory] = useState({ revenue: {}, units: {} });
   const [notifications, setNotifications] = useState([]);
 
-  // NEW: low stock state
+  // Low stock
   const [lowStock, setLowStock] = useState({ items: [], count: 0 });
   const [lowLoading, setLowLoading] = useState(true);
+
+  // 🔶 Monthly Target (shared in Firestore)
+  const [monthlyTarget, setMonthlyTarget] = useState(100000); // default if none set
+  const [targetLoading, setTargetLoading] = useState(true);
+  const [savingTarget, setSavingTarget] = useState(false);
+  const [mtdRevenue, setMtdRevenue] = useState(0);
 
   const INR = (n) =>
     new Intl.NumberFormat("en-IN", {
@@ -89,6 +99,45 @@ export default function AdminHome() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  /* 🔶 Fetch monthly target from Firestore (shared for all admins) */
+  useEffect(() => {
+    const fetchTarget = async () => {
+      try {
+        const ref = doc(db, "adminSettings", "dashboard");
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const val = Number(snap.data()?.monthlyTarget || 0);
+          if (val > 0) setMonthlyTarget(val);
+        }
+      } catch (e) {
+        console.error("Failed to load monthly target:", e);
+      } finally {
+        setTargetLoading(false);
+      }
+    };
+    fetchTarget();
+  }, []);
+
+  const saveTarget = async () => {
+    try {
+      setSavingTarget(true);
+      const ref = doc(db, "adminSettings", "dashboard");
+      await setDoc(
+        ref,
+        {
+          monthlyTarget: Number(monthlyTarget) || 0,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (e) {
+      console.error("Failed to save monthly target:", e);
+      alert("Failed to save target. Check console for details.");
+    } finally {
+      setSavingTarget(false);
+    }
+  };
+
   /* Fetch orders + low stock and build everything */
   useEffect(() => {
     let mounted = true;
@@ -97,7 +146,9 @@ export default function AdminHome() {
       try {
         const [ordersRes, lowRes] = await Promise.all([
           axios.get("http://localhost:5000/api/reports/all-orders"),
-          axios.get("http://localhost:5000/api/inventory/low-stock").catch(() => ({ data: { items: [], count: 0 } })), // fallback if route not ready
+          axios
+            .get("http://localhost:5000/api/inventory/low-stock")
+            .catch(() => ({ data: { items: [], count: 0 } })), // fallback if route not ready
         ]);
 
         const orders = Array.isArray(ordersRes.data) ? ordersRes.data : [];
@@ -150,9 +201,28 @@ export default function AdminHome() {
           now.getMonth(),
           now.getDate()
         );
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
         const ordersToday = orders.filter(
           (o) => new Date(o.createdAt) >= startOfToday
         ).length;
+
+        // 🔶 Month-To-Date Revenue (for target progress)
+        const mtd = orders.reduce((sum, o) => {
+          const d = new Date(o.createdAt);
+          if (d >= startOfMonth) {
+            const r =
+              o.totalAmount != null
+                ? Number(o.totalAmount)
+                : (o.items || []).reduce(
+                    (s, it) =>
+                      s + Number(it.quantity || 0) * Number(it.price || 0),
+                    0
+                  );
+            return sum + r;
+          }
+          return sum;
+        }, 0);
 
         if (!mounted) return;
 
@@ -164,6 +234,7 @@ export default function AdminHome() {
         });
         setByCategory({ revenue: revenueByCat, units: unitsByCat });
         setRecentOrders(recent);
+        setMtdRevenue(mtd);
 
         // ---- Low stock ----
         setLowStock({ items: low, count: low.length });
@@ -182,32 +253,42 @@ export default function AdminHome() {
           notifs.push({
             type: "new",
             title: "New order placed",
-            detail: `${latest.id} by ${latest.customer} — ${INR(latest.amount)}`,
+            detail: `${latest.id} by ${latest.customer} — ${INR(
+              latest.amount
+            )}`,
           });
         }
         if (pendingCount > 0) {
           notifs.push({
             type: "warn",
             title: "Pending orders",
-            detail: `${pendingCount} order${pendingCount > 1 ? "s" : ""} awaiting action`,
+            detail: `${pendingCount} order${
+              pendingCount > 1 ? "s" : ""
+            } awaiting action`,
           });
         }
         if (cancelledCount > 0) {
           notifs.push({
             type: "warn",
             title: "Cancelled orders",
-            detail: `${cancelledCount} order${cancelledCount > 1 ? "s" : ""} cancelled today`,
+            detail: `${cancelledCount} order${
+              cancelledCount > 1 ? "s" : ""
+            } cancelled today`,
           });
         }
         if (low.length > 0) {
-          const preview = low.slice(0, 3).map(i => `${i.name} (${i.stock}/${i.reorderLevel})`);
+          const preview = low
+            .slice(0, 3)
+            .map((i) => `${i.name} (${i.stock}/${i.reorderLevel})`);
           notifs.push({
             type: "warn",
             title: "Low stock alert",
-            detail: low.length <= 3 ? preview.join(", ") : `${preview.join(", ")} and ${low.length - 3} more`,
+            detail:
+              low.length <= 3
+                ? preview.join(", ")
+                : `${preview.join(", ")} and ${low.length - 3} more`,
           });
         }
-
         setNotifications(notifs);
       } catch (e) {
         console.error("Dashboard fetch failed:", e);
@@ -220,13 +301,19 @@ export default function AdminHome() {
     };
 
     fetchAll();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("isAdminLoggedIn");
     navigate("/login");
   };
+
+  // Progress calc
+  const progress =
+    monthlyTarget > 0 ? Math.min(100, Math.round((mtdRevenue / monthlyTarget) * 100)) : 0;
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -238,19 +325,34 @@ export default function AdminHome() {
           </h2>
         </div>
         <nav className="space-y-4 text-sm">
-          <button onClick={() => navigate("/admin/slabs")} className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md">
+          <button
+            onClick={() => navigate("/admin/slabs")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
             <FiBox /> Slabs Inventory
           </button>
-          <button onClick={() => navigate("/admin/ceramics")} className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md">
+          <button
+            onClick={() => navigate("/admin/ceramics")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
             <FiPackage /> Ceramics Inventory
           </button>
-          <button onClick={() => navigate("/admin/orders")} className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md">
+          <button
+            onClick={() => navigate("/admin/orders")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
             <FiSettings /> Orders
           </button>
-          <button onClick={() => navigate("/admin/support")} className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md">
+          <button
+            onClick={() => navigate("/admin/support")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
             <FiHeadphones /> Customer Support
           </button>
-          <button onClick={() => navigate("/admin/reports")} className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md">
+          <button
+            onClick={() => navigate("/admin/reports")}
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
+          >
             <FiTrendingUp /> Sales & Reports
           </button>
 
@@ -395,7 +497,63 @@ export default function AdminHome() {
           </table>
         </div>
 
-        {/* Low Stock Panel (replaces the old Sales Overview chart) */}
+        {/* 🔷 Monthly Target Progress */}
+        <div className="bg-white p-6 rounded-xl shadow-md mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-blue-700">Monthly Target</h2>
+            <div className="text-sm text-gray-600">
+              Period: {new Date().toLocaleString("default", { month: "long" })} {new Date().getFullYear()}
+            </div>
+          </div>
+
+          {targetLoading ? (
+            <div className="py-4 text-gray-500 text-sm">Loading target…</div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-slate-50 p-4 rounded-lg border">
+                  <div className="text-xs text-gray-500">MTD Revenue</div>
+                  <div className="text-lg font-semibold">{INR(mtdRevenue)}</div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-lg border">
+                  <div className="text-xs text-gray-500">Target</div>
+                  <div className="text-lg font-semibold">{INR(monthlyTarget)}</div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-lg border">
+                  <div className="text-xs text-gray-500">Progress</div>
+                  <div className="text-lg font-semibold">{progress}%</div>
+                </div>
+              </div>
+
+              <div className="w-full h-4 bg-slate-200 rounded-full overflow-hidden mb-4">
+                <div
+                  className={`h-full rounded-full ${progress < 50 ? "bg-red-400" : progress < 80 ? "bg-yellow-400" : "bg-green-500"}`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={monthlyTarget}
+                  onChange={(e) => setMonthlyTarget(Number(e.target.value))}
+                  className="px-3 py-2 border rounded-md w-48"
+                  placeholder="Set monthly target (INR)"
+                />
+                <button
+                  onClick={saveTarget}
+                  disabled={savingTarget}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {savingTarget ? "Saving…" : "Save Target"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Low Stock Panel */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-blue-700">
