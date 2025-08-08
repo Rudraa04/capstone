@@ -45,7 +45,7 @@ export default function ProductDetail() {
   const [cartCount, setCartCount] = useState(0);
 
   const [customSize, setCustomSize] = useState("12x12");
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState("1");
   const [pricePerTile, setPricePerTile] = useState(0);
 
   const [tileData, setTileData] = useState(null);

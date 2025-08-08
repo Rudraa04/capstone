@@ -21,6 +21,8 @@ import Exterior from "./pages/exterior.jsx";
 import Sanitary from "./pages/sanitary.jsx";
 import ProductDetail from "./pages/ProductDetail";
 import AllProducts from "./pages/allProduct.jsx";
+import TileCalculator from "./pages/TileCalculator";
+
 
 // Admin pages
 import AdminHome from "./pages/adminHome.jsx";
@@ -300,6 +302,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/tile-calculator"
+          element={
+          <ProtectedRoute userRole={userRole} allowedRoles={["customer", "admin"]}>
+          <TileCalculator />
+          </ProtectedRoute>
+         }
+        />
+
       </Routes>
     </BrowserRouter>
   );

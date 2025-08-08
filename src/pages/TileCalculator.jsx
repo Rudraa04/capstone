@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const TileCalculator = ({ onClose }) => {
   const [tileSize, setTileSize] = useState('48x24');
   const [roomLength, setRoomLength] = useState('');
   const [roomWidth, setRoomWidth] = useState('');
   const [boxesNeeded, setBoxesNeeded] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const tileSizes = {
     '48x24': 2,
@@ -13,8 +15,24 @@ const TileCalculator = ({ onClose }) => {
     '12x18': 6
   };
 
+  // ✅ Check Firebase auth state
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
+    });
+
+    return () => unsubscribe(); // Clean up listener
+  }, []);
+
   const calculateBoxes = (e) => {
     e.preventDefault();
+
+    // ✅ Block if user not logged in
+    if (!isLoggedIn) {
+      alert("You have to signup/login to use this feature.");
+      return;
+    }
 
     const length = parseFloat(roomLength);
     const width = parseFloat(roomWidth);
@@ -110,13 +128,13 @@ const TileCalculator = ({ onClose }) => {
         </div>
       )}
 
-      {/*}
-      <button
+      {/* Optional Close Button */}
+      {/* <button
         onClick={onClose}
         className="mt-6 w-full py-2 bg-red-500 text-white rounded hover:bg-red-600"
       >
         Close
-      </button>*/}
+      </button> */}
     </div>
   );
 };
