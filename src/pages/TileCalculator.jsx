@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const TileCalculator = () => {
+const TileCalculator = ({ onClose }) => {
   const [tileSize, setTileSize] = useState('48x24');
   const [roomLength, setRoomLength] = useState('');
   const [roomWidth, setRoomWidth] = useState('');
@@ -57,6 +57,7 @@ const TileCalculator = () => {
             <option value="12x18">12x18 inches (6 tiles per box)</option>
           </select>
         </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Room Length (ft)</label>
@@ -85,6 +86,7 @@ const TileCalculator = () => {
             />
           </div>
         </div>
+
         <div className="flex space-x-4">
           <button
             type="submit"
@@ -95,17 +97,26 @@ const TileCalculator = () => {
           <button
             type="button"
             onClick={resetForm}
-            className="w-full bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            className="w-full bg-gray-400 text-white p-2 rounded-md hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             Reset
           </button>
         </div>
       </form>
+
       {boxesNeeded !== null && (
         <div className="mt-6 text-center text-lg font-semibold text-gray-800">
           You need {boxesNeeded} boxes (excluding wastage).
         </div>
       )}
+
+      {/*}
+      <button
+        onClick={onClose}
+        className="mt-6 w-full py-2 bg-red-500 text-white rounded hover:bg-red-600"
+      >
+        Close
+      </button>*/}
     </div>
   );
 };

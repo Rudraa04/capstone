@@ -14,7 +14,7 @@ import {
   FaWhatsapp,
   FaLink,
   FaEye,
-  FaMicrophone
+  FaMicrophone,
 } from "react-icons/fa";
 import Footer from "../components/Footer";
 import axios from "axios";
@@ -22,7 +22,8 @@ import { useLocation } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "animate.css"; // For animation effects
-import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
+import TileCalculator from "./TileCalculator";
 
 export default function ProductDetail() {
   const { type, id } = useParams();
@@ -61,7 +62,6 @@ export default function ProductDetail() {
   const fromTab = location.state?.fromTab;
   const recognizerRef = useRef(null);
   const [voiceStatus, setVoiceStatus] = useState("");
-
 
   const [stockError, setStockError] = useState("");
 
@@ -200,26 +200,30 @@ export default function ProductDetail() {
     }
   }, [tileData]);
   useEffect(() => {
-  try {
-    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
-      import.meta.env.VITE_AZURE_SPEECH_KEY,
-      import.meta.env.VITE_AZURE_SPEECH_REGION
-    );
-    speechConfig.speechRecognitionLanguage = 'en-US';
-    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-    recognizerRef.current = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-  } catch (error) {
-    console.error('Failed to initialize Speech SDK:', error);
-    setVoiceStatus('Failed to initialize speech recognition. Please check your credentials.');
-  }
-
-  return () => {
-    if (recognizerRef.current) {
-      recognizerRef.current.close();
+    try {
+      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+        import.meta.env.VITE_AZURE_SPEECH_KEY,
+        import.meta.env.VITE_AZURE_SPEECH_REGION
+      );
+      speechConfig.speechRecognitionLanguage = "en-US";
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      recognizerRef.current = new SpeechSDK.SpeechRecognizer(
+        speechConfig,
+        audioConfig
+      );
+    } catch (error) {
+      console.error("Failed to initialize Speech SDK:", error);
+      setVoiceStatus(
+        "Failed to initialize speech recognition. Please check your credentials."
+      );
     }
-  };
-}, []);
 
+    return () => {
+      if (recognizerRef.current) {
+        recognizerRef.current.close();
+      }
+    };
+  }, []);
 
   const handleSearch = (input) => {
     const rawQuery = input || query;
@@ -287,39 +291,40 @@ export default function ProductDetail() {
     setSuggestions([]);
   };
   const handleVoiceInput = () => {
-  if (!recognizerRef.current) {
-    setVoiceStatus('Speech recognizer not initialized. Please check your credentials.');
-    return;
-  }
-
-  setVoiceStatus('Listening... Speak now.');
-  recognizerRef.current.startContinuousRecognitionAsync();
-
-  recognizerRef.current.recognized = (s, e) => {
-    if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-      let transcribedText = e.result.text;
-      transcribedText = transcribedText
-        .trim()
-        .toLowerCase()
-        .replace(/[^\w\s]/gi, ""); // remove punctuation
-
-      setQuery(transcribedText);
-      setVoiceStatus(`Transcription: ${transcribedText}`);
-      handleSearch(transcribedText);
+    if (!recognizerRef.current) {
+      setVoiceStatus(
+        "Speech recognizer not initialized. Please check your credentials."
+      );
+      return;
     }
-  };
 
-  recognizerRef.current.canceled = (s, e) => {
-    setVoiceStatus(`Error: ${e.errorDetails}`);
-    recognizerRef.current.stopContinuousRecognitionAsync();
-  };
+    setVoiceStatus("Listening... Speak now.");
+    recognizerRef.current.startContinuousRecognitionAsync();
 
-  recognizerRef.current.sessionStopped = (s, e) => {
-    setVoiceStatus('Voice input stopped.');
-    recognizerRef.current.stopContinuousRecognitionAsync();
-  };
-};
+    recognizerRef.current.recognized = (s, e) => {
+      if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+        let transcribedText = e.result.text;
+        transcribedText = transcribedText
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w\s]/gi, ""); // remove punctuation
 
+        setQuery(transcribedText);
+        setVoiceStatus(`Transcription: ${transcribedText}`);
+        handleSearch(transcribedText);
+      }
+    };
+
+    recognizerRef.current.canceled = (s, e) => {
+      setVoiceStatus(`Error: ${e.errorDetails}`);
+      recognizerRef.current.stopContinuousRecognitionAsync();
+    };
+
+    recognizerRef.current.sessionStopped = (s, e) => {
+      setVoiceStatus("Voice input stopped.");
+      recognizerRef.current.stopContinuousRecognitionAsync();
+    };
+  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -564,12 +569,12 @@ export default function ProductDetail() {
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
               <button
-  onClick={handleVoiceInput}
-  className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
-  title="Voice Search"
->
-  <FaMicrophone size={18} />
-</button>
+                onClick={handleVoiceInput}
+                className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+                title="Voice Search"
+              >
+                <FaMicrophone size={18} />
+              </button>
               <button
                 onClick={() => handleSearch()}
                 className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
@@ -1271,36 +1276,47 @@ export default function ProductDetail() {
               <>
                 {/* Input Quantity */}
                 <div className="mt-6 space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 flex items-center gap-2">
+                  <label className="block text-sm font-semibold text-gray-800">
                     Quantity
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={
-                      product.stock !== "N/A"
-                        ? parseInt(product.stock)
-                        : undefined
-                    }
-                    value={quantity}
-                    onInput={(e) => {
-                      const val = parseInt(e.target.value);
-                      const stock = parseInt(product.stock);
-
-                      if (isNaN(val) || val < 1) {
-                        setQuantity(1);
-                        setStockError("");
-                      } else if (product.stock !== "N/A" && val > stock) {
-                        setQuantity(stock);
-                        setStockError(`You can shop upto ${stock} items only.`);
-                      } else {
-                        setQuantity(val);
-                        setStockError("");
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="number"
+                      min="1"
+                      max={
+                        product.stock !== "N/A"
+                          ? parseInt(product.stock)
+                          : undefined
                       }
-                    }}
-                    className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g. 2"
-                  />
+                      value={quantity}
+                      onInput={(e) => {
+                        const val = parseInt(e.target.value);
+                        const stock = parseInt(product.stock);
+                        if (isNaN(val) || val < 1) {
+                          setQuantity(1);
+                          setStockError("");
+                        } else if (product.stock !== "N/A" && val > stock) {
+                          setQuantity(stock);
+                          setStockError(
+                            `You can shop up to ${stock} items only.`
+                          );
+                        } else {
+                          setQuantity(val);
+                          setStockError("");
+                        }
+                      }}
+                      className="w-32 border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                      placeholder="e.g. 2"
+                    />
+
+                    <button
+                      onClick={() => setShowCalculator(true)}
+                      className="text-md bg-blue-100 text-blue-800 px-3 py-1 rounded-xl shadow hover:bg-blue-200 transition whitespace-nowrap"
+                    >
+                      Tile Calculator
+                    </button>
+                  </div>
+
                   {stockError && (
                     <p className="text-red-600 text-sm mt-1">{stockError}</p>
                   )}
@@ -1374,6 +1390,25 @@ export default function ProductDetail() {
               alt={product.name}
               className="w-full h-auto max-h-[90vh] object-contain rounded-lg border-4 border-white shadow-2xl"
             />
+          </div>
+        </div>
+      )}
+      {showCalculator && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setShowCalculator(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-3xl w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-red-500 text-xl font-bold"
+              onClick={() => setShowCalculator(false)}
+            >
+              &times;
+            </button>
+            <TileCalculator />
           </div>
         </div>
       )}

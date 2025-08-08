@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import cors from 'cors'; //security feature
 import productRoutes from './routes/productRoutes.js';  // Handles all product-related APIs
 import squareRestRoutes from "./routes/squareRestRoutes.js"; // Import squareRestRoutes
+import reportRoute from './routes/reportRoute.js';
 
 // Load environment variables
 dotenv.config();
@@ -11,11 +12,13 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+
 app.use(cors()); // Allow requests from different origins (frontend/backend communication) 
 app.use(express.json()); // Allow Express to parse JSON bodies in requests
 
 // API Routes (all product APIs will be prefixed with /api/products)
 app.use("/", productRoutes);
+app.use('/api/reports', reportRoute); //route for reports
 
 // to fetch mongo string from env
 const MONGO_URI = process.env.MONGO_URI;
