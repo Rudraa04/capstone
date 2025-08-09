@@ -1,9 +1,19 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { FaSearch, FaShoppingCart, FaBars, FaTimes, FaMicrophone  } from "react-icons/fa";
+import {
+  FaSearch,
+  FaShoppingCart,
+  FaBars,
+  FaTimes,
+  FaMicrophone,
+} from "react-icons/fa";
 import { auth } from "../firebase/firebase";
-import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+
+import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -16,20 +26,21 @@ export default function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [voiceStatus, setVoiceStatus] = useState('');
+  const [voiceStatus, setVoiceStatus] = useState("");
   const dropdownRef = useRef();
   const recognizerRef = useRef(null);
-// this coode is only for the search and enter not suggestions 
-  const handleSearch = (input) => { //This is a function that runs when the user tries to search something by pressing enter or icon
+  // this coode is only for the search and enter not suggestions
+  const handleSearch = (input) => {
+    //This is a function that runs when the user tries to search something by pressing enter or icon
     const rawQuery = input || query; //rawQuery will be either the input passed to the function or the current query state
-    const trimmedQuery = rawQuery // 
+    const trimmedQuery = rawQuery //
       .trim() //removes extar spaces
       .toLowerCase() // makes it lowercase for easier matching
       .replace(/[^\w\s]/gi, ""); //removes special charecter. any character that is NOT a letter, number, underscore, or space
     const routeMap = [
       // Specific phrases FIRST
       {
-        keywords: ["exterior wall tiles", "exterior wall"], // keywords 
+        keywords: ["exterior wall tiles", "exterior wall"], // keywords
         route: "/exterior?sub=Exterior%20Wall%20Tiles", // routes
       },
       {
@@ -50,8 +61,14 @@ export default function Header() {
       },
 
       // General categories
-      { keywords: ["interior", "interior tiles","interior tile"], route: "/interior" },
-      { keywords: ["exterior", "exterior tiles", "exterior tile"], route: "/exterior" },
+      {
+        keywords: ["interior", "interior tiles", "interior tile"],
+        route: "/interior",
+      },
+      {
+        keywords: ["exterior", "exterior tiles", "exterior tile"],
+        route: "/exterior",
+      },
       {
         keywords: ["sanitary", "sanitaryware"],
         route: "/sanitary",
@@ -65,57 +82,63 @@ export default function Header() {
       { keywords: ["marble", "marbles"], route: "/slabs?type=marble" },
       { keywords: ["granite", "granites"], route: "/slabs?type=granite" },
     ];
-// logic
-    for (const entry of routeMap) { // loop through each route entry
+    // logic
+    for (const entry of routeMap) {
+      // loop through each route entry
       if (entry.route && entry.keywords.some((k) => trimmedQuery === k)) {
-  navigate(entry.route);
-  return;
-}
-
+        navigate(entry.route);
+        return;
+      }
     }
 
-    alert("No matching category found.");
+    toast.error("No matching category found.", {
+      position: "top-center",
+      autoClose: 3000,
+    });
+
     setSuggestions([]);
   };
   const handleVoiceInput = () => {
-  if (!recognizerRef.current) {
-    setVoiceStatus('Speech recognizer not initialized. Please check your credentials.');
-    return;
-  }
-
-  setVoiceStatus('Listening... Speak now.');
-  recognizerRef.current.startContinuousRecognitionAsync();
-
-  recognizerRef.current.recognized = (s, e) => {
-    if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-      let transcribedText = e.result.text;
-transcribedText = transcribedText
-  .trim()
-  .toLowerCase()
-  .replace(/[^\w\s]/gi, ""); // remove punctuation
-
-setQuery(transcribedText);
-setVoiceStatus(`Transcription: ${transcribedText}`);
-
-// Call the same search logic as regular text input
-handleSearch(transcribedText);
-
+    if (!recognizerRef.current) {
+      setVoiceStatus(
+        "Speech recognizer not initialized. Please check your credentials."
+      );
+      return;
     }
-  };
 
-  recognizerRef.current.canceled = (s, e) => {
-    setVoiceStatus(`Error: ${e.errorDetails}`);
-    recognizerRef.current.stopContinuousRecognitionAsync();
-  };
+    setVoiceStatus("Listening... Speak now.");
+    recognizerRef.current.startContinuousRecognitionAsync();
 
-  recognizerRef.current.sessionStopped = (s, e) => {
-    setVoiceStatus('Voice input stopped.');
-    recognizerRef.current.stopContinuousRecognitionAsync();
+    recognizerRef.current.recognized = (s, e) => {
+      if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+        let transcribedText = e.result.text;
+        transcribedText = transcribedText
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w\s]/gi, ""); // remove punctuation
+
+        setQuery(transcribedText);
+        setVoiceStatus(`Transcription: ${transcribedText}`);
+
+        // Call the same search logic as regular text input
+        handleSearch(transcribedText);
+      }
+    };
+
+    recognizerRef.current.canceled = (s, e) => {
+      setVoiceStatus(`Error: ${e.errorDetails}`);
+      recognizerRef.current.stopContinuousRecognitionAsync();
+    };
+
+    recognizerRef.current.sessionStopped = (s, e) => {
+      setVoiceStatus("Voice input stopped.");
+      recognizerRef.current.stopContinuousRecognitionAsync();
+    };
   };
-};
-// if the user logout it will clear memory to secure leaks
+  // if the user logout it will clear memory to secure leaks
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => { // firebase function to track login and logout
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      // firebase function to track login and logout
       setUser(currentUser);
     });
     return () => unsubscribe(); // cleans the listener when component is destroyed.
@@ -130,10 +153,12 @@ handleSearch(transcribedText);
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
   useEffect(() => {
-    const fetchAllCategories = async () => { // 
-      try { //sends get request 
+    const fetchAllCategories = async () => {
+      //
+      try {
+        //sends get request
         const tilesRes = await fetch(
           "http://localhost:5000/api/products/tiles"
         );
@@ -150,7 +175,7 @@ handleSearch(transcribedText);
           "http://localhost:5000/api/products/toilets"
         );
 
-        const tiles = await tilesRes.json(); // converts it into json 
+        const tiles = await tilesRes.json(); // converts it into json
         const sinks = await sinksRes.json();
         const granite = await graniteRes.json();
         const marble = await marbleRes.json();
@@ -181,34 +206,46 @@ handleSearch(transcribedText);
 
     updateCartCount(); // initial
 
-    window.addEventListener("cartUpdated", updateCartCount); //window dispatch event 
+    window.addEventListener("cartUpdated", updateCartCount); //window dispatch event
     return () => {
       window.removeEventListener("cartUpdated", updateCartCount);
     };
   }, []);
-useEffect(() => {
-  try {
-    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
-      import.meta.env.VITE_AZURE_SPEECH_KEY,
-      import.meta.env.VITE_AZURE_SPEECH_REGION
-    );
-    speechConfig.speechRecognitionLanguage = 'en-US';
-    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-    recognizerRef.current = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-  } catch (error) {
-    console.error('Failed to initialize Speech SDK:', error);
-    setVoiceStatus('Failed to initialize speech recognition. Please check your credentials.');
-  }
-
-  return () => {
-    if (recognizerRef.current) {
-      recognizerRef.current.close();
+  useEffect(() => {
+    try {
+      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+        import.meta.env.VITE_AZURE_SPEECH_KEY,
+        import.meta.env.VITE_AZURE_SPEECH_REGION
+      );
+      speechConfig.speechRecognitionLanguage = "en-US";
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      recognizerRef.current = new SpeechSDK.SpeechRecognizer(
+        speechConfig,
+        audioConfig
+      );
+    } catch (error) {
+      console.error("Failed to initialize Speech SDK:", error);
+      setVoiceStatus(
+        "Failed to initialize speech recognition. Please check your credentials."
+      );
     }
-  };
-}, []);
+
+    return () => {
+      if (recognizerRef.current) {
+        recognizerRef.current.close();
+      }
+    };
+  }, []);
   const handleLogout = async () => {
     await signOut(auth);
-    navigate("/login");
+    toast.success("Logged out successfully!", {
+      position: "bottom-right",
+      autoClose: 1000,
+    });
+
+    setTimeout(() => {
+      navigate("/login");
+    }, 1000); // Wait for toast to display before redirect
   };
 
   const underlineHover =
@@ -231,14 +268,18 @@ useEffect(() => {
               placeholder="Search products..."
               value={query}
               onChange={(e) => {
-                const value = e.target.value; // as user type stores the value in query state 
+                const value = e.target.value; // as user type stores the value in query state
                 setQuery(value);
-//logic for suggestion
-                if (value.length > 1) { // it the input has atleast 2 value 
-                  const filtered = allProducts.filter((product) => // filter all product
-                    product.Name?.toLowerCase().includes(value.toLowerCase()) // ? is for cehcking 
+                //logic for suggestion
+                if (value.length > 1) {
+                  // it the input has atleast 2 value
+                  const filtered = allProducts.filter(
+                    (
+                      product // filter all product
+                    ) =>
+                      product.Name?.toLowerCase().includes(value.toLowerCase()) // ? is for cehcking
                   );
-                  setSuggestions(filtered); // store matching item in suggestion array 
+                  setSuggestions(filtered); // store matching item in suggestion array
                 } else {
                   setSuggestions([]);
                 }
@@ -249,12 +290,12 @@ useEffect(() => {
               className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
             />
             <button
-             onClick={handleVoiceInput}
-             className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
-             title="Voice Search"
+              onClick={handleVoiceInput}
+              className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+              title="Voice Search"
             >
-            <FaMicrophone size={18} />
-           </button>
+              <FaMicrophone size={18} />
+            </button>
 
             <button
               onClick={() => handleSearch()} // if someone click the search icon call handle search
@@ -265,36 +306,43 @@ useEffect(() => {
           </div>
 
           {/* Search Suggestions with Image */}
-          {suggestions.length > 0 && ( // only show dropdown if suggestions 
+          {suggestions.length > 0 && ( // only show dropdown if suggestions
             <ul className="absolute left-0 top-full mt-2 bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50">
-              {suggestions.map((product, index) => ( // for each matching product 
-                <li
-                  key={index}
-                  className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    navigate(
-                      `/product/${product.category.toLowerCase()}/${ // if click takes to the page 
-                        product._id
-                      }`
-                    );
-                    setSuggestions([]); // after clicking clears suggestion list 
-                    setQuery("");
-                  }}
-                >
-                  <img
-                    src={product.Image || "https://via.placeholder.com/40x40"} // shows image preview 
-                    alt={product.Name}
-                    className="w-10 h-10 object-cover rounded border"
-                  />
-                  <div>
-                    <p className="text-sm font-semibold">{product.Name}</p>
-                    <p className="text-xs text-gray-500">{product.category}</p>
-                  </div>
-                </li>
-              ))}
+              {suggestions.map(
+                (
+                  product,
+                  index // for each matching product
+                ) => (
+                  <li
+                    key={index}
+                    className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      navigate(
+                        `/product/${product.category.toLowerCase()}/${
+                          // if click takes to the page
+                          product._id
+                        }`
+                      );
+                      setSuggestions([]); // after clicking clears suggestion list
+                      setQuery("");
+                    }}
+                  >
+                    <img
+                      src={product.Image || "https://via.placeholder.com/40x40"} // shows image preview
+                      alt={product.Name}
+                      className="w-10 h-10 object-cover rounded border"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold">{product.Name}</p>
+                      <p className="text-xs text-gray-500">
+                        {product.category}
+                      </p>
+                    </div>
+                  </li>
+                )
+              )}
             </ul>
           )}
-          
         </div>
         <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
           <Link to="/" className={`uppercase ${underlineHover}`}>
@@ -448,12 +496,12 @@ useEffect(() => {
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
               <button
-  onClick={handleVoiceInput}
-  className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
-  title="Voice Search"
->
-  <FaMicrophone size={18} />
-</button>
+                onClick={handleVoiceInput}
+                className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+                title="Voice Search"
+              >
+                <FaMicrophone size={18} />
+              </button>
 
               <button
                 onClick={() => handleSearch()}
@@ -495,7 +543,6 @@ useEffect(() => {
                 ))}
               </ul>
             )}
-            
           </div>
           <div className="flex flex-col gap-4 text-[16px] font-medium text-gray-700">
             <Link to="/" className="uppercase">
@@ -538,6 +585,7 @@ useEffect(() => {
           </div>
         </div>
       )}
+      <ToastContainer />
     </header>
   );
 }

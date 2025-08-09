@@ -54,11 +54,11 @@ export default function OrderManagement() {
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <button
-  onClick={() => navigate("/admin")}
-  className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
->
-  <FiHome /> Admin Panel
-</button>
+          onClick={() => navigate("/admin")}
+          className="text-2xl font-bold text-blue-700 flex items-center gap-2 hover:text-blue-900 transition"
+        >
+          <FiHome /> Admin Panel
+        </button>
 
         <nav className="space-y-4 text-sm">
           <button
@@ -91,7 +91,6 @@ export default function OrderManagement() {
           >
             <FiTrendingUp /> Sales & Reports
           </button>
-          
 
           {/* ✅ Customer Homepage Button */}
           <button

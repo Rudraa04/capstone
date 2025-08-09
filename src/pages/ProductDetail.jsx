@@ -326,12 +326,17 @@ export default function ProductDetail() {
     };
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    setUser(null);
-    alert("Logged out!");
-    navigate("/login");
-  };
+   const handleLogout = async () => {
+      await signOut(auth);
+      toast.success("Logged out successfully!", {
+        position: "bottom-right",
+        autoClose: 1000,
+      });
+  
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+    };
 
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";

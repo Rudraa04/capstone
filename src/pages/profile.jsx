@@ -11,6 +11,9 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "../firebase/firebase";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -63,7 +66,10 @@ export default function Profile() {
   const handlePasswordReset = async () => {
     if (user?.email) {
       await sendPasswordResetEmail(auth, user.email);
-      alert("Password reset email sent!");
+      toast.success("Password reset email sent!", {
+        position: "bottom-right",
+        autoClose: 2000,
+      });
     }
   };
 
@@ -78,10 +84,17 @@ export default function Profile() {
         address: profileData.address,
         role: fromAdmin ? "admin" : "customer",
       });
-      alert("Profile updated!");
+      toast.success("Profile updated successfully!", {
+        position: "bottom-right",
+        autoClose: 2000,
+      });
+
       setEditing(false);
     } catch (error) {
-      alert("Error updating profile: " + error.message);
+      toast.error("Error updating profile, Please try again. ", {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -90,7 +103,10 @@ export default function Profile() {
     if (!file || !auth.currentUser) return;
 
     if (file.size > 200 * 1024) {
-      alert("File too large! Max size allowed is 200KB.");
+      toast.error("File too large! Max size allowed is 200KB.", {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
       return;
     }
 
@@ -125,10 +141,17 @@ export default function Profile() {
         photoURL: refreshedUser.photoURL,
       }));
 
-      alert("Profile picture updated!");
+      toast.success("Profile picture updated successfully!", {
+        position: "bottom-right",
+        autoClose: 2000,
+      });
     } catch (err) {
-      alert("Error uploading picture: " + err.message);
+      toast.error("Error uploading picture, Please try again. " , {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
     }
+
     setUploading(false);
   };
 
@@ -164,11 +187,11 @@ export default function Profile() {
             </div>
 
             <label className="mt-4 text-sm font-medium">
-             {uploading
-              ? "Uploading..."
-              : user?.photoURL
-              ? "Change Picture"
-              : "Upload Picture"}
+              {uploading
+                ? "Uploading..."
+                : user?.photoURL
+                ? "Change Picture"
+                : "Upload Picture"}
             </label>
 
             <div className="relative mt-2">
@@ -180,9 +203,8 @@ export default function Profile() {
                   onChange={handleProfilePicUpload}
                   className="hidden"
                 />
-             </label>
-             </div>
-
+              </label>
+            </div>
 
             <h2 className="text-2xl font-bold mt-4">
               {profileData.fullName || "Unnamed User"}
@@ -212,8 +234,12 @@ export default function Profile() {
             <button
               onClick={async () => {
                 await signOut(auth);
+                toast.success("Logged out successfully!", {
+                  position: "bottom-right",
+                  autoClose: 1000,
+                });
                 localStorage.removeItem("fromAdmin");
-                navigate("/login");
+                setTimeout(() => navigate("/login"), 1000);
               }}
               className="bg-red-100 hover:bg-red-200 text-red-600 px-6 py-2 rounded-lg text-sm font-semibold"
             >
@@ -274,6 +300,7 @@ export default function Profile() {
           )}
         </div>
       </main>
+      <ToastContainer />
       <Footer />
     </div>
   );

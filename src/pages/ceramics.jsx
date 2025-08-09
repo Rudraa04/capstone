@@ -3,7 +3,9 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import axios from "axios";
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 import {
   FaSearch,
   FaShoppingCart,
@@ -293,11 +295,16 @@ export default function Ceramics() {
   }, [activeTab]);
 
   const handleLogout = async () => {
-    await signOut(auth);
-    setUser(null);
-    alert("Logged out!");
-    navigate("/login");
-  };
+      await signOut(auth);
+      toast.success("Logged out successfully!", {
+        position: "bottom-right",
+        autoClose: 1000,
+      });
+  
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+    };
 
   const underlineHover =
     "relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-500 hover:after:w-full after:transition-all after:duration-300";
@@ -1135,6 +1142,7 @@ export default function Ceramics() {
         </div>
       </div>
     </footer>
+    <ToastContainer />
     </div>
   );
 }

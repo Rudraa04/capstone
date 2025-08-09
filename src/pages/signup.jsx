@@ -12,75 +12,95 @@ import { FaArrowLeft } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
-export default function Signup() { 
+export default function Signup() {
   //usestate hook to track input and state
-  const navigate = useNavigate();  //these track the user’s name, email, password, error/success messages, and password visibility toggles.
+  const navigate = useNavigate(); //these track the user’s name, email, password, error/success messages, and password visibility toggles.
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
   // // Password strength text (Weak, Medium, Strong)
   const [strength, setStrength] = useState("");
-  const [validations, setValidations] = useState({ // validations criteria for password strength set at false at first
+  const [validations, setValidations] = useState({
+    // validations criteria for password strength set at false at first
     length: false,
     upper: false,
     lower: false,
     number: false,
     special: false,
   });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success", // "success" or "error"
+    size: "normal", // "normal" or "large"
+  });
 
-  const evaluatePassword = (pwd) => { // function to evaluate the password strength
+  const triggerToast = (
+    message,
+    type = "success",
+    size = "normal",
+    duration = 5000
+  ) => {
+    setToast({ show: true, message, type, size });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success", size: "normal" });
+    }, duration);
+  };
+
+  const evaluatePassword = (pwd) => {
+    // function to evaluate the password strength
     const newValidations = {
       length: pwd.length >= 8, // has atleast 8 characters
       upper: /[A-Z]/.test(pwd), // has atleast 1 uppercase letter
-      lower: /[a-z]/.test(pwd),// has atleast 1 lowercase letter
-      number: /[0-9]/.test(pwd),// has atleast 1 number
-      special: /[^A-Za-z0-9]/.test(pwd),// has atleast 1 special character
+      lower: /[a-z]/.test(pwd), // has atleast 1 lowercase letter
+      number: /[0-9]/.test(pwd), // has atleast 1 number
+      special: /[^A-Za-z0-9]/.test(pwd), // has atleast 1 special character
     };
     setValidations(newValidations); // updates the validations state with the new checks
     const passed = Object.values(newValidations).filter(Boolean).length; // counts how many validations passed means first part giveshow many is true/false second filter true and third display lenght of true
-    setStrength(passed <= 2 ? "Weak" : passed <= 4 ? "Medium" : "Strong"); 
+    setStrength(passed <= 2 ? "Weak" : passed <= 4 ? "Medium" : "Strong");
   }; //0-2 Weak, 3-4 Medium, 5 Strong
 
-  const handleSignup = async (e) => { // function to handle signup
+  const handleSignup = async (e) => {
+    // function to handle signup
     e.preventDefault(); // prevent default form submission behavior
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);//This line checks if the entered email is in a valid format using a regular expression (RegEx)
-    if (!isValidEmail) { // if email is not valid it shows error message and sets message type to error and stops the function
-      setMessage("Please enter a valid email address.");
-      setMessageType("error");
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); //This line checks if the entered email is in a valid format using a regular expression (RegEx)
+    const allValid = Object.values(validations).every(Boolean);
+    if (!isValidEmail) {
+      triggerToast("❌ Please enter a valid email address", "error");
       return;
     }
 
-    const allValid = Object.values(validations).every(Boolean); // checks for all validations to be true
-    if (!allValid) { // if any validation fails it shows error message and sets message type to error and stops the function
-      setMessage("Password does not meet all criteria.");
-      setMessageType("error");
+    if (!allValid) {
+      triggerToast("❌ Password does not meet all criteria", "error");
       return;
     }
 
-    if (password !== confirm) { // checks if password and confirm password match id not it shows error message and sets message type to error and stops the function
-      setMessage("Passwords do not match");
-      setMessageType("error");
+    if (password !== confirm) {
+      triggerToast("❌ Passwords do not match", "error");
       return;
     }
-// firebase signup logic 
-    try { //Call Firebase to create the user with email and password.auth is your Firebase authentication instance
-      const userCredential = await createUserWithEmailAndPassword( //Result is stored in userCredential.
+
+    // firebase signup logic
+    try {
+      //Call Firebase to create the user with email and password.auth is your Firebase authentication instance
+      const userCredential = await createUserWithEmailAndPassword(
+        //Result is stored in userCredential.
         auth,
         email,
         password
       );
-      const user = userCredential.user;  //Get the user object from the credentials so you can update profile and send verification.
+      const user = userCredential.user; //Get the user object from the credentials so you can update profile and send verification.
 
       await updateProfile(user, {
-        displayName: fullName, //Add the user's full name to their Firebase profile 
+        displayName: fullName, //Add the user's full name to their Firebase profile
       });
 
-      await setDoc(doc(db, "users", user.uid), { // saves user data in Firestore under users
+      await setDoc(doc(db, "users", user.uid), {
+        // saves user data in Firestore under users
         email: user.email, // stores user email
         fullName: fullName, // stores user full name
         role: "customer", // sets default role as customer
@@ -89,14 +109,28 @@ export default function Signup() {
       await sendEmailVerification(user); // sends verification email to the user
       await auth.signOut(); // Log the user out after signup until they verify their email.
 
-      setMessage(
-        "Signup successful! A verification email has been sent. Please verify before logging in."
+      triggerToast(
+        "✅ Signup successful! A verification email has been sent. Please verify before logging in.",
+        "success",
+        "large"
       );
-      setMessageType("success");
-      setTimeout(() => navigate("/login"), 2500); // Redirect to login page after 2.5 seconds
-    } catch (error) { // catches any errors during signup process
-      setMessage(error.message); // sets error message
-      setMessageType("error"); // sets message type to error
+      setTimeout(() => navigate("/login"), 2500);
+      // Redirect to login page after 2.5 seconds
+    } catch (error) {
+      // Handle specific Firebase errors
+      if (error.code === "auth/email-already-in-use") {
+        triggerToast(
+          "❌ This email is already registered. Please log in instead.",
+          "error"
+        );
+      } else if (error.code === "auth/weak-password") {
+        triggerToast(
+          "❌ Your password is too weak. Please choose a stronger one.",
+          "error"
+        );
+      } else {
+        triggerToast(`❌ ${error.message}`, "error");
+      }
     }
   };
 
@@ -112,7 +146,10 @@ export default function Signup() {
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
           <h2 className="text-4xl font-extrabold text-center text-blue-600 mb-8">
-            Create <span className="text-transparent bg-clip-text bg-blue-600 to-purple-600">Account</span>
+            Create{" "}
+            <span className="text-transparent bg-clip-text bg-blue-600 to-purple-600">
+              Account
+            </span>
           </h2>
 
           <form onSubmit={handleSignup} className="space-y-6">
@@ -201,11 +238,41 @@ export default function Signup() {
                   Strength: {strength || "N/A"}
                 </p>
                 <ul className="text-sm mt-1 space-y-1">
-                  <li className={validations.length ? "text-green-600" : "text-red-600"}>✓ At least 8 characters</li>
-                  <li className={validations.upper ? "text-green-600" : "text-red-600"}>✓ At least 1 uppercase letter</li>
-                  <li className={validations.lower ? "text-green-600" : "text-red-600"}>✓ At least 1 lowercase letter</li>
-                  <li className={validations.number ? "text-green-600" : "text-red-600"}>✓ At least 1 number</li>
-                  <li className={validations.special ? "text-green-600" : "text-red-600"}>✓ At least 1 special character</li>
+                  <li
+                    className={
+                      validations.length ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    ✓ At least 8 characters
+                  </li>
+                  <li
+                    className={
+                      validations.upper ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    ✓ At least 1 uppercase letter
+                  </li>
+                  <li
+                    className={
+                      validations.lower ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    ✓ At least 1 lowercase letter
+                  </li>
+                  <li
+                    className={
+                      validations.number ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    ✓ At least 1 number
+                  </li>
+                  <li
+                    className={
+                      validations.special ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    ✓ At least 1 special character
+                  </li>
                 </ul>
               </div>
             </div>
@@ -242,26 +309,38 @@ export default function Signup() {
             >
               Sign Up
             </button>
-
-            {message && (
-              <p
-                className={`text-sm text-center font-medium mt-2 ${
-                  messageType === "success" ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {message}
-              </p>
-            )}
           </form>
 
           <p className="mt-4 text-sm text-center text-gray-600">
             Already have an account?{" "}
-            <Link to="/login" className="text-blue-700 font-semibold hover:underline">
+            <Link
+              to="/login"
+              className="text-blue-700 font-semibold hover:underline"
+            >
               Login
             </Link>
           </p>
         </div>
       </div>
+      {toast.show && (
+        <div
+          onClick={() => setToast({ ...toast, show: false })}
+          className={`fixed bottom-4 right-4 z-50 animate-slideIn cursor-pointer shadow-xl transition-all duration-500 ${
+            toast.size === "large"
+              ? "max-w-xs sm:max-w-sm p-6 text-xl font-bold"
+              : "p-4 text-sm"
+          } rounded-lg ${
+            toast.type === "success"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.size === "large" && (
+            <div className="text-4xl mb-2 animate-bounce">🎉</div>
+          )}
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

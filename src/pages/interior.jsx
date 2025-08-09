@@ -12,7 +12,9 @@ import {
 } from "react-icons/fa";
 import Footer from "../components/Footer";
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 export default function Interior() {
   const navigate = useNavigate();
@@ -213,11 +215,16 @@ const handleVoiceInput = () => {
 };
 
   const handleLogout = async () => {
-    await signOut(auth);
-    setUser(null);
-    alert("Logged out!");
-    navigate("/login");
-  };
+     await signOut(auth);
+     toast.success("Logged out successfully!", {
+       position: "bottom-right",
+       autoClose: 1000,
+     });
+ 
+     setTimeout(() => {
+       navigate("/login");
+     }, 1000);
+   };
 
   const [tiles, setTiles] = useState([]); //This sets up a state variable called tiles to store filtered tiles that will be displayed.
 
@@ -618,6 +625,7 @@ const handleVoiceInput = () => {
       </section>
 
       <Footer />
+          <ToastContainer />
     </div>
   );
 }

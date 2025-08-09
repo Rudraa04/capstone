@@ -13,6 +13,7 @@
     "animate.css": "^4.1.1",
     "aos": "^2.3.4",
     "axios": "^1.10.0",
+    "canvas-confetti": "^1.9.3",
     "chart.js": "^4.4.9",
     "firebase": "^11.10.0",
     "firestone": "^0.1.0",

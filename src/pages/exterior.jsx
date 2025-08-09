@@ -11,7 +11,9 @@ import {
   FaMicrophone 
 } from "react-icons/fa";
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
-
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 import Footer from "../components/Footer";
 
@@ -115,12 +117,16 @@ export default function Exterior() {
   };
 }, []);
 
-
   const handleLogout = async () => {
     await signOut(auth);
-    setUser(null);
-    alert("Logged out!");
-    navigate("/login");
+    toast.success("Logged out successfully!", {
+      position: "bottom-right",
+      autoClose: 1000,
+    });
+
+    setTimeout(() => {
+      navigate("/login");
+    }, 1000);
   };
 
   useEffect(() => { //
@@ -618,6 +624,7 @@ export default function Exterior() {
       </section>
 
       <Footer />
+          <ToastContainer />
     </div>
   );
 }

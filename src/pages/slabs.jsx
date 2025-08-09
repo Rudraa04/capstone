@@ -8,11 +8,13 @@ import {
   FaBars,
   FaTimes,
   FaArrowLeft,
-  FaMicrophone 
+  FaMicrophone,
 } from "react-icons/fa";
 import slabBanner from "../images/slabs-banner.png";
-import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
-
+import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 export default function Slabs() {
   const navigate = useNavigate();
@@ -22,7 +24,8 @@ export default function Slabs() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [graniteProducts, setGraniteProducts] = useState([]);
   const [marbleProducts, setMarbleProducts] = useState([]);
-  const [filters, setFilters] = useState({ // filter is an object with different values given below
+  const [filters, setFilters] = useState({
+    // filter is an object with different values given below
     category: [],
     size: [],
     color: [],
@@ -41,7 +44,7 @@ export default function Slabs() {
   const recognizerRef = useRef(null);
   const [voiceStatus, setVoiceStatus] = useState("");
 
-// Filter options for marble and granite
+  // Filter options for marble and granite
   const filterOptions = {
     marble: {
       size: ["75 x 38", "72 x 36", "80 x 38", "75 x 36"],
@@ -66,7 +69,8 @@ export default function Slabs() {
   };
   //mapping for granite we have done mapping beacause our data in the database is not consistent and we have to map it to a standard format
   // so that we can filter it easily
-  const mapGraniteColor = (color) => { //This function takes in a color string and returns a standardized color label like "Black" or "Red".
+  const mapGraniteColor = (color) => {
+    //This function takes in a color string and returns a standardized color label like "Black" or "Red".
     if (!color) return ""; // If no color is provided, return an empty string
     const c = color.toLowerCase(); //Converts the input color to lowercase for case-insensitive matching.
     if (c.includes("black")) return "Black"; // If the color includes "black", return "Black"
@@ -74,9 +78,10 @@ export default function Slabs() {
     if (c.includes("grey") || c.includes("gray")) return "Grey"; // If the color includes "grey" or "gray", return "Grey"
     if (c.includes("white")) return "White"; // If the color includes "white", return "White"
     return ""; // if no match is found, return an empty string
-  }; 
+  };
 
-  const mapGraniteOrigin = (origin) => { // This function takes in an origin string and returns a standardized origin label like "South India" or "North India".
+  const mapGraniteOrigin = (origin) => {
+    // This function takes in an origin string and returns a standardized origin label like "South India" or "North India".
     if (!origin) return ""; // If no origin is provided, return an empty string
     const o = origin.toLowerCase(); // Converts the input origin to lowercase for case-insensitive matching.
     if (o.includes("south")) return "South India"; // If the origin includes "south", return "South India"
@@ -84,12 +89,13 @@ export default function Slabs() {
     if (o.includes("west")) return "West India"; // If the origin includes "west", return "West India"
     return ""; // if no match is found, return an empty string
   };
-  const mapGraniteSize = (size) => { // This function takes in a size string and returns a standardized size label like "104x38" or "108x40".
+  const mapGraniteSize = (size) => {
+    // This function takes in a size string and returns a standardized size label like "104x38" or "108x40".
     if (!size) return ""; // If no size is provided, return an empty string
     const s = size.toLowerCase().replace(/\s/g, ""); // Converts the input size to lowercase and removes any spaces for consistent matching.
     if (s.includes("104x38")) return "104x38"; // If the size includes "104x38", return "104x38"
     if (s.includes("108x40")) return "108x40"; //same
-    if (s.includes("108x42")) return "108x42";// same
+    if (s.includes("108x42")) return "108x42"; // same
     if (s.includes("110x42")) return "110x42"; //same
     if (s.includes("110x44")) return "110x44"; //same
     return ""; // if no match is found, return an empty string
@@ -108,13 +114,13 @@ export default function Slabs() {
 
   const mapMarbleColor = (color) => {
     if (!color) return ""; // If no color is provided, return an empty string
-    const c = color.toLowerCase();// Converts the input color to lowercase for case-insensitive matching.
+    const c = color.toLowerCase(); // Converts the input color to lowercase for case-insensitive matching.
     if (c.includes("milky")) return "Milky White"; // If the color includes "milky", return "Milky White"
-    if (c.includes("green")) return "Green";// If the color includes "green", return "Green"
+    if (c.includes("green")) return "Green"; // If the color includes "green", return "Green"
     if (c.includes("gold")) return "Gold"; // If the color includes "gold", return "Gold"
     if (c.includes("pink")) return "Light Pink"; // If the color includes "pink", return "Light Pink"
     if (c.includes("beige")) return "Beige"; // If the color includes "beige", return "Beige"
-    return ""; // if no match is found, return an empty string  
+    return ""; // if no match is found, return an empty string
   };
 
   const mapMarbleOrigin = (origin) => {
@@ -127,8 +133,9 @@ export default function Slabs() {
   };
 
   useEffect(() => {
-    const updateCartCount = () => { // This function updates the cart count based on localStorage
-      const storedCart = JSON.parse(localStorage.getItem("cart")) || []; // Get the cart from localStorage and parses it from json to array 
+    const updateCartCount = () => {
+      // This function updates the cart count based on localStorage
+      const storedCart = JSON.parse(localStorage.getItem("cart")) || []; // Get the cart from localStorage and parses it from json to array
       setCartCount(storedCart.length); // Updates the cartCount state by counting the number of products in the cart array
     };
 
@@ -213,26 +220,30 @@ export default function Slabs() {
     fetchGraniteProducts();
   }, []);
   useEffect(() => {
-  try {
-    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
-      import.meta.env.VITE_AZURE_SPEECH_KEY,
-      import.meta.env.VITE_AZURE_SPEECH_REGION
-    );
-    speechConfig.speechRecognitionLanguage = 'en-US';
-    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-    recognizerRef.current = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-  } catch (error) {
-    console.error('Failed to initialize Speech SDK:', error);
-    setVoiceStatus('Failed to initialize speech recognition. Please check your credentials.');
-  }
-
-  return () => {
-    if (recognizerRef.current) {
-      recognizerRef.current.close();
+    try {
+      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+        import.meta.env.VITE_AZURE_SPEECH_KEY,
+        import.meta.env.VITE_AZURE_SPEECH_REGION
+      );
+      speechConfig.speechRecognitionLanguage = "en-US";
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      recognizerRef.current = new SpeechSDK.SpeechRecognizer(
+        speechConfig,
+        audioConfig
+      );
+    } catch (error) {
+      console.error("Failed to initialize Speech SDK:", error);
+      setVoiceStatus(
+        "Failed to initialize speech recognition. Please check your credentials."
+      );
     }
-  };
-}, []);
 
+    return () => {
+      if (recognizerRef.current) {
+        recognizerRef.current.close();
+      }
+    };
+  }, []);
 
   const handleSearch = (input) => {
     const rawQuery = input || query;
@@ -300,45 +311,51 @@ export default function Slabs() {
     setSuggestions([]);
   };
   const handleVoiceInput = () => {
-  if (!recognizerRef.current) {
-    setVoiceStatus('Speech recognizer not initialized. Please check your credentials.');
-    return;
-  }
-
-  setVoiceStatus('Listening... Speak now.');
-  recognizerRef.current.startContinuousRecognitionAsync();
-
-  recognizerRef.current.recognized = (s, e) => {
-    if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-      let transcribedText = e.result.text;
-      transcribedText = transcribedText
-        .trim()
-        .toLowerCase()
-        .replace(/[^\w\s]/gi, ""); // remove punctuation
-
-      setQuery(transcribedText);
-      setVoiceStatus(`Transcription: ${transcribedText}`);
-      handleSearch(transcribedText);
+    if (!recognizerRef.current) {
+      setVoiceStatus(
+        "Speech recognizer not initialized. Please check your credentials."
+      );
+      return;
     }
-  };
 
-  recognizerRef.current.canceled = (s, e) => {
-    setVoiceStatus(`Error: ${e.errorDetails}`);
-    recognizerRef.current.stopContinuousRecognitionAsync();
-  };
+    setVoiceStatus("Listening... Speak now.");
+    recognizerRef.current.startContinuousRecognitionAsync();
 
-  recognizerRef.current.sessionStopped = (s, e) => {
-    setVoiceStatus('Voice input stopped.');
-    recognizerRef.current.stopContinuousRecognitionAsync();
-  };
-};
+    recognizerRef.current.recognized = (s, e) => {
+      if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+        let transcribedText = e.result.text;
+        transcribedText = transcribedText
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w\s]/gi, ""); // remove punctuation
 
+        setQuery(transcribedText);
+        setVoiceStatus(`Transcription: ${transcribedText}`);
+        handleSearch(transcribedText);
+      }
+    };
+
+    recognizerRef.current.canceled = (s, e) => {
+      setVoiceStatus(`Error: ${e.errorDetails}`);
+      recognizerRef.current.stopContinuousRecognitionAsync();
+    };
+
+    recognizerRef.current.sessionStopped = (s, e) => {
+      setVoiceStatus("Voice input stopped.");
+      recognizerRef.current.stopContinuousRecognitionAsync();
+    };
+  };
 
   const handleLogout = async () => {
     await signOut(auth);
-    setUser(null);
-    alert("Logged out!");
-    navigate("/login");
+    toast.success("Logged out successfully!", {
+      position: "bottom-right",
+      autoClose: 1000,
+    });
+
+    setTimeout(() => {
+      navigate("/login");
+    }, 1000);
   };
 
   const underlineHover =
@@ -353,13 +370,14 @@ export default function Slabs() {
     }));
   };
   //filter granite products based on selected filters
-  const filteredGranite = graniteProducts.filter((product) => { //Loop through all graniteProducts, and for each product, apply filter conditions to decide if it should be shown.
+  const filteredGranite = graniteProducts.filter((product) => {
+    //Loop through all graniteProducts, and for each product, apply filter conditions to decide if it should be shown.
     const sizeValue = mapGraniteSize(product.Size || ""); //  gets cleaned size using mapGranitesize(mapping) if Size is missing, it uses an empty string ("") to avoid errors.
-    const colorValue = mapGraniteColor(product.Color || "");// same as size
+    const colorValue = mapGraniteColor(product.Color || ""); // same as size
     const originValue = mapGraniteOrigin(product.Origin || ""); // same as size
 
     const sizeMatch =
-      !filters.size || //No size filter selected 
+      !filters.size || //No size filter selected
       filters.size.length === 0 || //filter size is empty
       filters.size.includes(sizeValue); //the product’s size (sizeValue) is in the selected sizes
     const colorMatch =
@@ -367,14 +385,15 @@ export default function Slabs() {
       filters.color.length === 0 || //filter color is empty
       filters.color.includes(colorValue); //the product’s color (colorValue) is in the selected colors
     const originMatch =
-      !filters.origin ||//No origin filter selected
+      !filters.origin || //No origin filter selected
       filters.origin.length === 0 || //filter origin is empty
       filters.origin.includes(originValue); //the product’s origin (originValue) is in the selected origins
 
     return sizeMatch && colorMatch && originMatch; //Returns true if the product matches all selected filters. it is responsible for showing one product if it matches two filters at a time
   });
   //filter marble products based on selected filters
-  const filteredMarble = marbleProducts.filter((product) => { //Loop through all marbleProducts, and for each product, apply filter conditions to decide if it should be shown.
+  const filteredMarble = marbleProducts.filter((product) => {
+    //Loop through all marbleProducts, and for each product, apply filter conditions to decide if it should be shown.
     const sizeValue = mapMarbleSize(product.Size || ""); // gets cleaned size using mapMarbleSize(mapping) if Size is missing, it uses an empty string ("") to avoid errors.
     const colorValue = mapMarbleColor(product.Color || ""); // same as size
     const originValue = mapMarbleOrigin(product.Origin || ""); // same as size
@@ -382,15 +401,15 @@ export default function Slabs() {
     const sizeMatch =
       !filters.size || //No size filter selected
       filters.size.length === 0 || //filter size is empty
-      filters.size.includes(sizeValue);// the product’s size (sizeValue) is in the selected sizes
+      filters.size.includes(sizeValue); // the product’s size (sizeValue) is in the selected sizes
     const colorMatch =
       !filters.color || //No color filter selected
       filters.color.length === 0 || //filter color is empty
-      filters.color.includes(colorValue);// the product’s color (colorValue) is in the selected colors
+      filters.color.includes(colorValue); // the product’s color (colorValue) is in the selected colors
     const originMatch =
       !filters.origin || //No origin filter selected
       filters.origin.length === 0 || //filter origin is empty
-      filters.origin.includes(originValue);// the product’s origin (originValue) is in the selected origins
+      filters.origin.includes(originValue); // the product’s origin (originValue) is in the selected origins
 
     return sizeMatch && colorMatch && originMatch; // Returns true if the product matches all selected filters. it is responsible for showing one product if it matches two filters at a time
   });
@@ -441,12 +460,12 @@ export default function Slabs() {
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
               <button
-  onClick={handleVoiceInput}
-  className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
-  title="Voice Search"
->
-  <FaMicrophone size={18} />
-</button>
+                onClick={handleVoiceInput}
+                className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+                title="Voice Search"
+              >
+                <FaMicrophone size={18} />
+              </button>
               <button
                 onClick={() => handleSearch()}
                 className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
@@ -911,151 +930,154 @@ export default function Slabs() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white px-4 sm:px-10 py-12 mt-16 text-sm">
-      {/* Top Section - 6 Columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-8">
-        {/* Column 1: Company Info */}
-        <div>
-          <h3 className="text-xl font-bold mb-4">Patel Ceramics</h3>
-          <p className="text-gray-300">
-            Crafting beauty in every tile. Serving excellence across India and
-            globally.
+        {/* Top Section - 6 Columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-8">
+          {/* Column 1: Company Info */}
+          <div>
+            <h3 className="text-xl font-bold mb-4">Patel Ceramics</h3>
+            <p className="text-gray-300">
+              Crafting beauty in every tile. Serving excellence across India and
+              globally.
+            </p>
+          </div>
+
+          {/* Column 2: Products */}
+          <div>
+            <h4 className="font-semibold mb-4">Products</h4>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="/interior">Interior</a>
+              </li>
+              <li>
+                <a href="/exterior">Exterior</a>
+              </li>
+              <li>
+                <a href="/sanitary">Sanitaryware</a>
+              </li>
+              <li>
+                <a href="/slabs">Granite & Marble</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Company */}
+          <div>
+            <h4 className="font-semibold mb-4">Company</h4>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="/about">About Us</a>
+              </li>
+              <li>
+                <a href="/projects">Projects</a>
+              </li>
+              <li>
+                <a href="/contact">Contact</a>
+              </li>
+              <li>
+                <a href="/blog">Blog</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Who We Serve */}
+          <div>
+            <h4 className="font-semibold mb-4">Who We Serve</h4>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="/serve/homeowners">Homeowners</a>
+              </li>
+              <li>
+                <a href="/serve/architects">Architects</a>
+              </li>
+              <li>
+                <a href="/serve/designers">Interior Designers</a>
+              </li>
+              <li>
+                <a href="/serve/builders">Builders & Contractors</a>
+              </li>
+              <li>
+                <a href="/serve/commercial">Commercial Spaces</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 5: What We Do */}
+          <div>
+            <h4 className="font-semibold mb-4">What We Do</h4>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="/services/custom-design">Custom Design</a>
+              </li>
+              <li>
+                <a href="/services/bulk-orders">Bulk Orders</a>
+              </li>
+              <li>
+                <a href="/services/quality">Quality Assurance</a>
+              </li>
+              <li>
+                <a href="/services/delivery">Nationwide Delivery</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 6: Follow Us */}
+          <div>
+            <h4 className="font-semibold mb-4">Follow Us</h4>
+            <div className="flex space-x-4 text-white text-lg">
+              <a
+                href="https://www.patelceramics.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                🌐
+              </a>
+              <a
+                href="https://facebook.com/patelceramics"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📘
+              </a>
+              <a
+                href="https://instagram.com/patelceramics"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📸
+              </a>
+              <a
+                href="https://youtube.com/@patelceramics"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                ▶
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <hr className="border-t border-gray-700 mb-6" />
+
+        {/* Bottom Row */}
+        <div className="flex flex-col md:flex-row justify-between items-center text-gray-400 gap-4 text-sm">
+          <p>
+            © {new Date().getFullYear()} Patel Ceramics. All rights reserved.
           </p>
-        </div>
-
-        {/* Column 2: Products */}
-        <div>
-          <h4 className="font-semibold mb-4">Products</h4>
-          <ul className="space-y-2 text-gray-300">
-            <li>
-              <a href="/interior">Interior</a>
-            </li>
-            <li>
-              <a href="/exterior">Exterior</a>
-            </li>
-            <li>
-              <a href="/sanitary">Sanitaryware</a>
-            </li>
-            <li>
-              <a href="/slabs">Granite & Marble</a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 3: Company */}
-        <div>
-          <h4 className="font-semibold mb-4">Company</h4>
-          <ul className="space-y-2 text-gray-300">
-            <li>
-              <a href="/about">About Us</a>
-            </li>
-            <li>
-              <a href="/projects">Projects</a>
-            </li>
-            <li>
-              <a href="/contact">Contact</a>
-            </li>
-            <li>
-              <a href="/blog">Blog</a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 4: Who We Serve */}
-        <div>
-          <h4 className="font-semibold mb-4">Who We Serve</h4>
-          <ul className="space-y-2 text-gray-300">
-            <li>
-              <a href="/serve/homeowners">Homeowners</a>
-            </li>
-            <li>
-              <a href="/serve/architects">Architects</a>
-            </li>
-            <li>
-              <a href="/serve/designers">Interior Designers</a>
-            </li>
-            <li>
-              <a href="/serve/builders">Builders & Contractors</a>
-            </li>
-            <li>
-              <a href="/serve/commercial">Commercial Spaces</a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 5: What We Do */}
-        <div>
-          <h4 className="font-semibold mb-4">What We Do</h4>
-          <ul className="space-y-2 text-gray-300">
-            <li>
-              <a href="/services/custom-design">Custom Design</a>
-            </li>
-            <li>
-              <a href="/services/bulk-orders">Bulk Orders</a>
-            </li>
-            <li>
-              <a href="/services/quality">Quality Assurance</a>
-            </li>
-            <li>
-              <a href="/services/delivery">Nationwide Delivery</a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 6: Follow Us */}
-        <div>
-          <h4 className="font-semibold mb-4">Follow Us</h4>
-          <div className="flex space-x-4 text-white text-lg">
-            <a
-              href="https://www.patelceramics.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              🌐
+          <div className="flex gap-4">
+            <a href="/privacy-policy" className="hover:text-white">
+              Privacy Policy
             </a>
-            <a
-              href="https://facebook.com/patelceramics"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              📘
+            <a href="/terms" className="hover:text-white">
+              Terms of Use
             </a>
-            <a
-              href="https://instagram.com/patelceramics"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              📸
-            </a>
-            <a
-              href="https://youtube.com/@patelceramics"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ▶
+            <a href="/sitemap" className="hover:text-white">
+              Sitemap
             </a>
           </div>
         </div>
-      </div>
-
-      {/* Divider */}
-      <hr className="border-t border-gray-700 mb-6" />
-
-      {/* Bottom Row */}
-      <div className="flex flex-col md:flex-row justify-between items-center text-gray-400 gap-4 text-sm">
-        <p>© {new Date().getFullYear()} Patel Ceramics. All rights reserved.</p>
-        <div className="flex gap-4">
-          <a href="/privacy-policy" className="hover:text-white">
-            Privacy Policy
-          </a>
-          <a href="/terms" className="hover:text-white">
-            Terms of Use
-          </a>
-          <a href="/sitemap" className="hover:text-white">
-            Sitemap
-          </a>
-        </div>
-      </div>
-    </footer>
+      </footer>
+      <ToastContainer />
     </div>
   );
 }

@@ -1,7 +1,12 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import confetti from "canvas-confetti";
+
 //firebase auth methods
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { auth } from "../firebase/firebase";
 // Firestore methods
 import { getDoc, doc } from "firebase/firestore";
@@ -16,6 +21,24 @@ import ReCAPTCHA from "react-google-recaptcha";
 //component starts
 export default function Login() {
   const navigate = useNavigate();
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success", // "success" or "error"
+    size: "normal", // "normal" or "large"
+  });
+
+  const triggerToast = (
+    message,
+    type = "success",
+    size = "normal",
+    duration = 5000
+  ) => {
+    setToast({ show: true, message, type, size });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success", size: "normal" });
+    }, duration);
+  };
 
   const [email, setEmail] = useState(""); //state variable for email
   const [password, setPassword] = useState(""); //for password
@@ -27,8 +50,8 @@ export default function Login() {
   const [captchaValue, setCaptchaValue] = useState(null);
   //tracks the number of failed attempts
   //Count how many times the user failed to log in
-    //We get this number from the browser's local storage
-    //when page loads for the first time we still check the failed attempts before.
+  //We get this number from the browser's local storage
+  //when page loads for the first time we still check the failed attempts before.
   const [failedAttempts, setFailedAttempts] = useState(() => {
     return parseInt(localStorage.getItem("failedAttempts") || "0", 10); //if null then default is 0 , and we convert string to int using parseint10
   });
@@ -39,25 +62,50 @@ export default function Login() {
     setCaptchaValue(value); //save captcha value
   };
 
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.logoutMessage) {
+      triggerToast(location.state.logoutMessage, "success");
+
+      // Clear the state after showing toast
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location]);
+  useEffect(() => {
+    if (toast.show && toast.type === "success") {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { x: 0.95, y: 0.9 }, // 95% from left, 90% from top → bottom-right area
+      });
+    }
+  }, [toast]);
+
   // Forgot Password Function
   const handleForgotPassword = async () => {
-    if (!email || !email.includes("@")) { //for valid email address
-      alert("Please enter a valid email address first.");
+    if (!email || !email.includes("@")) {
+      //for valid email address
+      triggerToast("❌ Please enter a valid email address first.", "error");
       return;
     }
 
     try {
       await sendPasswordResetEmail(auth, email); //for email verification
-      alert("Password reset email sent! Check your inbox or spam.");
+      triggerToast(
+        "📧 Password reset email sent! Check your inbox or spam.",
+        "success"
+      );
     } catch (error) {
       console.error("Reset error:", error.message);
-        //Error handling based on Firebase error codes
-      if (error.code === "auth/user-not-found") { // if users not found  
-        alert("No account found with this email.");
+      //Error handling based on Firebase error codes
+      if (error.code === "auth/user-not-found") {
+        // if users not found
+        triggerToast("❌ No account found with this email.", "error");
       } else if (error.code === "auth/invalid-email") {
-        alert("Invalid email format.");
+        triggerToast("⚠️ Invalid email format.", "error");
       } else {
-        alert("Something went wrong. Please try again.");
+        triggerToast("❌ Something went wrong. Please try again.", "error");
       }
     }
   };
@@ -69,12 +117,16 @@ export default function Login() {
 
     try {
       //Firebase auth login
-      const userCredential = await signInWithEmailAndPassword(auth, email, password); // Use Firebase Auth to sign in the user with the provided email and password.
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      ); // Use Firebase Auth to sign in the user with the provided email and password.
       const user = userCredential.user; // get the user object which contains user details
       //check if user has verified email
       if (!user.emailVerified) {
-        setMessage("Please verify your email before logging in.");
-        setMessageType("error"); //show error message
+        triggerToast("❌ Please verify your email before logging in.", "error");
+        //show error message
         return; // If email is not verified, show a message and stop login here.
       }
 
@@ -84,9 +136,8 @@ export default function Login() {
 
       if (userDocSnap.exists()) {
         const role = userDocSnap.data().role; //get the role from user document
+        triggerToast("✅ Login successful!", "success");
 
-        setMessage("Login successful!");
-        setMessageType("success");
         //resets all captcha value after successful login
         localStorage.removeItem("failedAttempts"); //removes failed attempts count
         setFailedAttempts(0); //sets to 0
@@ -94,7 +145,8 @@ export default function Login() {
         setCaptchaValue(null); //clear captcha token
         //redirects user based on role
         setTimeout(() => {
-          if (role === "admin") navigate("/admin"); // If the user is an admin, navigate to the admin dashboard.
+          if (role === "admin") navigate("/admin");
+          // If the user is an admin, navigate to the admin dashboard.
           else navigate("/"); // If the user is a regular user, navigate to the home page.
         }, 1000); // after 1 second
       } else {
@@ -102,7 +154,7 @@ export default function Login() {
         setMessageType("error");
       }
     } catch (error) {
-      //If login fails, increase the count of captcha by 1 
+      //If login fails, increase the count of captcha by 1
       const newFailed = failedAttempts + 1;
       setFailedAttempts(newFailed);
       //Save the new count to local storage so it's remembered
@@ -115,11 +167,11 @@ export default function Login() {
         error.code === "auth/invalid-credential" ||
         error.code === "auth/wrong-password"
       ) {
-        setMessage("Email or Password is incorrect.");
+        triggerToast("❌ Email or Password is incorrect.", "error");
       } else if (error.code === "auth/too-many-requests") {
-        setMessage("Too many attempts. Please try again later.");
+        triggerToast("⚠️ Too many attempts. Please try again later.", "error");
       } else {
-        setMessage("Something went wrong. Please try again.");
+        triggerToast("❌ Something went wrong. Please try again.", "error");
       }
 
       setMessageType("error");
@@ -138,10 +190,10 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
           <Link to="/" className="block text-center">
-  <h1 className="text-4xl font-bold text-blue-800 mb-3">
-    Patel Ceramics
-  </h1>
-</Link>
+            <h1 className="text-4xl font-bold text-blue-800 mb-3">
+              Patel Ceramics
+            </h1>
+          </Link>
 
           <h2 className="text-3xl font-extrabold text-center text-blue-600 mb-6">
             Log In
@@ -197,7 +249,7 @@ export default function Login() {
                 </span>
               </div>
             </div>
-              
+
             {showCaptcha && (
               <div className="mt-4 flex justify-center">
                 <ReCAPTCHA
@@ -216,26 +268,41 @@ export default function Login() {
             >
               Login
             </button>
-
-            {message && (
-              <p
-                className={`text-sm text-center font-medium mt-2 ${
-                  messageType === "success" ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {message}
-              </p>
-            )}
           </form>
 
           <p className="mt-4 text-sm text-center text-gray-600">
             Don’t have an account?{" "}
-            <Link to="/signup" className="text-blue-700 font-semibold hover:underline">
+            <Link
+              to="/signup"
+              className="text-blue-700 font-semibold hover:underline"
+            >
               Sign up
             </Link>
           </p>
         </div>
       </div>
+      {toast.show && (
+        <div
+          onClick={() => setToast({ ...toast, show: false })}
+          className={`fixed bottom-4 right-4 z-50 cursor-pointer shadow-xl transition-all duration-500 transform 
+      ${
+        toast.type === "success"
+          ? "bg-green-600 text-white animate-pulse"
+          : "bg-red-600 text-white"
+      } 
+      ${
+        toast.size === "large"
+          ? "max-w-xs sm:max-w-sm p-6 text-xl font-bold"
+          : "p-4 text-sm"
+      }
+      rounded-lg animate-fadeInScale`}
+        >
+          {toast.size === "large" && (
+            <div className="text-4xl mb-2 animate-bounce">🎉</div>
+          )}
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

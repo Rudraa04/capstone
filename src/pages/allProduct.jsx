@@ -9,10 +9,12 @@ import {
   FaBars,
   FaTimes,
   FaArrowLeft,
-  FaMicrophone
+  FaMicrophone,
 } from "react-icons/fa";
-import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
-
+import * as SpeechSDK from "microsoft-cognitiveservices-speech-sdk";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 const AllProducts = () => {
   const [products, setProducts] = useState([]);
@@ -23,7 +25,7 @@ const AllProducts = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [cartCount, setCartCount] = useState(0);
   const [suggestions, setSuggestions] = useState([]);
-  const [voiceStatus, setVoiceStatus] = useState('');
+  const [voiceStatus, setVoiceStatus] = useState("");
   const dropdownRef = useRef(null);
   const recognizerRef = useRef(null);
   const navigate = useNavigate();
@@ -70,32 +72,42 @@ const AllProducts = () => {
     };
     fetchAllProducts();
   }, []);
-useEffect(() => {
-  try {
-    const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
-      import.meta.env.VITE_AZURE_SPEECH_KEY,
-      import.meta.env.VITE_AZURE_SPEECH_REGION
-    );
-    speechConfig.speechRecognitionLanguage = 'en-US';
-    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-    recognizerRef.current = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-  } catch (error) {
-    console.error('Failed to initialize Speech SDK:', error);
-    setVoiceStatus('Failed to initialize speech recognition. Please check your credentials.');
-  }
-
-  return () => {
-    if (recognizerRef.current) {
-      recognizerRef.current.close();
+  useEffect(() => {
+    try {
+      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+        import.meta.env.VITE_AZURE_SPEECH_KEY,
+        import.meta.env.VITE_AZURE_SPEECH_REGION
+      );
+      speechConfig.speechRecognitionLanguage = "en-US";
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      recognizerRef.current = new SpeechSDK.SpeechRecognizer(
+        speechConfig,
+        audioConfig
+      );
+    } catch (error) {
+      console.error("Failed to initialize Speech SDK:", error);
+      setVoiceStatus(
+        "Failed to initialize speech recognition. Please check your credentials."
+      );
     }
-  };
-}, []);
+
+    return () => {
+      if (recognizerRef.current) {
+        recognizerRef.current.close();
+      }
+    };
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
-    setUser(null);
-    alert("Logged out!");
-    navigate("/login");
+    toast.success("Logged out successfully!", {
+      position: "bottom-right",
+      autoClose: 1000,
+    });
+
+    setTimeout(() => {
+      navigate("/login");
+    }, 1000);
   };
 
   const underlineHover =
@@ -150,47 +162,48 @@ useEffect(() => {
 
     for (const entry of routeMap) {
       if (entry.route && entry.keywords.some((k) => trimmedQuery === k)) {
-  navigate(entry.route);
-  return;
+        navigate(entry.route);
+        return;
       }
     }
 
     alert("No matching category found.");
     setSuggestions([]);
   };
-   const handleVoiceInput = () => {
+  const handleVoiceInput = () => {
     if (!recognizerRef.current) {
-      setVoiceStatus('Speech recognizer not initialized. Please check your credentials.');
+      setVoiceStatus(
+        "Speech recognizer not initialized. Please check your credentials."
+      );
       return;
     }
-  
-    setVoiceStatus('Listening... Speak now.');
+
+    setVoiceStatus("Listening... Speak now.");
     recognizerRef.current.startContinuousRecognitionAsync();
-  
+
     recognizerRef.current.recognized = (s, e) => {
       if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
         let transcribedText = e.result.text;
-  transcribedText = transcribedText
-    .trim()
-    .toLowerCase()
-    .replace(/[^\w\s]/gi, ""); // remove punctuation
-  
-  setQuery(transcribedText);
-  setVoiceStatus(`Transcription: ${transcribedText}`);
-  
-  // Call the same search logic as regular text input
-  handleSearch(transcribedText);
-  
+        transcribedText = transcribedText
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w\s]/gi, ""); // remove punctuation
+
+        setQuery(transcribedText);
+        setVoiceStatus(`Transcription: ${transcribedText}`);
+
+        // Call the same search logic as regular text input
+        handleSearch(transcribedText);
       }
     };
-  
+
     recognizerRef.current.canceled = (s, e) => {
       setVoiceStatus(`Error: ${e.errorDetails}`);
       recognizerRef.current.stopContinuousRecognitionAsync();
     };
-  
+
     recognizerRef.current.sessionStopped = (s, e) => {
-      setVoiceStatus('Voice input stopped.');
+      setVoiceStatus("Voice input stopped.");
       recognizerRef.current.stopContinuousRecognitionAsync();
     };
   };
@@ -247,13 +260,12 @@ useEffect(() => {
                 className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
               />
               <button
-  onClick={handleVoiceInput}
-  className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
-  title="Voice Search"
->
-  <FaMicrophone size={18} />
-</button>
-
+                onClick={handleVoiceInput}
+                className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
+                title="Voice Search"
+              >
+                <FaMicrophone size={18} />
+              </button>
 
               <button
                 onClick={() => handleSearch()}
@@ -614,151 +626,154 @@ useEffect(() => {
 
       {/* FOOTER */}
       <footer className="bg-gray-900 text-white px-4 sm:px-10 py-12 mt-16 text-sm">
-      {/* Top Section - 6 Columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-8">
-        {/* Column 1: Company Info */}
-        <div>
-          <h3 className="text-xl font-bold mb-4">Patel Ceramics</h3>
-          <p className="text-gray-300">
-            Crafting beauty in every tile. Serving excellence across India and
-            globally.
+        {/* Top Section - 6 Columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-8">
+          {/* Column 1: Company Info */}
+          <div>
+            <h3 className="text-xl font-bold mb-4">Patel Ceramics</h3>
+            <p className="text-gray-300">
+              Crafting beauty in every tile. Serving excellence across India and
+              globally.
+            </p>
+          </div>
+
+          {/* Column 2: Products */}
+          <div>
+            <h4 className="font-semibold mb-4">Products</h4>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="/interior">Interior</a>
+              </li>
+              <li>
+                <a href="/exterior">Exterior</a>
+              </li>
+              <li>
+                <a href="/sanitary">Sanitaryware</a>
+              </li>
+              <li>
+                <a href="/slabs">Granite & Marble</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Company */}
+          <div>
+            <h4 className="font-semibold mb-4">Company</h4>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="/about">About Us</a>
+              </li>
+              <li>
+                <a href="/projects">Projects</a>
+              </li>
+              <li>
+                <a href="/contact">Contact</a>
+              </li>
+              <li>
+                <a href="/blog">Blog</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Who We Serve */}
+          <div>
+            <h4 className="font-semibold mb-4">Who We Serve</h4>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="/serve/homeowners">Homeowners</a>
+              </li>
+              <li>
+                <a href="/serve/architects">Architects</a>
+              </li>
+              <li>
+                <a href="/serve/designers">Interior Designers</a>
+              </li>
+              <li>
+                <a href="/serve/builders">Builders & Contractors</a>
+              </li>
+              <li>
+                <a href="/serve/commercial">Commercial Spaces</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 5: What We Do */}
+          <div>
+            <h4 className="font-semibold mb-4">What We Do</h4>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="/services/custom-design">Custom Design</a>
+              </li>
+              <li>
+                <a href="/services/bulk-orders">Bulk Orders</a>
+              </li>
+              <li>
+                <a href="/services/quality">Quality Assurance</a>
+              </li>
+              <li>
+                <a href="/services/delivery">Nationwide Delivery</a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 6: Follow Us */}
+          <div>
+            <h4 className="font-semibold mb-4">Follow Us</h4>
+            <div className="flex space-x-4 text-white text-lg">
+              <a
+                href="https://www.patelceramics.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                🌐
+              </a>
+              <a
+                href="https://facebook.com/patelceramics"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📘
+              </a>
+              <a
+                href="https://instagram.com/patelceramics"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📸
+              </a>
+              <a
+                href="https://youtube.com/@patelceramics"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                ▶
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <hr className="border-t border-gray-700 mb-6" />
+
+        {/* Bottom Row */}
+        <div className="flex flex-col md:flex-row justify-between items-center text-gray-400 gap-4 text-sm">
+          <p>
+            © {new Date().getFullYear()} Patel Ceramics. All rights reserved.
           </p>
-        </div>
-
-        {/* Column 2: Products */}
-        <div>
-          <h4 className="font-semibold mb-4">Products</h4>
-          <ul className="space-y-2 text-gray-300">
-            <li>
-              <a href="/interior">Interior</a>
-            </li>
-            <li>
-              <a href="/exterior">Exterior</a>
-            </li>
-            <li>
-              <a href="/sanitary">Sanitaryware</a>
-            </li>
-            <li>
-              <a href="/slabs">Granite & Marble</a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 3: Company */}
-        <div>
-          <h4 className="font-semibold mb-4">Company</h4>
-          <ul className="space-y-2 text-gray-300">
-            <li>
-              <a href="/about">About Us</a>
-            </li>
-            <li>
-              <a href="/projects">Projects</a>
-            </li>
-            <li>
-              <a href="/contact">Contact</a>
-            </li>
-            <li>
-              <a href="/blog">Blog</a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 4: Who We Serve */}
-        <div>
-          <h4 className="font-semibold mb-4">Who We Serve</h4>
-          <ul className="space-y-2 text-gray-300">
-            <li>
-              <a href="/serve/homeowners">Homeowners</a>
-            </li>
-            <li>
-              <a href="/serve/architects">Architects</a>
-            </li>
-            <li>
-              <a href="/serve/designers">Interior Designers</a>
-            </li>
-            <li>
-              <a href="/serve/builders">Builders & Contractors</a>
-            </li>
-            <li>
-              <a href="/serve/commercial">Commercial Spaces</a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 5: What We Do */}
-        <div>
-          <h4 className="font-semibold mb-4">What We Do</h4>
-          <ul className="space-y-2 text-gray-300">
-            <li>
-              <a href="/services/custom-design">Custom Design</a>
-            </li>
-            <li>
-              <a href="/services/bulk-orders">Bulk Orders</a>
-            </li>
-            <li>
-              <a href="/services/quality">Quality Assurance</a>
-            </li>
-            <li>
-              <a href="/services/delivery">Nationwide Delivery</a>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 6: Follow Us */}
-        <div>
-          <h4 className="font-semibold mb-4">Follow Us</h4>
-          <div className="flex space-x-4 text-white text-lg">
-            <a
-              href="https://www.patelceramics.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              🌐
+          <div className="flex gap-4">
+            <a href="/privacy-policy" className="hover:text-white">
+              Privacy Policy
             </a>
-            <a
-              href="https://facebook.com/patelceramics"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              📘
+            <a href="/terms" className="hover:text-white">
+              Terms of Use
             </a>
-            <a
-              href="https://instagram.com/patelceramics"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              📸
-            </a>
-            <a
-              href="https://youtube.com/@patelceramics"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ▶
+            <a href="/sitemap" className="hover:text-white">
+              Sitemap
             </a>
           </div>
         </div>
-      </div>
-
-      {/* Divider */}
-      <hr className="border-t border-gray-700 mb-6" />
-
-      {/* Bottom Row */}
-      <div className="flex flex-col md:flex-row justify-between items-center text-gray-400 gap-4 text-sm">
-        <p>© {new Date().getFullYear()} Patel Ceramics. All rights reserved.</p>
-        <div className="flex gap-4">
-          <a href="/privacy-policy" className="hover:text-white">
-            Privacy Policy
-          </a>
-          <a href="/terms" className="hover:text-white">
-            Terms of Use
-          </a>
-          <a href="/sitemap" className="hover:text-white">
-            Sitemap
-          </a>
-        </div>
-      </div>
-    </footer>
+      </footer>
+      <ToastContainer />
     </div>
   );
 };
