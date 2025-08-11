@@ -39,6 +39,12 @@ export default function CustomerSupport() {
   const [actionLoading, setActionLoading] = useState(false);
   const replyInputRef = useRef(null);
 
+  // ---------- helpers for order display ----------
+  const isMongoId = (s) => /^[a-f\d]{24}$/i.test(s || "");
+  const shortId = (s) =>
+    s && s.length > 12 ? `${s.slice(0, 6)}…${s.slice(-6)}` : s || "";
+  const openOrder = (orderId) => navigate(`/admin/orders?orderId=${orderId}`);
+
   // --------------- data load ---------------
   const load = async () => {
     setLoading(true);
@@ -63,7 +69,9 @@ export default function CustomerSupport() {
   const rows = useMemo(() => {
     if (!sortHighFirst) return tickets;
     const order = { High: 0, Medium: 1, Low: 2 };
-    return [...tickets].sort((a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3));
+    return [...tickets].sort(
+      (a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3)
+    );
   }, [tickets, sortHighFirst]);
 
   // --------------- actions ---------------
@@ -90,7 +98,9 @@ export default function CustomerSupport() {
         repliedBy: "admin:rudra", // replace with real admin identity
       });
       setSelected(updated);
-      setTickets((prev) => prev.map((t) => (t._id === updated._id ? updated : t)));
+      setTickets((prev) =>
+        prev.map((t) => (t._id === updated._id ? updated : t))
+      );
       setReplyMsg("");
     } catch (e) {
       console.error(e);
@@ -176,13 +186,51 @@ export default function CustomerSupport() {
         </button>
 
         <nav className="space-y-4 text-sm">
-          <button onClick={() => navigate("/admin/slabs")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"><FiBox /> Slabs Inventory</button>
-          <button onClick={() => navigate("/admin/ceramics")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"><FiPackage /> Ceramics Inventory</button>
-          <button onClick={() => navigate("/admin/orders")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"><FiSettings /> Orders</button>
-          <button onClick={() => navigate("/admin/support")} className="w-full flex items-center gap-3 px-4 py-2 bg-gray-200 rounded-md font-semibold"><FiHeadphones /> Customer Support</button>
-          <button onClick={() => navigate("/admin/reports")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"><FiTrendingUp /> Sales & Reports</button>
-          <button onClick={() => navigate("/", { state: { fromAdmin: true } })} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"><FiGlobe /> Customer Homepage</button>
-          <button onClick={() => { localStorage.removeItem("isAdminLoggedIn"); navigate("/login"); }} className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-100 rounded-md"><FiLogOut /> Logout</button>
+          <button
+            onClick={() => navigate("/admin/slabs")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiBox /> Slabs Inventory
+          </button>
+          <button
+            onClick={() => navigate("/admin/ceramics")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiPackage /> Ceramics Inventory
+          </button>
+          <button
+            onClick={() => navigate("/admin/orders")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiSettings /> Orders
+          </button>
+          <button
+            onClick={() => navigate("/admin/support")}
+            className="w-full flex items-center gap-3 px-4 py-2 bg-gray-200 rounded-md font-semibold"
+          >
+            <FiHeadphones /> Customer Support
+          </button>
+          <button
+            onClick={() => navigate("/admin/reports")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiTrendingUp /> Sales & Reports
+          </button>
+          <button
+            onClick={() => navigate("/", { state: { fromAdmin: true } })}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"
+          >
+            <FiGlobe /> Customer Homepage
+          </button>
+          <button
+            onClick={() => {
+              localStorage.removeItem("isAdminLoggedIn");
+              navigate("/login");
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-100 rounded-md"
+          >
+            <FiLogOut /> Logout
+          </button>
         </nav>
       </aside>
 
@@ -191,9 +239,15 @@ export default function CustomerSupport() {
         <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-8">
           {/* Header */}
           <div className="mb-4">
-            <h1 className="text-3xl font-bold text-blue-800">Customer Support</h1>
-            <p className="text-sm text-gray-500">Track, reply, and resolve customer tickets.</p>
-            {errorMsg && <div className="text-red-600 text-sm mt-2">{errorMsg}</div>}
+            <h1 className="text-3xl font-bold text-blue-800">
+              Customer Support
+            </h1>
+            <p className="text-sm text-gray-500">
+              Track, reply, and resolve customer tickets.
+            </p>
+            {errorMsg && (
+              <div className="text-red-600 text-sm mt-2">{errorMsg}</div>
+            )}
           </div>
 
           {/* Filters */}
@@ -231,9 +285,19 @@ export default function CustomerSupport() {
                 High priority first
               </label>
 
-              <ActionButton onClick={load} className="border bg-white hover:bg-gray-50">Apply</ActionButton>
               <ActionButton
-                onClick={() => { setStatus("All"); setQ(""); setSortHighFirst(true); load(); }}
+                onClick={load}
+                className="border bg-white hover:bg-gray-50"
+              >
+                Apply
+              </ActionButton>
+              <ActionButton
+                onClick={() => {
+                  setStatus("All");
+                  setQ("");
+                  setSortHighFirst(true);
+                  load();
+                }}
                 className="border bg-white hover:bg-gray-50"
               >
                 Clear
@@ -246,13 +310,13 @@ export default function CustomerSupport() {
             <table className="min-w-full table-fixed text-sm text-left text-gray-700">
               {/* Fixed widths so things don’t jump/warp on zoom */}
               <colgroup>
-                <col style={{ width: "140px" }} />   {/* Ticket */}
-                <col style={{ width: "230px" }} />   {/* Customer */}
-                <col style={{ width: "auto" }} />    {/* Issue */}
-                <col style={{ width: "110px" }} />   {/* Priority */}
-                <col style={{ width: "120px" }} />   {/* Status */}
-                <col style={{ width: "170px" }} />   {/* Created */}
-                <col style={{ width: "360px" }} />   {/* Actions */}
+                <col style={{ width: "140px" }} /> {/* Ticket */}
+                <col style={{ width: "230px" }} /> {/* Customer */}
+                <col style={{ width: "auto" }} /> {/* Issue */}
+                <col style={{ width: "110px" }} /> {/* Priority */}
+                <col style={{ width: "120px" }} /> {/* Status */}
+                <col style={{ width: "170px" }} /> {/* Created */}
+                <col style={{ width: "360px" }} /> {/* Actions */}
               </colgroup>
 
               <thead className="bg-blue-50 text-gray-700 text-xs uppercase sticky top-0">
@@ -269,9 +333,17 @@ export default function CustomerSupport() {
 
               <tbody>
                 {loading ? (
-                  <tr><td className="p-6 text-gray-500" colSpan={7}>Loading…</td></tr>
+                  <tr>
+                    <td className="p-6 text-gray-500" colSpan={7}>
+                      Loading…
+                    </td>
+                  </tr>
                 ) : rows.length === 0 ? (
-                  <tr><td className="p-6 text-gray-500" colSpan={7}>No tickets found.</td></tr>
+                  <tr>
+                    <td className="p-6 text-gray-500" colSpan={7}>
+                      No tickets found.
+                    </td>
+                  </tr>
                 ) : (
                   rows.map((t) => (
                     <tr key={t._id} className="border-t align-top">
@@ -279,23 +351,41 @@ export default function CustomerSupport() {
                         {t.ticketId || t._id.slice(-6)}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-medium">{t.customerSnapshot?.name || "Unknown"}</div>
-                        <div className="text-gray-500 truncate">{t.customerSnapshot?.email || ""}</div>
+                        <div className="font-medium">
+                          {t.customerSnapshot?.name || "Unknown"}
+                        </div>
+                        <div className="text-gray-500 truncate">
+                          {t.customerSnapshot?.email || ""}
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         {/* 2-line clamp without plugins */}
                         <div className="leading-5 max-h-[3.2rem] overflow-hidden">
                           {t.issue}
                         </div>
+                        {t.orderId && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Order:{" "}
+                            {isMongoId(t.orderId)
+                              ? shortId(t.orderId)
+                              : t.orderId}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4">
-                        <span className={badgePriority(t.priority)}>{t.priority}</span>
+                        <span className={badgePriority(t.priority)}>
+                          {t.priority}
+                        </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={badgeStatus(t.status)}>{t.status}</span>
+                        <span className={badgeStatus(t.status)}>
+                          {t.status}
+                        </span>
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
-                        {t.createdAt ? new Date(t.createdAt).toLocaleString() : "-"}
+                        {t.createdAt
+                          ? new Date(t.createdAt).toLocaleString()
+                          : "-"}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
@@ -326,7 +416,9 @@ export default function CustomerSupport() {
                           <select
                             className="border rounded h-9 px-2 text-sm w-[130px]"
                             value={t.status}
-                            onChange={(e) => handleStatusChange(t._id, e.target.value)}
+                            onChange={(e) =>
+                              handleStatusChange(t._id, e.target.value)
+                            }
                             disabled={actionLoading}
                           >
                             <option>Open</option>
@@ -351,28 +443,77 @@ export default function CustomerSupport() {
                 <h3 className="text-xl font-semibold">
                   Ticket {selected.ticketId || selected._id?.slice(-6)}
                 </h3>
-                <button onClick={() => setSelected(null)} className="text-gray-500 hover:text-gray-800">✕</button>
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-gray-500 hover:text-gray-800"
+                >
+                  ✕
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-6 text-sm">
                 <div>
                   <div className="font-medium mb-1">Customer</div>
                   <div>{selected.customerSnapshot?.name || "Unknown"}</div>
-                  <div className="text-gray-500">{selected.customerSnapshot?.email}</div>
-                  <div className="text-gray-500">{selected.customerSnapshot?.phone}</div>
+                  <div className="text-gray-500">
+                    {selected.customerSnapshot?.email}
+                  </div>
+                  <div className="text-gray-500">
+                    {selected.customerSnapshot?.phone}
+                  </div>
                 </div>
                 <div>
                   <div className="font-medium mb-1">Details</div>
-                  <div><span className="text-gray-500">Priority:</span> {selected.priority}</div>
-                  <div><span className="text-gray-500">Status:</span> {selected.status}</div>
-                  {selected.orderId && <div><span className="text-gray-500">Order:</span> {selected.orderId}</div>}
-                  <div><span className="text-gray-500">Created:</span> {selected.createdAt ? new Date(selected.createdAt).toLocaleString() : "-"}</div>
+                  <div>
+                    <span className="text-gray-500">Priority:</span>{" "}
+                    {selected.priority}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Status:</span>{" "}
+                    {selected.status}
+                  </div>
+
+                  {selected.orderId && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500">Order Number:</span>
+                      <span className="font-medium">
+                        {isMongoId(selected.orderId)
+                          ? shortId(selected.orderId)
+                          : selected.orderId}
+                      </span>
+                      <button
+                        onClick={() =>
+                          navigator.clipboard.writeText(selected.orderId)
+                        }
+                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                        title="Copy"
+                      >
+                        Copy
+                      </button>
+                      <button
+                        onClick={() => openOrder(selected.orderId)}
+                        className="text-xs px-2 py-1 border rounded hover:bg-gray-50"
+                        title="Open order"
+                      >
+                        Open
+                      </button>
+                    </div>
+                  )}
+
+                  <div>
+                    <span className="text-gray-500">Created:</span>{" "}
+                    {selected.createdAt
+                      ? new Date(selected.createdAt).toLocaleString()
+                      : "-"}
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="font-medium">Issue</div>
-                <div className="border rounded p-3 bg-gray-50">{selected.issue}</div>
+                <div className="border rounded p-3 bg-gray-50">
+                  {selected.issue}
+                </div>
               </div>
 
               <div className="space-y-2 max-h-56 overflow-auto">
@@ -382,7 +523,10 @@ export default function CustomerSupport() {
                     selected.replies.map((r, idx) => (
                       <div key={idx} className="border rounded p-3">
                         <div className="text-xs text-gray-500 mb-1">
-                          {r.repliedBy} • {r.createdAt ? new Date(r.createdAt).toLocaleString() : ""}
+                          {r.repliedBy} •{" "}
+                          {r.createdAt
+                            ? new Date(r.createdAt).toLocaleString()
+                            : ""}
                         </div>
                         <div>{r.message}</div>
                       </div>
@@ -411,7 +555,9 @@ export default function CustomerSupport() {
                 <select
                   className="ml-2 border rounded h-10 px-2 text-sm"
                   value={selected.status}
-                  onChange={(e) => handleStatusChange(selected._id, e.target.value)}
+                  onChange={(e) =>
+                    handleStatusChange(selected._id, e.target.value)
+                  }
                   disabled={actionLoading}
                 >
                   <option>Open</option>
@@ -423,6 +569,6 @@ export default function CustomerSupport() {
           </div>
         )}
       </main>
-    </div>
-  );
+    </div>
+  );
 }
