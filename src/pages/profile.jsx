@@ -220,6 +220,12 @@ export default function Profile() {
                 >
                   Logout
                 </button>
+                <button
+                  onClick={() => navigate("/support")}
+                  className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-6 py-2 rounded-lg text-sm font-semibold"
+                >
+                  Customer Support
+                </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -256,7 +262,9 @@ export default function Profile() {
                       )
                     ) : (
                       <div className="w-full border border-gray-200 px-4 py-3 rounded-lg bg-gray-100">
-                        {key === "email" ? user?.email : profileData[key] || "-"}
+                        {key === "email"
+                          ? user?.email
+                          : profileData[key] || "-"}
                       </div>
                     )}
                   </div>
@@ -276,8 +284,8 @@ export default function Profile() {
             </div>
 
             {/* Order History on the Right */}
-            <div className="w-full lg:w-1/3">
-              <OrderHistoryPanel />
+            <div className="w-full lg:w-1/3 flex flex-col">
+              <OrderHistoryPanel className="h-full" />
             </div>
           </div>
         </div>

@@ -22,8 +22,7 @@ import Sanitary from "./pages/sanitary.jsx";
 import ProductDetail from "./pages/ProductDetail";
 import AllProducts from "./pages/allProduct.jsx";
 import TileCalculator from "./pages/TileCalculator";
-
-
+import CustomerSupportCustomer from "./pages/CustomerSupportCustomer";
 // Admin pages
 import AdminHome from "./pages/adminHome.jsx";
 import AddProduct from "./admin/AddProduct";
@@ -44,6 +43,7 @@ import ToiletInventory from "./admin/ToiletInventory.jsx";
 import OrderManagement from "./admin/OrderManagement";
 import CustomerSupport from "./admin/CustomerSupport.jsx";
 import SalesReports from "./admin/SalesReports.jsx";
+
 
 // Footer Pages
 import About from "./pages/About.jsx";
@@ -106,8 +106,8 @@ export default function App() {
         <Route path="/interior" element={<Interior />} />
         <Route path="/exterior" element={<Exterior />} />
         <Route path="/sanitary" element={<Sanitary />} />
+        <Route path="/support" element={<CustomerSupportCustomer />} />
 
-      
         <Route path="/product/:type/:id" element={<ProductDetail />} />
         <Route path="/products" element={<AllProducts />} />
         {/* Company */}
@@ -288,8 +288,11 @@ export default function App() {
         <Route
           path="/cart"
           element={
-            <ProtectedRoute userRole={userRole} allowedRoles={["customer", "admin"]}>
-              <Cart/>
+            <ProtectedRoute
+              userRole={userRole}
+              allowedRoles={["customer", "admin"]}
+            >
+              <Cart />
             </ProtectedRoute>
           }
         />
@@ -297,8 +300,11 @@ export default function App() {
         <Route
           path="/checkout"
           element={
-            <ProtectedRoute userRole={userRole} allowedRoles={["customer", "admin"]}>
-              <Checkout/>
+            <ProtectedRoute
+              userRole={userRole}
+              allowedRoles={["customer", "admin"]}
+            >
+              <Checkout />
             </ProtectedRoute>
           }
         />
@@ -306,12 +312,14 @@ export default function App() {
         <Route
           path="/tile-calculator"
           element={
-          <ProtectedRoute userRole={userRole} allowedRoles={["customer", "admin"]}>
-          <TileCalculator />
-          </ProtectedRoute>
-         }
+            <ProtectedRoute
+              userRole={userRole}
+              allowedRoles={["customer", "admin"]}
+            >
+              <TileCalculator />
+            </ProtectedRoute>
+          }
         />
-
       </Routes>
     </BrowserRouter>
   );

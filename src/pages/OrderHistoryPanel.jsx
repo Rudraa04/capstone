@@ -32,19 +32,22 @@ function Modal({ isOpen, onClose, children }) {
   );
 }
 
-
 export default function OrderHistoryPanel() {
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [showModal, setShowModal] = useState(false);
-const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportForm, setSupportForm] = useState({
+    subject: "",
+    message: "",
+  });
 
-const openOrderModal = (order) => {
-  setSelectedOrder(order);
-  setShowModal(true);
-};
-
+  const openOrderModal = (order) => {
+    setSelectedOrder(order);
+    setShowModal(true);
+  };
 
   // Format money in INR with ₹ symbol
   const money = (n) =>
@@ -99,9 +102,12 @@ const openOrderModal = (order) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-sm font-semibold">{money(order.totalAmount)}</div>
+          <div className="flex items-center justify-between w-full">
+            {/* Price + Status */}
+            <div className="text-left">
+              <div className="text-sm font-semibold">
+                {money(order.totalAmount)}
+              </div>
               <div className="mt-1">
                 <span className={statusBadge(order.status)}>
                   {order.status || "Paid"}
@@ -109,6 +115,7 @@ const openOrderModal = (order) => {
               </div>
             </div>
 
+            {/* View Details Button on Right */}
             <button
               onClick={() => openOrderModal(order)}
               className="text-blue-600 hover:text-blue-800 text-sm font-semibold px-3 py-1 border border-blue-200 rounded-md bg-white hover:bg-blue-50"
@@ -120,17 +127,33 @@ const openOrderModal = (order) => {
 
         {/* Quick preview of items */}
         {Array.isArray(order.items) && order.items.length > 0 && !isOpen && (
-          <ul className="mt-3 text-xs text-gray-600 list-disc ml-5">
+          <div className="mt-3 space-y-2">
             {order.items.slice(0, 3).map((it, i) => (
-              <li key={i}>
-                {(it.name || it.productType || "Item")} × {it.quantity} @{" "}
-                {money(it.price)}
-              </li>
+              <div
+                key={i}
+                className="flex items-center justify-between text-xs bg-white p-2 rounded-lg border"
+              >
+                <div className="flex items-center gap-2">
+                  <img
+                    src={it.image || "https://via.placeholder.com/40"}
+                    alt={it.name || it.productType || "Item"}
+                    className="w-8 h-8 object-cover rounded border"
+                  />
+                  <span className="font-medium text-gray-800">
+                    {it.name || it.productType || "Item"}
+                  </span>
+                </div>
+                <div className="text-gray-600">
+                  {it.quantity} × {money(it.price)}
+                </div>
+              </div>
             ))}
             {order.items.length > 3 && (
-              <li className="italic">…and {order.items.length - 3} more</li>
+              <p className="text-xs italic text-gray-500">
+                …and {order.items.length - 3} more
+              </p>
             )}
-          </ul>
+          </div>
         )}
 
         {/* Expanded details */}
@@ -149,7 +172,7 @@ const openOrderModal = (order) => {
                 <div className="space-y-3">
                   {order.items?.map((it, idx) => {
                     const lineTotal =
-                      (Number(it.price || 0) * Number(it.quantity || 1)) ||
+                      Number(it.price || 0) * Number(it.quantity || 1) ||
                       it.lineTotal;
                     return (
                       <div
@@ -167,8 +190,12 @@ const openOrderModal = (order) => {
                           </div>
                           <div className="text-xs text-gray-500">
                             {it.sku && <span>SKU: {it.sku} · </span>}
-                            {it.specs?.size && <span>Size: {it.specs.size} · </span>}
-                            {it.specs?.color && <span>Color: {it.specs.color} · </span>}
+                            {it.specs?.size && (
+                              <span>Size: {it.specs.size} · </span>
+                            )}
+                            {it.specs?.color && (
+                              <span>Color: {it.specs.color} · </span>
+                            )}
                             {it.specs?.finish && (
                               <span>Finish: {it.specs.finish}</span>
                             )}
@@ -176,12 +203,18 @@ const openOrderModal = (order) => {
                         </div>
                         <div className="text-right text-xs">
                           <div>
-                            Qty: <span className="font-medium">{it.quantity}</span>
+                            Qty:{" "}
+                            <span className="font-medium">{it.quantity}</span>
                           </div>
                           <div>
-                            Unit: <span className="font-medium">{money(it.price)}</span>
+                            Unit:{" "}
+                            <span className="font-medium">
+                              {money(it.price)}
+                            </span>
                           </div>
-                          <div className="font-semibold">{money(lineTotal)}</div>
+                          <div className="font-semibold">
+                            {money(lineTotal)}
+                          </div>
                         </div>
                       </div>
                     );
@@ -192,7 +225,9 @@ const openOrderModal = (order) => {
               {/* Price Summary */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-lg p-3 border">
-                  <h5 className="font-semibold text-gray-800 mb-2">Price Summary</h5>
+                  <h5 className="font-semibold text-gray-800 mb-2">
+                    Price Summary
+                  </h5>
                   <div className="text-sm flex justify-between">
                     <span>Subtotal</span>
                     <span>{money(order.subtotal ?? order.totalAmount)}</span>
@@ -228,7 +263,9 @@ const openOrderModal = (order) => {
                   </h5>
                   {order.shippingAddress ? (
                     <div className="text-sm text-gray-700">
-                      <div className="font-medium">{order.shippingAddress.name}</div>
+                      <div className="font-medium">
+                        {order.shippingAddress.name}
+                      </div>
                       <div>{order.shippingAddress.street}</div>
                       <div>
                         {order.shippingAddress.city}
@@ -243,7 +280,9 @@ const openOrderModal = (order) => {
                       )}
                     </div>
                   ) : (
-                    <div className="text-sm text-gray-500">No address on file.</div>
+                    <div className="text-sm text-gray-500">
+                      No address on file.
+                    </div>
                   )}
 
                   <div className="mt-3 text-sm">
@@ -268,23 +307,38 @@ const openOrderModal = (order) => {
               </div>
 
               {/* Timeline */}
-              {Array.isArray(order.timeline) && order.timeline.length > 0 && (
-                <div>
-                  <h5 className="font-semibold text-gray-800 mb-2">Order Timeline</h5>
-                  <div className="flex flex-wrap gap-2">
-                    {order.timeline.map((t, i) => (
-                      <span
+              {/* Quick preview of items */}
+              {Array.isArray(order.items) &&
+                order.items.length > 0 &&
+                !isOpen && (
+                  <div className="mt-3 space-y-2">
+                    {order.items.slice(0, 3).map((it, i) => (
+                      <div
                         key={i}
-                        className="text-xs bg-white border px-2 py-1 rounded-full text-gray-700"
-                        title={t.at ? new Date(t.at).toLocaleString() : ""}
+                        className="flex items-center justify-between text-xs bg-white p-2 rounded-lg border"
                       >
-                        {t.label}
-                        {t.at ? ` • ${new Date(t.at).toLocaleDateString()}` : ""}
-                      </span>
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={it.image || "https://via.placeholder.com/40"}
+                            alt={it.name || it.productType || "Item"}
+                            className="w-8 h-8 object-cover rounded border"
+                          />
+                          <span className="font-medium text-gray-800">
+                            {it.name || it.productType || "Item"}
+                          </span>
+                        </div>
+                        <div className="text-gray-600">
+                          {it.quantity} × {money(it.price)}
+                        </div>
+                      </div>
                     ))}
+                    {order.items.length > 3 && (
+                      <p className="text-xs italic text-gray-500">
+                        …and {order.items.length - 3} more
+                      </p>
+                    )}
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
         </div>
@@ -307,50 +361,120 @@ const openOrderModal = (order) => {
           <Row key={order._id} order={order} />
         ))}
       </div>
+
       <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
-  {selectedOrder && (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-blue-800">Order Details</h2>
-
-      <div className="text-sm text-gray-600">
-        <p><strong>Order ID:</strong> {selectedOrder._id}</p>
-        <p><strong>Date:</strong> {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : "—"}</p>
-        <p><strong>Status:</strong> {selectedOrder.status}</p>
-      </div>
-
-      <div>
-        <h3 className="font-semibold mb-2">Items</h3>
-        {selectedOrder.items?.map((it, idx) => (
-          <div key={idx} className="flex items-center gap-3 border rounded-lg p-2 bg-gray-50 mb-2">
-            <img src={it.image || "https://via.placeholder.com/60"} alt={it.name} className="w-14 h-14 rounded object-cover" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold">{it.name || it.productType}</p>
-              <p className="text-xs text-gray-500">Qty: {it.quantity} × ₹{it.price}</p>
+        {selectedOrder && (
+          <div className="space-y-8">
+            {/* Header */}
+            <div className="border-b pb-4 flex justify-between items-center">
+              <h2 className="text-2xl font-extrabold text-blue-900 tracking-wide">
+                Order Details
+              </h2>
+              <span
+                className={`text-xs uppercase tracking-wide ${statusBadge(
+                  selectedOrder.status
+                )}`}
+              >
+                {selectedOrder.status}
+              </span>
             </div>
-            <div className="font-semibold">₹{(it.price * it.quantity).toFixed(2)}</div>
+
+            {/* Order Info */}
+            <div className="grid sm:grid-cols-2 gap-6 text-sm text-gray-800 bg-gray-50 p-5 rounded-xl border">
+              <div>
+                <p className="text-gray-500 text-xs uppercase">Order ID</p>
+                <p className="font-medium">{selectedOrder._id}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs uppercase">Date</p>
+                <p className="font-medium">
+                  {selectedOrder.createdAt
+                    ? new Date(selectedOrder.createdAt).toLocaleString()
+                    : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs uppercase">
+                  Payment Method
+                </p>
+                <p className="font-medium">
+                  {selectedOrder.payment?.processor || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs uppercase">Total Amount</p>
+                <p className="font-bold text-green-700 text-lg">
+                  ₹{selectedOrder.totalAmount}
+                </p>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div>
+              <h3 className="font-bold mb-4 text-lg text-gray-900 border-b pb-2">
+                Items in This Order
+              </h3>
+              <div className="space-y-4">
+                {selectedOrder.items?.map((it, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-5 border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <img
+                      src={it.image || "https://via.placeholder.com/60"}
+                      alt={it.name}
+                      className="w-16 h-16 rounded-lg object-cover border"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {it.name || it.productType}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Quantity:{" "}
+                        <span className="font-medium">{it.quantity}</span> × ₹
+                        {it.price}
+                      </p>
+                    </div>
+                    <div className="text-right font-bold text-gray-800">
+                      ₹{(it.price * it.quantity).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            <div>
+              <h3 className="font-bold mb-3 text-lg text-gray-900 border-b pb-2">
+                Shipping Address
+              </h3>
+              <div className="bg-gray-50 p-5 rounded-xl border text-sm leading-relaxed">
+                {selectedOrder.shippingAddress ? (
+                  <>
+                    <p className="font-semibold text-gray-800">
+                      {selectedOrder.shippingAddress.name}
+                    </p>
+                    <p>{selectedOrder.shippingAddress.street}</p>
+                    <p>
+                      {selectedOrder.shippingAddress.city},{" "}
+                      {selectedOrder.shippingAddress.state} -{" "}
+                      {selectedOrder.shippingAddress.postalCode}
+                    </p>
+                    <p>{selectedOrder.shippingAddress.country}</p>
+                    {selectedOrder.shippingAddress.phone && (
+                      <p className="mt-2">
+                        📞 {selectedOrder.shippingAddress.phone}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-gray-500">No address on file.</p>
+                )}
+              </div>
+            </div>
           </div>
-        ))}
-      </div>
-
-      <div>
-        <h3 className="font-semibold mb-2">Shipping Address</h3>
-        {selectedOrder.shippingAddress ? (
-          <p className="text-sm">
-            {selectedOrder.shippingAddress.name}, {selectedOrder.shippingAddress.street}, {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} - {selectedOrder.shippingAddress.postalCode}, {selectedOrder.shippingAddress.country}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-500">No address on file.</p>
         )}
-      </div>
-
-      <div>
-        <h3 className="font-semibold mb-2">Total Amount</h3>
-        <p className="text-lg font-bold">₹{selectedOrder.totalAmount}</p>
-      </div>
-    </div>
-  )}
-</Modal>
-
+      </Modal>
     </div>
   );
 }
