@@ -3,10 +3,48 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { api } from "../api";
 
+function Modal({ isOpen, onClose, children }) {
+  if (!isOpen) return null;
+
+  const handleBackdropClick = (e) => {
+    if (e.target.id === "modal-backdrop") onClose();
+  };
+
+  return (
+    <div
+      id="modal-backdrop"
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black bg-opacity-40"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+
 export default function OrderHistoryPanel() {
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+const [selectedOrder, setSelectedOrder] = useState(null);
+
+const openOrderModal = (order) => {
+  setSelectedOrder(order);
+  setShowModal(true);
+};
+
 
   // Format money in INR with ₹ symbol
   const money = (n) =>
@@ -72,7 +110,7 @@ export default function OrderHistoryPanel() {
             </div>
 
             <button
-              onClick={() => setExpandedId(isOpen ? null : order._id)}
+              onClick={() => openOrderModal(order)}
               className="text-blue-600 hover:text-blue-800 text-sm font-semibold px-3 py-1 border border-blue-200 rounded-md bg-white hover:bg-blue-50"
             >
               {isOpen ? "Hide details" : "View details"}
@@ -269,6 +307,50 @@ export default function OrderHistoryPanel() {
           <Row key={order._id} order={order} />
         ))}
       </div>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
+  {selectedOrder && (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold text-blue-800">Order Details</h2>
+
+      <div className="text-sm text-gray-600">
+        <p><strong>Order ID:</strong> {selectedOrder._id}</p>
+        <p><strong>Date:</strong> {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : "—"}</p>
+        <p><strong>Status:</strong> {selectedOrder.status}</p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold mb-2">Items</h3>
+        {selectedOrder.items?.map((it, idx) => (
+          <div key={idx} className="flex items-center gap-3 border rounded-lg p-2 bg-gray-50 mb-2">
+            <img src={it.image || "https://via.placeholder.com/60"} alt={it.name} className="w-14 h-14 rounded object-cover" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">{it.name || it.productType}</p>
+              <p className="text-xs text-gray-500">Qty: {it.quantity} × ₹{it.price}</p>
+            </div>
+            <div className="font-semibold">₹{(it.price * it.quantity).toFixed(2)}</div>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <h3 className="font-semibold mb-2">Shipping Address</h3>
+        {selectedOrder.shippingAddress ? (
+          <p className="text-sm">
+            {selectedOrder.shippingAddress.name}, {selectedOrder.shippingAddress.street}, {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} - {selectedOrder.shippingAddress.postalCode}, {selectedOrder.shippingAddress.country}
+          </p>
+        ) : (
+          <p className="text-sm text-gray-500">No address on file.</p>
+        )}
+      </div>
+
+      <div>
+        <h3 className="font-semibold mb-2">Total Amount</h3>
+        <p className="text-lg font-bold">₹{selectedOrder.totalAmount}</p>
+      </div>
+    </div>
+  )}
+</Modal>
+
     </div>
   );
 }
