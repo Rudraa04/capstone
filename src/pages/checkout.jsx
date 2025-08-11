@@ -6,6 +6,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
+import { api } from "../api";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -271,6 +272,69 @@ export default function Checkout() {
       }
     }
   };
+async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const token = await user.getIdToken();
+
+  const items = (cartItems || []).map(ci => ({
+    productId: ci._id || ci.id,
+    sku: ci.sku,
+    productType: ci.category || ci.type || "Tile",
+    name: ci.name,
+    quantity: parseInt(ci.quantity || 1, 10),
+    price: Number(ci.price || 0) - Number(ci.discount || 0),
+    unit: ci.unit || "box",
+    image: ci.image,
+    specs: ci.specs || { size: ci.size, color: ci.color, finish: ci.finish },
+  }));
+
+  // snapshot selected address
+  const addr = addressList.find(a => a.id === selectedAddress) || {};
+  const shippingAddress = {
+    name: addr.fullName || "",
+    street: addr.street || "",
+    city: addr.city || "",
+    state: addr.state || "",
+    postalCode: addr.postalCode || "",
+    country: addr.country || "",
+    phone: addr.phone || "",
+  };
+
+  // optional totals (useful for detail view)
+  const subtotal = items.reduce((s, it) => s + it.price * it.quantity, 0);
+  const taxTotal = +(subtotal * 0.05).toFixed(2);
+  const shippingFee = 0;
+
+  const receiptUrl = paymentResult?.payment?.receipt_url;
+  const last4 = paymentResult?.payment?.card_details?.card?.last_4;
+  const brand = paymentResult?.payment?.card_details?.card?.card_brand;
+
+  await api.post(
+    "/api/orders",
+    {
+      items,
+      currency: "INR",                // display currency for your UI
+      subtotal,
+      taxTotal,
+      shippingFee,
+      totalAmount: Number(grandTotal.toFixed(2)),
+      status: "Paid",
+      customerName: shippingAddress.name,
+      shippingAddress,
+      payment: {
+        processor: "Square",
+        receiptUrl,
+        last4,
+        brand,
+      },
+      timeline: [{ label: "Ordered", at: new Date().toISOString() }],
+    },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+}
+
 
   const handlePlaceOrder = async () => {
     // 1. Validate address
@@ -312,20 +376,27 @@ export default function Checkout() {
       const data = await res.json(); // parses the response from your backend
 
       if (res.ok) {
-        //if the payment was successful
-        localStorage.setItem(
-          //Save a success message in localStorage — this will be shown on the Cart page.
-          "orderSuccessMessage",
-          "🎉 Your payment was successful! Thank you for your order."
-        );
+  // 1) Save order to backend
+  await saveOrderAfterPayment(cartItems, grandTotal, data.result); 
 
-        localStorage.removeItem("cart"); //  Clear the user's cart after payment.
-        window.dispatchEvent(new Event("cartUpdated")); //  Notify other components (like the cart icon in the header) that the cart is now empty.
+  // 2) Clear cart (⚠️ your app loads from "cartItems", so clear BOTH keys)
+  localStorage.removeItem("cartItems");
+  localStorage.removeItem("cart");
+  window.dispatchEvent(new Event("cartUpdated"));
 
-        navigate("/cart"); // Redirect the user to the Cart page
-      } else {
-        triggerToast("❌ Payment failed: " + data.message, "error");
-      }
+  // 3) Success toast + redirect (go to Profile or Order History if you have a route)
+  localStorage.setItem(
+    "orderSuccessMessage",
+    "🎉 Your payment was successful! Thank you for your order."
+  );
+
+  // Redirect to cart or profile — your choice:
+  // navigate("/profile"); // if your profile shows Order History
+  navigate("/cart"); // keep your current behavior if preferred
+} else {
+  triggerToast("❌ Payment failed: " + data.message, "error");
+}
+
     } catch (err) {
       console.error(err);
       triggerToast("❌ Payment request failed. Please try again.", "error");

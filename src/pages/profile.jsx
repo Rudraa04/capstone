@@ -7,13 +7,11 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, db, storage } from "../firebase/firebase";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { ToastContainer } from "react-toastify";
+import OrderHistoryPanel from "./OrderHistoryPanel"; // ✅ Updated path
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -40,9 +38,7 @@ export default function Profile() {
           userData.role === "admin";
 
         setFromAdmin(isAdmin);
-        if (!isAdmin) {
-          localStorage.removeItem("fromAdmin");
-        }
+        if (!isAdmin) localStorage.removeItem("fromAdmin");
 
         setUser({
           ...currentUser,
@@ -66,10 +62,7 @@ export default function Profile() {
   const handlePasswordReset = async () => {
     if (user?.email) {
       await sendPasswordResetEmail(auth, user.email);
-      toast.success("Password reset email sent!", {
-        position: "bottom-right",
-        autoClose: 2000,
-      });
+      alert("Password reset email sent!");
     }
   };
 
@@ -84,17 +77,10 @@ export default function Profile() {
         address: profileData.address,
         role: fromAdmin ? "admin" : "customer",
       });
-      toast.success("Profile updated successfully!", {
-        position: "bottom-right",
-        autoClose: 2000,
-      });
-
+      alert("Profile updated!");
       setEditing(false);
     } catch (error) {
-      toast.error("Error updating profile, Please try again. ", {
-        position: "bottom-right",
-        autoClose: 3000,
-      });
+      alert("Error updating profile: " + error.message);
     }
   };
 
@@ -103,10 +89,7 @@ export default function Profile() {
     if (!file || !auth.currentUser) return;
 
     if (file.size > 200 * 1024) {
-      toast.error("File too large! Max size allowed is 200KB.", {
-        position: "bottom-right",
-        autoClose: 3000,
-      });
+      alert("File too large! Max size allowed is 200KB.");
       return;
     }
 
@@ -141,17 +124,10 @@ export default function Profile() {
         photoURL: refreshedUser.photoURL,
       }));
 
-      toast.success("Profile picture updated successfully!", {
-        position: "bottom-right",
-        autoClose: 2000,
-      });
+      alert("Profile picture updated!");
     } catch (err) {
-      toast.error("Error uploading picture, Please try again. " , {
-        position: "bottom-right",
-        autoClose: 3000,
-      });
+      alert("Error uploading picture: " + err.message);
     }
-
     setUploading(false);
   };
 
@@ -159,148 +135,153 @@ export default function Profile() {
     <div className="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen text-gray-900 font-sans">
       <Header />
       <main className="py-16 px-4">
-        <div className="max-w-3xl mx-auto bg-white shadow-2xl rounded-3xl border border-gray-200 p-10">
-          {fromAdmin && (
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => navigate("/admin")}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow"
-              >
-                Back to Admin
-              </button>
-            </div>
-          )}
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col-reverse lg:flex-row gap-8">
+            {/* Profile Card */}
+            <div className="w-full lg:flex-1 bg-white shadow-2xl rounded-3xl border border-gray-200 p-10">
+              {fromAdmin && (
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => navigate("/admin")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow"
+                  >
+                    Back to Admin
+                  </button>
+                </div>
+              )}
 
-          <div className="flex flex-col items-center text-center mb-10">
-            <div className="w-28 h-28 rounded-full overflow-hidden shadow border-2 border-blue-500 transition-transform duration-300 ease-in-out hover:scale-105 hover:ring hover:ring-blue-400 hover:shadow-xl">
-              {user?.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt="Profile"
-                  className="object-cover w-full h-full"
-                />
-              ) : (
-                <div className="w-full h-full bg-blue-100 text-blue-600 flex items-center justify-center text-4xl font-bold">
-                  {profileData.fullName?.charAt(0) || "U"}
+              <div className="flex flex-col items-center text-center mb-10">
+                <div className="w-28 h-28 rounded-full overflow-hidden shadow border-2 border-blue-500 transition-transform duration-300 ease-in-out hover:scale-105 hover:ring hover:ring-blue-400 hover:shadow-xl">
+                  {user?.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt="Profile"
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-blue-100 text-blue-600 flex items-center justify-center text-4xl font-bold">
+                      {profileData.fullName?.charAt(0) || "U"}
+                    </div>
+                  )}
+                </div>
+
+                <label className="mt-4 text-sm font-medium">
+                  {uploading
+                    ? "Uploading..."
+                    : user?.photoURL
+                    ? "Change Picture"
+                    : "Upload Picture"}
+                </label>
+
+                <div className="relative mt-2">
+                  <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg shadow-md transition">
+                    Choose File
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfilePicUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                <h2 className="text-2xl font-bold mt-4">
+                  {profileData.fullName || "Unnamed User"}
+                </h2>
+                <p className="text-sm text-gray-600 mb-2">{user?.email}</p>
+
+                {fromAdmin && (
+                  <span className="text-xs text-white bg-blue-600 px-2 py-1 rounded-full">
+                    Admin
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-4 mb-8">
+                <button
+                  onClick={() => setEditing(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-semibold"
+                >
+                  Edit Profile
+                </button>
+                <button
+                  onClick={handlePasswordReset}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg text-sm font-semibold"
+                >
+                  Change Password
+                </button>
+                <button
+                  onClick={async () => {
+                    await signOut(auth);
+                    localStorage.removeItem("fromAdmin");
+                    navigate("/login");
+                  }}
+                  className="bg-red-100 hover:bg-red-200 text-red-600 px-6 py-2 rounded-lg text-sm font-semibold"
+                >
+                  Logout
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {["fullName", "phone", "email", "address"].map((key) => (
+                  <div key={key}>
+                    <label className="text-sm font-semibold mb-1 block text-gray-700">
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                    </label>
+                    {editing && key !== "email" ? (
+                      key === "address" ? (
+                        <textarea
+                          rows={2}
+                          value={profileData[key] || ""}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              [key]: e.target.value,
+                            })
+                          }
+                          className="w-full border border-gray-300 px-4 py-2 rounded-lg bg-gray-50 focus:outline-none"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={profileData[key] || ""}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              [key]: e.target.value,
+                            })
+                          }
+                          className="w-full border border-gray-300 px-4 py-2 rounded-lg bg-gray-50 focus:outline-none"
+                        />
+                      )
+                    ) : (
+                      <div className="w-full border border-gray-200 px-4 py-3 rounded-lg bg-gray-100">
+                        {key === "email" ? user?.email : profileData[key] || "-"}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {editing && (
+                <div className="flex justify-end mt-8">
+                  <button
+                    onClick={handleSave}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold"
+                  >
+                    Save Changes
+                  </button>
                 </div>
               )}
             </div>
 
-            <label className="mt-4 text-sm font-medium">
-              {uploading
-                ? "Uploading..."
-                : user?.photoURL
-                ? "Change Picture"
-                : "Upload Picture"}
-            </label>
-
-            <div className="relative mt-2">
-              <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg shadow-md transition">
-                Choose File
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfilePicUpload}
-                  className="hidden"
-                />
-              </label>
+            {/* Order History on the Right */}
+            <div className="w-full lg:w-1/3">
+              <OrderHistoryPanel />
             </div>
-
-            <h2 className="text-2xl font-bold mt-4">
-              {profileData.fullName || "Unnamed User"}
-            </h2>
-            <p className="text-sm text-gray-600 mb-2">{user?.email}</p>
-
-            {fromAdmin && (
-              <span className="text-xs text-white bg-blue-600 px-2 py-1 rounded-full">
-                Admin
-              </span>
-            )}
           </div>
-
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
-            <button
-              onClick={() => setEditing(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-semibold"
-            >
-              Edit Profile
-            </button>
-            <button
-              onClick={handlePasswordReset}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg text-sm font-semibold"
-            >
-              Change Password
-            </button>
-            <button
-              onClick={async () => {
-                await signOut(auth);
-                toast.success("Logged out successfully!", {
-                  position: "bottom-right",
-                  autoClose: 1000,
-                });
-                localStorage.removeItem("fromAdmin");
-                setTimeout(() => navigate("/login"), 1000);
-              }}
-              className="bg-red-100 hover:bg-red-200 text-red-600 px-6 py-2 rounded-lg text-sm font-semibold"
-            >
-              Logout
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {["fullName", "phone", "email", "address"].map((key) => (
-              <div key={key}>
-                <label className="text-sm font-semibold mb-1 block text-gray-700">
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                </label>
-                {editing && key !== "email" ? (
-                  key === "address" ? (
-                    <textarea
-                      rows={2}
-                      value={profileData[key] || ""}
-                      onChange={(e) =>
-                        setProfileData({
-                          ...profileData,
-                          [key]: e.target.value,
-                        })
-                      }
-                      className="w-full border border-gray-300 px-4 py-2 rounded-lg bg-gray-50 focus:outline-none"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={profileData[key] || ""}
-                      onChange={(e) =>
-                        setProfileData({
-                          ...profileData,
-                          [key]: e.target.value,
-                        })
-                      }
-                      className="w-full border border-gray-300 px-4 py-2 rounded-lg bg-gray-50 focus:outline-none"
-                    />
-                  )
-                ) : (
-                  <div className="w-full border border-gray-200 px-4 py-3 rounded-lg bg-gray-100">
-                    {key === "email" ? user?.email : profileData[key] || "-"}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {editing && (
-            <div className="flex justify-end mt-8">
-              <button
-                onClick={handleSave}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold"
-              >
-                Save Changes
-              </button>
-            </div>
-          )}
         </div>
       </main>
-      <ToastContainer />
       <Footer />
     </div>
   );

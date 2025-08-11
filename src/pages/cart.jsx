@@ -5,10 +5,6 @@ import { auth } from "../firebase/firebase";
 import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { toast } from "react-toastify";
-
-
-
 
 export default function Cart() { // export so it can be used in other files
   const navigate = useNavigate(); // used to redirect users to othwer page in this case checkout page
@@ -32,16 +28,7 @@ export default function Cart() { // export so it can be used in other files
     }, duration);
   };
 
-  useEffect(() => {
-  const message = localStorage.getItem("orderSuccessMessage");
-  if (message) {
-    toast.success(message, {
-      position: "bottom-right",
-      autoClose: 1500,
-    });
-    localStorage.removeItem("orderSuccessMessage");
-  }
-}, []);
+  
 
   useEffect(() => {
     const message = localStorage.getItem("orderSuccessMessage");

@@ -3,41 +3,81 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// EITHER: use a dedicated URI…
-/*
-process.env.ORDER_HISTORY_URI = 'mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/Order_History'
-const orderConn = mongoose.createConnection(process.env.ORDER_HISTORY_URI);
-*/
-
-// …OR: reuse cluster URI but target the DB by name:
 const orderConnection = mongoose.createConnection(process.env.MONGO_URI, {
   dbName: 'Order_History',
 });
 
+const OrderItemSchema = new mongoose.Schema(
+  {
+    productId: { type: mongoose.Schema.Types.ObjectId, required: false },
+    sku: String,
+    name: String,                  // snapshot name
+    image: String,                 // snapshot image URL
+    specs: Object,                 // { color, size, finish, ... } free-form
+    productType: {
+      type: String,
+      enum: ['Tile', 'Sink', 'Toilet', 'Granite', 'Marble'],
+      required: true,
+    },
+    unit: { type: String, default: 'box' },  // 'box' | 'piece' | etc.
+    quantity: { type: Number, required: true },
+    price: { type: Number, required: true }, // unit price charged (pre-tax)
+    lineTotal: { type: Number },             // convenience: price * quantity
+  },
+  { _id: false }
+);
+
 const OrderSchema = new mongoose.Schema(
   {
-    // If you're using Firebase Auth, store UID as string:
-    userUid: { type: String, required: true }, // e.g., 'O1aBcD23...'
-    // If you prefer MongoDB user _id instead, tell me and I’ll switch this to ObjectId.
+    // Who
+    userUid: { type: String, required: true },
 
-    items: [
+    // What
+    items: { type: [OrderItemSchema], required: true },
+
+    // Totals (store a snapshot so UI never has to recompute)
+    subtotal: Number,            // sum of lineTotals (pre-tax, pre-discount)
+    discountTotal: { type: Number, default: 0 },
+    taxTotal: { type: Number, default: 0 },
+    shippingFee: { type: Number, default: 0 },
+    currency: { type: String, default: 'INR' }, // show ₹ in UI
+    totalAmount: { type: Number, required: true }, // grand total charged
+
+    // Shipping snapshot
+    shippingAddress: {
+      name: String,
+      phone: String,
+      street: String,
+      city: String,
+      state: String,
+      postalCode: String,
+      country: String,
+    },
+
+    // Delivery (outsourced) – fill when the partner sends you data
+    tracking: {
+      provider: String,          // e.g., Delhivery, BlueDart, etc.
+      trackingCode: String,      // partner’s code
+      trackingUrl: String,       // deep link to partner tracking page
+      expectedDelivery: Date,
+    },
+
+    // Optional status timeline for pretty UI (use when you want)
+    timeline: [
       {
-        productId: { type: mongoose.Schema.Types.ObjectId, required: true },
-        productType: {
-          type: String,
-          enum: ['Tile', 'Sink', 'Toilet', 'Granite', 'Marble'],
-          required: true,
-        },
-        quantity: { type: Number, required: true },
-        price: { type: Number, required: true }, // price per unit you charged
-        unit: { type: String, default: 'box' },  // 'box' | 'piece'
-        name: String,                             // snapshot name at purchase time (optional but useful)                            // optional
+        label: String,           // 'Ordered', 'Shipped', 'Delivered'
+        at: { type: Date, default: Date.now },
+        note: String,
       },
     ],
 
-    totalAmount: { type: Number, required: true },
-    
-
+    // Payment snapshot
+    payment: {
+      method: String,            // 'Card', 'UPI', etc.
+      processor: String,         // 'Square', 'Razorpay', etc.
+      referenceId: String,       // payment id/receipt
+      receiptUrl: String,        // link if available
+    },
 
     status: {
       type: String,
@@ -46,12 +86,11 @@ const OrderSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true,                // createdAt / updatedAt
-    collection: 'Customer_Order',    // <- EXACT collection name
+    timestamps: true,
+    collection: 'Customer_Order',
   }
 );
 
-// helpful index for fetching a user's history by most recent first
 OrderSchema.index({ userUid: 1, createdAt: -1 });
 
-export default orderConnection.model('Order_Model', OrderSchema, 'Customer_Order' );
+export default orderConnection.model('Order_Model', OrderSchema, 'Customer_Order');
