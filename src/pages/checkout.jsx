@@ -8,31 +8,51 @@ import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { api } from "../api";
 
-/* --- pricing helpers (no UI changes) --- */
+/* replace your isTile/looksLikeTile + computeLineTotal with this: */
+
+function isTilesItem(it = {}) {
+  const tag = String(it.kind || it.type || it.category || it.productType || "").toLowerCase();
+  return /tile/.test(tag); // only treat real “Tiles” as tiles
+}
+
 const BOX_CONFIG = {
   "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
   "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
   "12x18": { tilesPerBox: 6, sqftPerBox: 9 },
   "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
 };
+
 function getBoxInfo(sizeStr = "") {
-  const key = String(sizeStr).replace(/\s+/g, "");
+  const key = String(sizeStr || "").replace(/\s+/g, "");
   if (BOX_CONFIG[key]) return BOX_CONFIG[key];
   const [L, W] = key.split("x").map(Number);
   const sqftPerTile = L && W ? (L * W) / 144 : 0;
   return { tilesPerBox: 1, sqftPerBox: sqftPerTile };
 }
-/** ₹/sqft × sqft-per-box × boxes (tiles), else price × qty (non-tiles) */
-function computeLineTotal(item) {
-  const price = parseFloat(item?.price) || 0;
-  const qty = parseInt(item?.quantity) || 0;
-  const looksLikeTile = typeof item?.size === "string" && /^\s*\d+\s*x\s*\d+\s*$/i.test(item.size);
-  if (looksLikeTile) {
-    const { sqftPerBox } = getBoxInfo(item.size);
-    return price * sqftPerBox * qty;
+
+function computeLineTotal(it = {}) {
+  const price = parseFloat(it.price) || 0;
+  const qty = parseInt(it.quantity) || 0;
+
+  if (isTilesItem(it)) {
+    const sizeStr = it.size || it.specs?.size || "";
+    const { sqftPerBox } = getBoxInfo(sizeStr);
+    return price * sqftPerBox * qty; // ₹/sqft × sqft/box × boxes
   }
+
+  // all non-tiles (granite, marble, sinks, toilets...) are price × qty
   return price * qty;
 }
+function normalizeProductType(v) {
+  const s = String(v || "").toLowerCase();
+  if (s.includes("tile")) return "Tile";
+  if (s.includes("granite")) return "Granite";
+  if (s.includes("marble")) return "Marble";
+  if (s.includes("sanitary") || s.includes("toilet") || s.includes("wc") || s.includes("basin") || s.includes("sink"))
+    return "Sanitaryware";
+  return "Tile"; // fallback to a known enum value
+}
+
 
 
 export default function Checkout() {
@@ -102,12 +122,15 @@ export default function Checkout() {
   }, []);
 
   useEffect(() => {
-    const storedItems = localStorage.getItem("cartItems"); //It tries to get any cart items that were saved in localStorage
-    if (storedItems) {
-      // If there are items in localStorage
-      setCartItems(JSON.parse(storedItems)); // If yes, it converts it back into an array and stores it in the cartItems state, so the cart can display them.
-    }
-  }, []);
+  const load = () => {
+    const raw = localStorage.getItem("cart") ?? localStorage.getItem("cartItems");
+    setCartItems(raw ? JSON.parse(raw) : []);
+  };
+  load();
+  window.addEventListener("cartUpdated", load);
+  return () => window.removeEventListener("cartUpdated", load);
+}, []);
+
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -308,7 +331,7 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
   const items = (cartItems || []).map(ci => ({
     productId: ci._id || ci.id,
     sku: ci.sku,
-    productType: ci.category || ci.type || "Tile",
+     productType: normalizeProductType(ci.category || ci.type || ci.kind || ci.productType),
     name: ci.name,
     quantity: parseInt(ci.quantity || 1, 10),
     price: Number(ci.price || 0) - Number(ci.discount || 0),
@@ -701,8 +724,9 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
                         <h4 className="font-semibold text-base">{item.name}</h4>
                         <p className="text-sm text-gray-500">Qty: {quantity}</p>
                         <p className="text-sm text-gray-400">
-                          Price per Sqft: ₹{finalPrice}
-                        </p>
+  {isTilesItem(item) ? "Price per Sqft" : "Unit Price"}: ₹{finalPrice.toFixed(2)}
+</p>
+
                       </div>
                     </div>
                    <div className="text-right font-medium">

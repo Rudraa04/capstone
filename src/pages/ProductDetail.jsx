@@ -365,6 +365,8 @@ const handleAddToCart = () => {
     const cartItem = {
       id: Date.now(),
       ...product,
+      kind: type,
+      category: type,
       quantity, // boxes for tiles, units otherwise
       totalTiles: type === "tiles" ? totalUnits : undefined,
       totalSqft: type === "tiles" ? totalSqft : undefined,
@@ -389,6 +391,7 @@ const handleAddToCart = () => {
       existingCart.push(cartItem);
     }
     localStorage.setItem("cart", JSON.stringify(existingCart));
+    window.dispatchEvent(new Event("cartUpdated"));
     toast.success("🛒 Added to cart!", {
       position: "bottom-right",
       autoClose: 3000,

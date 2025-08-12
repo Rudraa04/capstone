@@ -1,15 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { api } from "../api";
 
 /* ===== pricing helpers (UI untouched) ===== */
+
+// Only treat real “Tiles” as tiles based on product type/category/kind
+const isTilesItem = (it = {}) => {
+  const tag = String(
+    it.productType || it.category || it.kind || it.type || ""
+  ).toLowerCase();
+  return tag.includes("tile");
+};
+
 const BOX_CONFIG = {
   "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
   "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
   "12x18": { tilesPerBox: 6, sqftPerBox: 9 },
   "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
 };
+
 const getBoxInfo = (sizeStr = "") => {
   const key = String(sizeStr || "").replace(/\s+/g, "");
   if (BOX_CONFIG[key]) return BOX_CONFIG[key];
@@ -17,20 +27,90 @@ const getBoxInfo = (sizeStr = "") => {
   const sqftPerTile = L && W ? (L * W) / 144 : 0;
   return { tilesPerBox: 1, sqftPerBox: sqftPerTile };
 };
-const isTileItem = (it) =>
-  typeof (it?.size || it?.specs?.size) === "string" &&
-  /^\s*\d+\s*x\s*\d+\s*$/i.test(it.size || it.specs.size);
 
-const computeLineTotal = (it) => {
-  const price = parseFloat(it?.price) || 0;         // ₹ per sqft (tiles) or ₹ per unit (others)
-  const qty = parseInt(it?.quantity) || 0;          // boxes or units
-  if (isTileItem(it)) {
-    const { sqftPerBox } = getBoxInfo(it.size || it.specs.size);
-    return price * sqftPerBox * qty;                // ₹/sqft × sqft/box × boxes
+const computeLineTotal = (it = {}) => {
+  const price = parseFloat(it.price) || 0;     // ₹/sqft for tiles, ₹/unit for others
+  const qty = parseInt(it.quantity) || 0;      // boxes or units
+
+  if (isTilesItem(it)) {
+    const sizeStr = it.specs?.size || it.size || "";
+    const { sqftPerBox } = getBoxInfo(sizeStr);
+    return price * sqftPerBox * qty;           // ₹/sqft × sqft/box × boxes
   }
-  return price * qty;                               // non-tiles: ₹ × units
+  return price * qty;                          // non-tiles: price × qty
 };
 /* ===== end helpers ===== */
+/** Decide per-order whether to use tile math or simple unit price */
+/** Decide per-item whether to use tile math or simple unit price (greedy to match the order subtotal) */
+const makeLineCalculator = (order) => {
+  const items = Array.isArray(order?.items) ? order.items : [];
+
+  // Target subtotal (prefer backend's subtotal; else total - tax - shipping)
+  const targetSubtotal =
+    Number(order?.subtotal ?? 0) ||
+    Math.max(
+      0,
+      Number(order?.totalAmount || 0) -
+        Number(order?.taxTotal || 0) -
+        Number(order?.shippingFee || 0)
+    );
+
+  // Precompute unit and tile totals for each item
+  const unitTotals = items.map((it) => {
+    const price = parseFloat(it?.price) || 0;
+    const qty = parseInt(it?.quantity) || 0;
+    return price * qty;
+  });
+
+  const tileTotals = items.map((it) => {
+    const price = parseFloat(it?.price) || 0;
+    const qty = parseInt(it?.quantity) || 0;
+
+    if (!isTilesItem(it)) return price * qty;
+
+    const sizeStr = it?.specs?.size || it?.size || "";
+    const { sqftPerBox } = getBoxInfo(sizeStr);
+
+    // Heuristic: if the size is a huge slab (e.g., >25 sqft), treat it as non-tile
+    if (sqftPerBox > 25) return price * qty;
+
+    return price * sqftPerBox * qty;
+  });
+
+  const unitSum = unitTotals.reduce((a, b) => a + b, 0);
+  let need = targetSubtotal - unitSum;
+
+  // Start with unit for all; greedily flip items to tile to approach target
+  const deltas = tileTotals
+    .map((t, i) => ({ i, delta: t - unitTotals[i] }))
+    .filter((d) => d.delta > 0) // only items that increase towards the target
+    .sort((a, b) => b.delta - a.delta); // try bigger adjustments first
+
+  const useTile = new Set();
+  for (const d of deltas) {
+    if (Math.abs(need - d.delta) <= Math.abs(need)) {
+      useTile.add(d.i);
+      need -= d.delta;
+      if (Math.abs(need) < 1e-6) break; // close enough
+    }
+  }
+  // If we didn’t pick any and there are candidates, pick the single closest
+  if (useTile.size === 0 && deltas.length) {
+    let best = deltas.reduce(
+      (best, d) =>
+        Math.abs(need - d.delta) < Math.abs(need - (best?.delta ?? Infinity))
+          ? d
+          : best,
+      null
+    );
+    if (best) useTile.add(best.i);
+  }
+
+  // Return a calculator that needs the item's index
+  return (_item, idx) => (useTile.has(idx) ? tileTotals[idx] : unitTotals[idx]);
+};
+
+
 
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
@@ -110,6 +190,7 @@ export default function OrderHistoryPanel() {
   const Row = ({ order }) => {
     const created = order.createdAt ? new Date(order.createdAt) : null;
     const isOpen = expandedId === order._id;
+    const calcLine = makeLineCalculator(order);
 
     return (
       <div className="p-4 rounded-xl border border-gray-100 bg-gray-50 hover:shadow-md hover:border-blue-300 transition-all duration-200">
@@ -165,7 +246,7 @@ export default function OrderHistoryPanel() {
                 </div>
                 {/* show LINE TOTAL instead of qty × unit */}
                 <div className="text-gray-600">
-                  {money(computeLineTotal(it))}
+                  {money(calcLine(it, i))}
                 </div>
               </div>
             ))}
@@ -190,7 +271,7 @@ export default function OrderHistoryPanel() {
                 <h4 className="font-semibold text-gray-800 mb-3">Items</h4>
                 <div className="space-y-3">
                   {order.items?.map((it, idx) => {
-                    const lineTotal = computeLineTotal(it);
+                    const lineTotal = calcLine(it, idx);
                     return (
                       <div
                         key={idx}
@@ -283,7 +364,7 @@ export default function OrderHistoryPanel() {
                         </span>
                       </div>
                       <div className="text-gray-600">
-                        {money(computeLineTotal(it))}
+                        {money(calcLine(it, i))}
                       </div>
                     </div>
                   ))}
@@ -300,6 +381,12 @@ export default function OrderHistoryPanel() {
       </div>
     );
   };
+
+  const calcLineModal = useMemo(
+  () => (selectedOrder ? makeLineCalculator(selectedOrder) : null),
+  [selectedOrder]
+);
+
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 max-h-[600px] overflow-y-auto">
@@ -318,103 +405,116 @@ export default function OrderHistoryPanel() {
       </div>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
-        {selectedOrder && (
-          <div className="space-y-8">
-            {/* Header */}
-            <div className="border-b pb-4 flex justify-between items-center">
-              <h2 className="text-2xl font-extrabold text-blue-900 tracking-wide">
-                Order Details
-              </h2>
-              <span className={`text-xs uppercase tracking-wide ${statusBadge(selectedOrder.status)}`}>
-                {selectedOrder.status}
-              </span>
-            </div>
+  {selectedOrder && (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="border-b pb-4 flex justify-between items-center">
+        <h2 className="text-2xl font-extrabold text-blue-900 tracking-wide">
+          Order Details
+        </h2>
+        <span
+          className={`text-xs uppercase tracking-wide ${statusBadge(
+            selectedOrder.status
+          )}`}
+        >
+          {selectedOrder.status}
+        </span>
+      </div>
 
-            {/* Order Info */}
-            <div className="grid sm:grid-cols-2 gap-6 text-sm text-gray-800 bg-gray-50 p-5 rounded-xl border">
-              <div>
-                <p className="text-gray-500 text-xs uppercase">Order ID</p>
-                <p className="font-medium">{selectedOrder._id}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs uppercase">Date</p>
-                <p className="font-medium">
-                  {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : "—"}
+      {/* Order Info */}
+      <div className="grid sm:grid-cols-2 gap-6 text-sm text-gray-800 bg-gray-50 p-5 rounded-xl border">
+        <div>
+          <p className="text-gray-500 text-xs uppercase">Order ID</p>
+          <p className="font-medium">{selectedOrder._id}</p>
+        </div>
+        <div>
+          <p className="text-gray-500 text-xs uppercase">Date</p>
+          <p className="font-medium">
+            {selectedOrder.createdAt
+              ? new Date(selectedOrder.createdAt).toLocaleString()
+              : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-500 text-xs uppercase">Payment Method</p>
+          <p className="font-medium">
+            {selectedOrder.payment?.processor || "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-500 text-xs uppercase">Total Amount</p>
+          <p className="font-bold text-green-700 text-lg">
+            ₹{selectedOrder.totalAmount}
+          </p>
+        </div>
+      </div>
+
+      {/* Items list in modal */}
+      <div>
+        <h3 className="font-bold mb-4 text-lg text-gray-900 border-b pb-2">
+          Items in This Order
+        </h3>
+        <div className="space-y-4">
+          {selectedOrder.items?.map((it, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-5 border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
+            >
+              <img
+                src={it.image || "https://via.placeholder.com/60"}
+                alt={it.name}
+                className="w-16 h-16 rounded-lg object-cover border"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  {it.name || it.productType}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Quantity: <span className="font-medium">{it.quantity}</span>
+                  {(it.specs?.size || it.size) &&
+                    ` • Size: ${it.specs?.size || it.size}`}
                 </p>
               </div>
-              <div>
-                <p className="text-gray-500 text-xs uppercase">Payment Method</p>
-                <p className="font-medium">{selectedOrder.payment?.processor || "—"}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-xs uppercase">Total Amount</p>
-                <p className="font-bold text-green-700 text-lg">₹{selectedOrder.totalAmount}</p>
+              <div className="text-right font-bold text-gray-800">
+                {calcLineModal ? money(calcLineModal(it, idx)) : money(computeLineTotal(it))}
               </div>
             </div>
+          ))}
+        </div>
+      </div>
 
-            {/* Items list in modal */}
-            <div>
-              <h3 className="font-bold mb-4 text-lg text-gray-900 border-b pb-2">
-                Items in This Order
-              </h3>
-              <div className="space-y-4">
-                {selectedOrder.items?.map((it, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-5 border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <img
-                      src={it.image || "https://via.placeholder.com/60"}
-                      alt={it.name}
-                      className="w-16 h-16 rounded-lg object-cover border"
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">
-                        {it.name || it.productType}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Quantity: <span className="font-medium">{it.quantity}</span>
-                        {(it.specs?.size || it.size) && ` • Size: ${it.specs?.size || it.size}`}
-                      </p>
-                    </div>
-                    <div className="text-right font-bold text-gray-800">
-                      {money(computeLineTotal(it))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Shipping Address */}
-            <div>
-              <h3 className="font-bold mb-3 text-lg text-gray-900 border-b pb-2">
-                Shipping Address
-              </h3>
-              <div className="bg-gray-50 p-5 rounded-xl border text-sm leading-relaxed">
-                {selectedOrder.shippingAddress ? (
-                  <>
-                    <p className="font-semibold text-gray-800">
-                      {selectedOrder.shippingAddress.name}
-                    </p>
-                    <p>{selectedOrder.shippingAddress.street}</p>
-                    <p>
-                      {selectedOrder.shippingAddress.city},{" "}
-                      {selectedOrder.shippingAddress.state} -{" "}
-                      {selectedOrder.shippingAddress.postalCode}
-                    </p>
-                    <p>{selectedOrder.shippingAddress.country}</p>
-                    {selectedOrder.shippingAddress.phone && (
-                      <p className="mt-2">📞 {selectedOrder.shippingAddress.phone}</p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-gray-500">No address on file.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {/* Shipping Address */}
+      <div>
+        <h3 className="font-bold mb-3 text-lg text-gray-900 border-b pb-2">
+          Shipping Address
+        </h3>
+        <div className="bg-gray-50 p-5 rounded-xl border text-sm leading-relaxed">
+          {selectedOrder.shippingAddress ? (
+            <>
+              <p className="font-semibold text-gray-800">
+                {selectedOrder.shippingAddress.name}
+              </p>
+              <p>{selectedOrder.shippingAddress.street}</p>
+              <p>
+                {selectedOrder.shippingAddress.city},{" "}
+                {selectedOrder.shippingAddress.state} -{" "}
+                {selectedOrder.shippingAddress.postalCode}
+              </p>
+              <p>{selectedOrder.shippingAddress.country}</p>
+              {selectedOrder.shippingAddress.phone && (
+                <p className="mt-2">📞 {selectedOrder.shippingAddress.phone}</p>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-500">No address on file.</p>
+          )}
+        </div>
+      </div>
     </div>
+  )}
+</Modal>
+
+    </div>
+
   );
 }

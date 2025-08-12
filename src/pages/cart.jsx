@@ -6,7 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-/* --- pricing helpers (UI untouched) --- */
+/* replace your isTile/looksLikeTile + computeLineTotal with this: */
+
+function isTilesItem(it = {}) {
+  const tag = String(it.kind || it.type || it.category || it.productType || "").toLowerCase();
+  return /tile/.test(tag); // only treat real “Tiles” as tiles
+}
+
 const BOX_CONFIG = {
   "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
   "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
@@ -15,25 +21,27 @@ const BOX_CONFIG = {
 };
 
 function getBoxInfo(sizeStr = "") {
-  const key = String(sizeStr).replace(/\s+/g, "");
+  const key = String(sizeStr || "").replace(/\s+/g, "");
   if (BOX_CONFIG[key]) return BOX_CONFIG[key];
   const [L, W] = key.split("x").map(Number);
   const sqftPerTile = L && W ? (L * W) / 144 : 0;
   return { tilesPerBox: 1, sqftPerBox: sqftPerTile };
 }
 
-/** ₹/sqft × sqft-per-box × boxes  (tiles), else price × qty (non-tiles) */
-function computeLineTotal(item) {
-  const price = parseFloat(item?.price) || 0;
-  const qty = parseInt(item?.quantity) || 0;
-  const looksLikeTile = typeof item?.size === "string" && /^\s*\d+\s*x\s*\d+\s*$/i.test(item.size);
-  if (looksLikeTile) {
-    const { sqftPerBox } = getBoxInfo(item.size);
-    return price * sqftPerBox * qty;
+function computeLineTotal(it = {}) {
+  const price = parseFloat(it.price) || 0;
+  const qty = parseInt(it.quantity) || 0;
+
+  if (isTilesItem(it)) {
+    const sizeStr = it.size || it.specs?.size || "";
+    const { sqftPerBox } = getBoxInfo(sizeStr);
+    return price * sqftPerBox * qty; // ₹/sqft × sqft/box × boxes
   }
+
+  // all non-tiles (granite, marble, sinks, toilets...) are price × qty
   return price * qty;
 }
-/* --- end helpers --- */
+
 
 
 export default function Cart() { // export so it can be used in other files
@@ -267,7 +275,7 @@ export default function Cart() { // export so it can be used in other files
               </div>
               <button
                 onClick={() => {
-                  localStorage.setItem("cartItems", JSON.stringify(cartItems));
+                  localStorage.setItem("cart", JSON.stringify(cartItems));
                   navigate("/checkout");
                 }}
                 className="w-full py-2 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition"
