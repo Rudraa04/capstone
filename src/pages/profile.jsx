@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   onAuthStateChanged,
@@ -25,7 +25,7 @@ export default function Profile() {
   });
   const [editing, setEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
-
+  const fileInputRef = useRef(null);
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
@@ -143,7 +143,7 @@ export default function Profile() {
                 <div className="flex justify-end mb-4">
                   <button
                     onClick={() => navigate("/admin")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow"
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow"
                   >
                     Back to Admin
                   </button>
@@ -151,62 +151,53 @@ export default function Profile() {
               )}
 
               <div className="flex flex-col items-center text-center mb-10">
-                <div className="w-28 h-28 rounded-full overflow-hidden shadow border-2 border-blue-500 transition-transform duration-300 ease-in-out hover:scale-105 hover:ring hover:ring-blue-400 hover:shadow-xl">
-                  {user?.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt="Profile"
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-blue-100 text-blue-600 flex items-center justify-center text-4xl font-bold">
-                      {profileData.fullName?.charAt(0) || "U"}
-                    </div>
-                  )}
-                </div>
+  {/* Avatar */}
+  <div
+    onClick={() => fileInputRef.current?.click()}
+    role="button"
+    tabIndex={0}
+    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileInputRef.current?.click()}
+    className="w-28 h-28 rounded-full overflow-hidden shadow border-2 border-blue-500 transition-transform duration-300 ease-in-out hover:scale-105 hover:ring hover:ring-blue-400 hover:shadow-xl cursor-pointer"
+    title="Click to change picture"
+  >
+    {user?.photoURL ? (
+      <img src={user.photoURL} alt="Profile" className="object-cover w-full h-full" />
+    ) : (
+      <div className="w-full h-full bg-blue-100 text-blue-600 flex items-center justify-center text-4xl font-bold">
+        {profileData.fullName?.charAt(0) || "U"}
+      </div>
+    )}
+  </div>
+  {/* Hidden file input */}
+  <input
+    ref={fileInputRef}
+    type="file"
+    accept="image/*"
+    onChange={handleProfilePicUpload}
+    className="hidden"
+  />
 
-                <label className="mt-4 text-sm font-medium">
-                  {uploading
-                    ? "Uploading..."
-                    : user?.photoURL
-                    ? "Change Picture"
-                    : "Upload Picture"}
-                </label>
+  <h2 className="text-2xl font-bold mt-4">
+    {profileData.fullName || "Unnamed User"}
+  </h2>
+  <p className="text-sm text-gray-600 mb-2">{user?.email}</p>
 
-                <div className="relative mt-2">
-                  <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg shadow-md transition">
-                    Choose File
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleProfilePicUpload}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
+  {fromAdmin && (
+    <span className="text-xs text-white bg-blue-600 px-2 py-1 rounded-full">Admin</span>
+  )}
+</div>
 
-                <h2 className="text-2xl font-bold mt-4">
-                  {profileData.fullName || "Unnamed User"}
-                </h2>
-                <p className="text-sm text-gray-600 mb-2">{user?.email}</p>
-
-                {fromAdmin && (
-                  <span className="text-xs text-white bg-blue-600 px-2 py-1 rounded-full">
-                    Admin
-                  </span>
-                )}
-              </div>
 
               <div className="flex flex-wrap justify-center gap-4 mb-8">
                 <button
                   onClick={() => setEditing(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-semibold"
+                  className="border border-blue-500 text-blue-500 hover:bg-blue-50 px-6 py-2 rounded-lg text-sm font-semibold transition-colors duration-200"
                 >
                   Edit Profile
                 </button>
                 <button
                   onClick={handlePasswordReset}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg text-sm font-semibold"
+                  className="border border-blue-500 text-blue-500 hover:bg-blue-50 px-6 py-2 rounded-lg text-sm font-semibold transition-colors duration-200"
                 >
                   Change Password
                 </button>
@@ -216,16 +207,16 @@ export default function Profile() {
                     localStorage.removeItem("fromAdmin");
                     navigate("/login");
                   }}
-                  className="bg-red-100 hover:bg-red-200 text-red-600 px-6 py-2 rounded-lg text-sm font-semibold"
+                  className="border border-red-600 text-red-600 hover:bg-red-50 px-6 py-2 rounded-lg text-sm font-semibold transition-colors duration-200"
                 >
                   Logout
                 </button>
-                <button
-                  onClick={() => navigate("/support")}
-                  className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-6 py-2 rounded-lg text-sm font-semibold"
-                >
-                  Customer Support
-                </button>
+               <button
+  onClick={() => navigate("/support")}
+  className="border border-blue-500 text-blue-500 hover:bg-blue-50 px-6 py-2 rounded-lg text-sm font-semibold transition-colors duration-200"
+>
+  Customer Support
+</button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
