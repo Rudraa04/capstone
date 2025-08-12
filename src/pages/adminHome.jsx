@@ -67,7 +67,6 @@ export default function AdminHome() {
     newUsers: 0,
     revenue: 0,
   });
-  const [recentOrders, setRecentOrders] = useState([]);
   const [byCategory, setByCategory] = useState({ revenue: {}, units: {} });
   const [notifications, setNotifications] = useState([]);
 
@@ -154,7 +153,7 @@ export default function AdminHome() {
         const orders = Array.isArray(ordersRes.data) ? ordersRes.data : [];
         const low = lowRes?.data?.items || [];
 
-        // ---- Recent orders (latest 5) ----
+        // ---- Build quick "recent" (not stored in state; used for notifications only) ----
         const recent = [...orders]
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .slice(0, 5)
@@ -233,7 +232,6 @@ export default function AdminHome() {
           revenue: totalRevenue,
         });
         setByCategory({ revenue: revenueByCat, units: unitsByCat });
-        setRecentOrders(recent);
         setMtdRevenue(mtd);
 
         // ---- Low stock ----
@@ -313,7 +311,9 @@ export default function AdminHome() {
 
   // Progress calc
   const progress =
-    monthlyTarget > 0 ? Math.min(100, Math.round((mtdRevenue / monthlyTarget) * 100)) : 0;
+    monthlyTarget > 0
+      ? Math.min(100, Math.round((mtdRevenue / monthlyTarget) * 100))
+      : 0;
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -452,51 +452,6 @@ export default function AdminHome() {
           />
         </div>
 
-        {/* Recent Orders */}
-        <div className="bg-white p-6 rounded-xl shadow-md mb-10">
-          <h2 className="text-xl font-bold mb-4 text-blue-700">Recent Orders</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500 border-b">
-                <th className="py-2">Order ID</th>
-                <th className="py-2">Customer</th>
-                <th className="py-2">Status</th>
-                <th className="py-2">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="py-4 text-center text-gray-500">
-                    No orders yet.
-                  </td>
-                </tr>
-              ) : (
-                recentOrders.map((o, idx) => (
-                  <tr key={idx} className="border-b">
-                    <td className="py-2">{o.id}</td>
-                    <td className="py-2">{o.customer}</td>
-                    <td className="py-2">
-                      <span
-                        className={
-                          (o.status || "").toLowerCase() === "completed"
-                            ? "text-green-600 font-semibold"
-                            : (o.status || "").toLowerCase() === "cancelled"
-                            ? "text-red-600 font-semibold"
-                            : "text-yellow-600 font-semibold"
-                        }
-                      >
-                        {o.status}
-                      </span>
-                    </td>
-                    <td className="py-2">{INR(o.amount)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
         {/* 🔷 Monthly Target Progress */}
         <div className="bg-white p-6 rounded-xl shadow-md mb-10">
           <div className="flex items-center justify-between mb-4">
@@ -527,7 +482,9 @@ export default function AdminHome() {
 
               <div className="w-full h-4 bg-slate-200 rounded-full overflow-hidden mb-4">
                 <div
-                  className={`h-full rounded-full ${progress < 50 ? "bg-red-400" : progress < 80 ? "bg-yellow-400" : "bg-green-500"}`}
+                  className={`h-full rounded-full ${
+                    progress < 50 ? "bg-red-400" : progress < 80 ? "bg-yellow-400" : "bg-green-500"
+                  }`}
                   style={{ width: `${progress}%` }}
                 />
               </div>

@@ -23,6 +23,7 @@
     "leo-profanity": "^1.8.0",
     "microsoft-cognitiveservices-speech-sdk": "^1.45.0",
     "mongodb": "^6.17.0",
+    "nodemailer": "^7.0.5",
     "openai": "^5.12.2",
     "papaparse": "^5.5.3",
     "react": "^19.1.0",
