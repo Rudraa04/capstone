@@ -231,7 +231,7 @@ export default function OrderManagement() {
                         {status}
                       </span>
                     </td>
-                    <td className="py-2 px-4 space-x-2">
+                    <td className="py-2 px-4 space-x-1">
                       <button
                         onClick={() => navigate(`/admin/orders/${row.id}`)}
                         className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
