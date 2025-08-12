@@ -6,6 +6,36 @@ import { motion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
+/* --- pricing helpers (UI untouched) --- */
+const BOX_CONFIG = {
+  "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
+  "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
+  "12x18": { tilesPerBox: 6, sqftPerBox: 9 },
+  "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
+};
+
+function getBoxInfo(sizeStr = "") {
+  const key = String(sizeStr).replace(/\s+/g, "");
+  if (BOX_CONFIG[key]) return BOX_CONFIG[key];
+  const [L, W] = key.split("x").map(Number);
+  const sqftPerTile = L && W ? (L * W) / 144 : 0;
+  return { tilesPerBox: 1, sqftPerBox: sqftPerTile };
+}
+
+/** ₹/sqft × sqft-per-box × boxes  (tiles), else price × qty (non-tiles) */
+function computeLineTotal(item) {
+  const price = parseFloat(item?.price) || 0;
+  const qty = parseInt(item?.quantity) || 0;
+  const looksLikeTile = typeof item?.size === "string" && /^\s*\d+\s*x\s*\d+\s*$/i.test(item.size);
+  if (looksLikeTile) {
+    const { sqftPerBox } = getBoxInfo(item.size);
+    return price * sqftPerBox * qty;
+  }
+  return price * qty;
+}
+/* --- end helpers --- */
+
+
 export default function Cart() { // export so it can be used in other files
   const navigate = useNavigate(); // used to redirect users to othwer page in this case checkout page
   const [user, setUser] = useState(null); // used to store the current user
@@ -68,11 +98,7 @@ export default function Cart() { // export so it can be used in other files
     window.dispatchEvent(new Event("cartUpdated")); // Notify other parts of the app that the cart has been updated
   };
 
-  const subtotal = cartItems.reduce((sum, item) => { //goes to the cart one by one 
-    const price = parseFloat(item.price) || 0; // gets the price of the item convert it to float and if it is not a number then it will be 0
-    const quantity = parseInt(item.quantity) || 0; // gets the quantity of the item convert it to integer and if it is not a number then it will be 0
-    return sum + price * quantity;
-  }, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + computeLineTotal(item), 0);
 
   const totalItemDiscount = cartItems.reduce((sum, item) => {
     const discount = parseFloat(item.discount) || 0;
@@ -159,12 +185,8 @@ export default function Cart() { // export so it can be used in other files
                             </p>
                           )}
                           <p className="text-lg font-bold text-gray-900">
-                            ₹
-                            {(
-                              (parseFloat(item.price || 0) -
-                                parseFloat(item.discount || 0)) *
-                              parseInt(item.quantity || 0)
-                            ).toFixed(2)}
+                            ₹{computeLineTotal(item).toFixed(2)}
+                            
                           </p>
 
                           {item.discount > 0 && (

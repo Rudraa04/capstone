@@ -8,6 +8,33 @@ import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { api } from "../api";
 
+/* --- pricing helpers (no UI changes) --- */
+const BOX_CONFIG = {
+  "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
+  "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
+  "12x18": { tilesPerBox: 6, sqftPerBox: 9 },
+  "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
+};
+function getBoxInfo(sizeStr = "") {
+  const key = String(sizeStr).replace(/\s+/g, "");
+  if (BOX_CONFIG[key]) return BOX_CONFIG[key];
+  const [L, W] = key.split("x").map(Number);
+  const sqftPerTile = L && W ? (L * W) / 144 : 0;
+  return { tilesPerBox: 1, sqftPerBox: sqftPerTile };
+}
+/** ₹/sqft × sqft-per-box × boxes (tiles), else price × qty (non-tiles) */
+function computeLineTotal(item) {
+  const price = parseFloat(item?.price) || 0;
+  const qty = parseInt(item?.quantity) || 0;
+  const looksLikeTile = typeof item?.size === "string" && /^\s*\d+\s*x\s*\d+\s*$/i.test(item.size);
+  if (looksLikeTile) {
+    const { sqftPerBox } = getBoxInfo(item.size);
+    return price * sqftPerBox * qty;
+  }
+  return price * qty;
+}
+
+
 export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -303,7 +330,8 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
   };
 
   // optional totals (useful for detail view)
-  const subtotal = items.reduce((s, it) => s + it.price * it.quantity, 0);
+  const subtotal = (cartItems || []).reduce((s, ci) => s + computeLineTotal(ci), 0);
+
   const taxTotal = +(subtotal * 0.05).toFixed(2);
   const shippingFee = 0;
 
@@ -404,13 +432,8 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
   };
 
   // First: calculate totalAmount properly
-  const totalAmount = cartItems.reduce((sum, item) => {
-    const price = parseFloat(item.price) || 0;
-    const discount = parseFloat(item.discount) || 0;
-    const quantity = parseInt(item.quantity) || 1;
-    const itemTotal = (price - discount) * quantity;
-    return sum + itemTotal;
-  }, 0);
+  const totalAmount = cartItems.reduce((sum, item) => sum + computeLineTotal(item), 0);
+
 
   // Then: compute GST and Grand Total outside of reduce
   const GST_RATE = 0.05;
@@ -678,13 +701,13 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
                         <h4 className="font-semibold text-base">{item.name}</h4>
                         <p className="text-sm text-gray-500">Qty: {quantity}</p>
                         <p className="text-sm text-gray-400">
-                          Unit: ₹{finalPrice}
+                          Price per Sqft: ₹{finalPrice}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right font-medium">
-                      ₹{(finalPrice * quantity).toFixed(2)}
-                    </div>
+                   <div className="text-right font-medium">
+  ₹{computeLineTotal(item).toFixed(2)}
+</div>
                   </div>
                 );
               })}
