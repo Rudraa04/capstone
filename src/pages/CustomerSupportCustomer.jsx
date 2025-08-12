@@ -1,24 +1,117 @@
 import React, { useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { useNavigate } from "react-router-dom"; //
+import { useNavigate } from "react-router-dom";
 import Select from "react-select";
+import axios from "axios";
+import { auth } from "../firebase/firebase"; // uses your existing client Firebase
+import { createTicket } from "../api/customerTickets";
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
+  "http://localhost:5000";
 
 const CustomerSupport = () => {
-  const navigate = useNavigate(); // ⬅ Add this
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     subject: "",
-    category: "",
+    category: "", // "order" | "payment" | "product" | "general" | "accountissue"
     email: "",
     country: "",
     message: "",
+    orderNumber: "", // Mongo ObjectId when category="order"
   });
 
-  const handleSubmit = (e) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successTicket, setSuccessTicket] = useState(null); // holds API response on success
+
+  const isMongoId = (s) => /^[a-f\d]{24}$/i.test(s || "");
+  const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s || "");
+
+  // Compose a clear issue blob for admins to read
+  const buildIssueText = () => {
+    // put all fields in one readable blob for agents
+    const topicMap = {
+      order: "Order Issue",
+      payment: "Payment Problem",
+      product: "Product Inquiry",
+      general: "General Question",
+      accountissue: "Account Issues",
+    };
+    return [
+      formData.subject && `Subject: ${formData.subject}`,
+      formData.category &&
+        `Topic: ${topicMap[formData.category] || formData.category}`,
+      formData.country && `Country: ${formData.country}`,
+      formData.orderNumber && `Order: ${formData.orderNumber}`,
+      formData.email && `Contact Email (provided): ${formData.email}`,
+      "",
+      formData.message || "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: send data to backend or Firestore
-    alert("Your support request has been sent!");
-    setFormData({ subject: "", category: "", message: "" });
+    setErrorMsg("");
+    setSuccessTicket(null);
+
+    // Must be logged in so we can send UID; backend expects a real Firebase user
+    const user = auth.currentUser;
+    if (!user) {
+      setErrorMsg("Please log in to submit a support ticket.");
+      return;
+    }
+
+    // Basic validations
+    if (!formData.category) return setErrorMsg("Please select a topic.");
+    if (!formData.subject.trim()) return setErrorMsg("Please add a subject.");
+    if (!formData.message.trim())
+      return setErrorMsg("Please describe your issue.");
+    if (formData.email && !isEmail(formData.email)) {
+      return setErrorMsg("Please enter a valid contact email.");
+    }
+    if (formData.category === "order") {
+      if (!formData.orderNumber.trim())
+        return setErrorMsg("Please enter your Order Number.");
+      if (!isMongoId(formData.orderNumber.trim())) {
+        return setErrorMsg(
+          "Order Number looks invalid. It must be a 24-character ID."
+        );
+      }
+    }
+
+    const payload = {
+      customerId: user.uid, // ✅ server stores UID; verified via Firebase Admin
+      issue: buildIssueText(), // ✅ one blob containing subject/topic/country/email/message
+      orderId:
+        formData.category === "order" ? formData.orderNumber.trim() : null, // ✅ shown in admin modal
+    };
+
+    setSubmitting(true);
+    try {
+      const res = await createTicket(payload);
+      setSuccessTicket(res);
+      // reset (keep category so the form doesn't jump)
+      setFormData((prev) => ({
+        ...prev,
+        subject: "",
+        country: "",
+        message: "",
+        orderNumber: "",
+      }));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setErrorMsg(
+        err?.response?.data?.error ||
+          "Failed to create ticket. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const countryOptions = [
@@ -223,6 +316,8 @@ const CustomerSupport = () => {
     { value: "Zimbabwe", label: "Zimbabwe" },
   ];
 
+  const userEmail = auth.currentUser?.email || "";
+
   return (
     <>
       <Header />
@@ -252,6 +347,21 @@ const CustomerSupport = () => {
             Contact Customer Support
           </h1>
         </div>
+
+        {/* Alerts */}
+        {errorMsg && (
+          <div className="mb-4 rounded border border-red-200 bg-red-50 text-red-700 px-3 py-2 text-sm">
+            {errorMsg}
+          </div>
+        )}
+        {successTicket && (
+          <div className="mb-4 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 px-3 py-2 text-sm">
+            Ticket created:{" "}
+            <span className="font-semibold">
+              {successTicket.ticketId || successTicket._id?.slice(-6)}
+            </span>
+          </div>
+        )}
 
         <form
           onSubmit={handleSubmit}
@@ -287,19 +397,21 @@ const CustomerSupport = () => {
               </label>
               <input
                 type="text"
-                value={formData.orderNumber || ""}
+                value={formData.orderNumber}
                 onChange={(e) =>
                   setFormData({ ...formData, orderNumber: e.target.value })
                 }
-                placeholder="Enter your order number"
+                placeholder="Enter your order number (24-char ID)"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
+              <div className="text-xs text-gray-400 mt-1">
+                Example: 64f3ab19e3c2b4e112345678
+              </div>
             </div>
           )}
 
-          {/* Contact Email */}
-          {/* Contact Email */}
+          {/* Contact Email (optional, for your team’s context only) */}
           <div>
             <label className="block text-sm font-semibold mb-2">
               How can we contact you?
@@ -307,35 +419,37 @@ const CustomerSupport = () => {
             <div className="relative">
               <input
                 type="email"
-                value={formData.email}
+                value={formData.email || userEmail}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                required
                 placeholder="Enter your email address"
                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${
-                  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-                    ? "border-green-500 focus:ring-green-500"
-                    : "border-gray-300 focus:ring-blue-500"
+                  !formData.email || isEmail(formData.email || userEmail)
+                    ? "border-gray-300 focus:ring-blue-500"
+                    : "border-red-300 focus:ring-red-500"
                 }`}
               />
-              {formData.email &&
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-green-500 absolute right-3 top-1/2 transform -translate-y-1/2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                )}
+              {(formData.email ? isEmail(formData.email) : !!userEmail) && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-green-500 absolute right-3 top-1/2 -translate-y-1/2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              )}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              We’ll email updates to your account address. This field is for
+              extra contact info (optional).
             </div>
           </div>
 
@@ -344,11 +458,13 @@ const CustomerSupport = () => {
             <label className="block text-sm font-semibold mb-2">Country</label>
             <Select
               options={countryOptions}
-              value={countryOptions.find(
-                (option) => option.value === formData.country
-              )}
-              onChange={(selectedOption) =>
-                setFormData({ ...formData, country: selectedOption.value })
+              value={
+                countryOptions.find(
+                  (option) => option.value === formData.country
+                ) || null
+              }
+              onChange={(opt) =>
+                setFormData({ ...formData, country: opt?.value || "" })
               }
               placeholder="Start typing your country..."
               isSearchable
@@ -357,9 +473,24 @@ const CustomerSupport = () => {
                   ...provided,
                   borderRadius: "0.5rem",
                   padding: "2px",
-                  borderColor: "#d1d5db", // Tailwind's gray-300
+                  borderColor: "#d1d5db",
                 }),
               }}
+            />
+          </div>
+
+          {/* Subject */}
+          <div>
+            <label className="block text-sm font-semibold mb-2">Subject</label>
+            <input
+              type="text"
+              value={formData.subject}
+              onChange={(e) =>
+                setFormData({ ...formData, subject: e.target.value })
+              }
+              placeholder="e.g., Refund for damaged tiles"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
             />
           </div>
 
@@ -381,12 +512,20 @@ const CustomerSupport = () => {
           </div>
 
           {/* Submit */}
-          <div className="text-right">
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="px-6 py-2 border rounded-lg"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
+              disabled={submitting}
+              className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-60"
             >
-              Send Request
+              {submitting ? "Submitting…" : "Send Request"}
             </button>
           </div>
         </form>

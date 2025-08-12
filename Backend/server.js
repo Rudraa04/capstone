@@ -2,11 +2,14 @@ import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors'; //security feature
+import "./lib/firebaseAdmin.js";
 import productRoutes from './routes/productRoutes.js';  // Handles all product-related APIs
 import squareRestRoutes from "./routes/squareRestRoutes.js"; // Import squareRestRoutes
 import reportRoute from './routes/reportRoute.js';
 import ordersRouter from "./routes/orderRoutes.js";
 import supportticketRoutes from "./routes/supportticketroute.js";
+
+
 // Load environment variables
 dotenv.config();
 
