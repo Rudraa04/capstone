@@ -1,0 +1,21 @@
+.carousel .control-arrow {
+  background: rgba(0, 0, 0, 0.5); 
+  width: 60px;                   
+  height: 100px;                  
+  top: 50% !important;             
+  transform: translateY(-50%);
+  z-index: 2;
+  border-radius: 8px;
+}
+
+.carousel .control-prev.control-arrow {
+  left: 20px;                   
+}
+
+.carousel .control-next.control-arrow {
+  right: 20px;                     
+}
+
+.carousel .control-arrow:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
