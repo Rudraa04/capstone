@@ -339,9 +339,6 @@ const handleQuantityChange = (id, newQuantity) => {
               : "bg-red-600 text-white"
           }`}
         >
-          {toast.size === "large" && (
-            <div className="text-4xl mb-2 animate-bounce">🎉</div>
-          )}
           {toast.message}
         </div>
       )}
