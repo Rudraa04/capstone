@@ -1,3 +1,4 @@
+// Backend/controllers/supportticketController.js
 import mongoose from "mongoose";
 import SupportTicket from "../models/supportticket.js";
 import ArchivedTicket from "../models/archivedTicket.js";
@@ -6,7 +7,24 @@ import { authAdmin } from "../lib/firebaseAdmin.js";
 import { classifyPriority } from "../utils/priorityAI.js";
 import { moderateMessage } from "../utils/moderationAI.js";
 import { embedText, cosineSim } from "../utils/embeddingsAI.js";
-import { sendMail } from "../utils/mailer.js"; //for gmail 
+import {
+  sendMail,
+  sendTicketAckToCustomer,
+  notifySupportNewTicket,
+} from "../utils/mailer.js";
+
+console.log(
+  "[TICKETS] SupportTicket DB:",
+  SupportTicket.db?.name,
+  "COLL:",
+  SupportTicket.collection?.collectionName
+);
+console.log(
+  "[TICKETS] ArchivedTicket DB:",
+  ArchivedTicket.db?.name,
+  "COLL:",
+  ArchivedTicket.collection?.collectionName
+);
 
 // Helper: find by Mongo _id or human ticketId (e.g., TKT-XXXXX)
 async function findTicketByAnyId(id) {
@@ -16,11 +34,11 @@ async function findTicketByAnyId(id) {
   }
   return await SupportTicket.findOne({ ticketId: id });
 }
+
 const extractEmailFromIssue = (text = "") => {
   const m = text.match(/contact email.*?:\s*([^\s<>(),;]+@[^\s<>(),;]+)/i);
   return m ? m[1] : "";
 };
-
 
 // ------------------------
 // Create Ticket (strict UID + moderation + semantic dedupe + AI priority + email)
@@ -99,7 +117,6 @@ export const createTicket = async (req, res) => {
       const sim = cosineSim(newVec, vec || []);
       if (sim >= SIM_THRESH) {
         // Reuse existing ticket instead of creating a new one
-        // (Optional: you could email the user here saying we linked it to an existing ticket.)
         return res.status(200).json(t);
       }
     }
@@ -140,36 +157,28 @@ export const createTicket = async (req, res) => {
       }
     }
 
-    // 6) Fire-and-forget confirmation email (won't block the API response)
+    // 6) Fire-and-forget emails (won't block API response)
     (async () => {
       try {
         const toEmail = email || extractEmailFromIssue(issue);
-        if (!toEmail) {
+        if (toEmail) {
+          await sendTicketAckToCustomer({
+            ticketId: newTicket.ticketId,
+            issue,
+            toEmail,
+            customerName: name,
+            orderId,
+          });
+        } else {
           console.warn("[mail] no customer email found; skip confirmation");
-          return;
         }
-        const shortIssue = (issue || "").split("\n").pop()?.slice(0, 200) || "";
 
-        await sendMail({
-          to: toEmail,
-          subject: `[${newTicket.ticketId}] We received your support request`,
-          text:
-            `Hi ${name || "there"},\n\n` +
-            `Thanks for contacting Patel Ceramics Support. Your ticket has been created.\n\n` +
-            `Ticket ID: ${newTicket.ticketId}\n` +
-            (orderId ? `Order Number: ${orderId}\n` : "") +
-            (shortIssue ? `Issue: ${shortIssue}\n\n` : `\n`) +
-            `You can reply to this email to add more details.\n\n` +
-            `— Patel Ceramics Support`,
-          html:
-            `<p>Hi ${name || "there"},</p>` +
-            `<p>Thanks for contacting <b>Patel Ceramics Support</b>. Your ticket has been created.</p>` +
-            `<p><b>Ticket ID:</b> ${newTicket.ticketId}<br/>` +
-            (orderId ? `<b>Order Number:</b> ${orderId}<br/>` : ``) +
-            (shortIssue ? `<b>Issue:</b> ${shortIssue}<br/>` : ``) +
-            `</p><p>You can reply to this email to add more details.</p>` +
-            `<p>— Patel Ceramics Support</p>`,
-          headers: { "X-Ticket-ID": newTicket.ticketId },
+        await notifySupportNewTicket({
+          ticketId: newTicket.ticketId,
+          issue,
+          customerEmail: email || "",
+          customerName: name || "",
+          orderId: orderId || "",
         });
       } catch (err) {
         console.error("[mail] ticket create email failed:", err?.message || err);
@@ -183,6 +192,7 @@ export const createTicket = async (req, res) => {
     return res.status(500).json({ error: "Failed to create ticket." });
   }
 };
+
 // ------------------------
 // Get All Tickets (server-side filters: status, q, from/to)
 // ------------------------
@@ -270,25 +280,30 @@ export const replyToTicket = async (req, res) => {
 
         const subject = `[${ticket.ticketId}] Update from Patel Ceramics Support`;
         const safeName = ticket.customerSnapshot?.name || "there";
+        const safeBody = String(message)
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\n/g, "<br/>");
 
         await sendMail({
           to: toEmail,
           subject,
           text:
-            `Hi ${safeName},\n\n` +
-            `We’ve posted a new reply on your ticket ${ticket.ticketId}:\n\n` +
-            `${message}\n\n` +
-            `You can simply reply to this email to continue the conversation.\n\n` +
-            `— Patel Ceramics Support`,
+`Hi ${safeName},
+
+We’ve posted a new reply on your ticket ${ticket.ticketId}:
+
+${message}
+
+You can reply to this email to continue the conversation.
+
+— Patel Ceramics Support`,
           html:
-            `<p>Hi ${safeName},</p>` +
-            `<p>We’ve posted a new reply on your ticket <b>${ticket.ticketId}</b>:</p>` +
-            `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #ddd;background:#f7f7f7;">${message
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-              .replace(/\n/g, "<br/>")}</blockquote>` +
-            `<p>You can reply to this email to continue the conversation.</p>` +
-            `<p>— Patel Ceramics Support</p>`,
+`<p>Hi ${safeName},</p>
+<p>We’ve posted a new reply on your ticket <b>${ticket.ticketId}</b>:</p>
+<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #ddd;background:#f7f7f7;">${safeBody}</blockquote>
+<p>You can reply to this email to continue the conversation.</p>
+<p>— Patel Ceramics Support</p>`,
           headers: { "X-Ticket-ID": ticket.ticketId },
         });
       } catch (e) {

@@ -14,6 +14,11 @@ import lowStockRoutes from "./routes/lowStockRoutes.js";
 
 // Load environment variables
 dotenv.config();
+console.log("[MAIL ENV]",
+  "user:", process.env.SMTP_USER,
+  "hasPass:", !!process.env.SMTP_PASS
+);
+
 
 // Initialize Express app
 const app = express();
@@ -26,7 +31,7 @@ app.use(express.json()); // Allow Express to parse JSON bodies in requests
 app.use("/", productRoutes);
 app.use('/api/reports', reportRoute); //route for reports
 app.use("/api", ordersRouter); 
-app.use("/api/supporttickets", supportticketRoutes); //route for support ticket
+app.use("/api/supporttickets", supportticketRoutes); //route for support ticket
 app.use("/api/inventory", lowStockRoutes);
 app.use("/api/inventory", inventoryRoutes);
 

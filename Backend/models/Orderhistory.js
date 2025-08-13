@@ -12,8 +12,7 @@ import Bathtubs from "./Bathtubs.js";
 
 const { Types } = mongoose;
 
-const orderConnection = mongoose.createConnection(process.env.MONGO_URI, {
-  dbName: "Order_History",
+const orderConnection = mongoose.createConnection(process.env.ORDERS_URI, {
 });
 
 /* ================== SCHEMA ================== */

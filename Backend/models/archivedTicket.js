@@ -1,4 +1,9 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
+
+// Same DB: Customer_Tickets
+const TicketsConn = mongoose.createConnection(process.env.TICKETS_URI);
 
 const ArchivedTicketSchema = new mongoose.Schema(
   {
@@ -30,4 +35,5 @@ const ArchivedTicketSchema = new mongoose.Schema(
   { timestamps: false }
 );
 
-export default mongoose.model("ArchivedTicket", ArchivedTicketSchema);
+// IMPORTANT: write to "archivedtickets" collection (inside Customer_Tickets DB)
+export default TicketsConn.model("ArchivedTicket", ArchivedTicketSchema, "archivedtickets");
