@@ -98,6 +98,9 @@ const MODEL_BY_KEY = Object.fromEntries(MODELS.map(m => [m.key, m.Model]));
 
 const STOCK_FIELDS = ["Stock_admin", "stock"]; // try in this order
 
+// ⬇️ New: types that should NOT auto-decrement
+const NO_AUTO_DECREMENT = new Set(["granite", "marble"]);
+
 const norm = (v) => String(v ?? "").trim().toLowerCase();
 const normalizeType = (raw) => TYPE_MAP[norm(raw)] || norm(raw);
 const qtyOf = (x) => {
@@ -110,7 +113,7 @@ const toOid = (val) => {
   return Types.ObjectId.isValid(s) ? new Types.ObjectId(s) : null;
 };
 
-// ---- NEW: regex helpers for tolerant name matching ----
+// ---- regex helpers for tolerant name matching ----
 function escapeRegex(s = "") {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -215,6 +218,12 @@ OrderSchema.pre("save", async function () {
       }
 
       const qty = qtyOf(raw);
+
+      // ⬇️ NEW: skip decrement for types in NO_AUTO_DECREMENT
+      if (NO_AUTO_DECREMENT.has(finalKey)) {
+        // We still resolved/validated the product above. Just don't touch stock or audit.
+        continue;
+      }
 
       // 2) decrement with guard
       let ok = false, usedField = null;
