@@ -203,7 +203,7 @@ export default function AdminHome() {
   const [pendingCount, setPendingCount] = useState(0);
   const [cancelledCount, setCancelledCount] = useState(0);
 
-  // 🔶 Monthly Target (shared in Firestore)
+  //  Monthly Target (shared in Firestore)
   const [monthlyTarget, setMonthlyTarget] = useState(100000); // default if none set
   const [targetLoading, setTargetLoading] = useState(true);
   const [savingTarget, setSavingTarget] = useState(false);
@@ -227,7 +227,7 @@ export default function AdminHome() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  /* 🔶 Live monthly target from Firestore (shared for all admins) */
+  /*  Live monthly target from Firestore (shared for all admins) */
   useEffect(() => {
     const ref = doc(db, "adminSettings", "dashboard");
     // ensure doc exists so subscription has something to read
@@ -391,7 +391,7 @@ export default function AdminHome() {
 
         const ordersToday = orders.filter((o) => new Date(o.createdAt) >= startOfToday).length;
 
-        // 🔶 Month-To-Date Revenue (sum of order subtotals)
+        //  Month-To-Date Revenue (sum of order subtotals)
         const mtd = orders.reduce((sum, o) => {
           const d = new Date(o.createdAt);
           if (d >= startOfMonth) return sum + orderSubtotal(o);
@@ -452,7 +452,7 @@ export default function AdminHome() {
     (lowSummary.total > 0 ? 1 : 0);
 
   return (
-    <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
+    <div className="flex min-h-screen text-gray-800 bg-blue-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <div>
@@ -515,7 +515,7 @@ export default function AdminHome() {
       <main className="flex-1 px-10 py-8">
         <div className="flex justify-between items-center mb-8 relative">
           <div>
-            <h1 className="text-3xl font-semibold mb-1">Welcome, Admin</h1>
+            <h1 className="text-3xl text-blue-700 font-bold mb-1">Welcome, Admin</h1>
             <p className="text-gray-500 text-sm">Here's what's happening today.</p>
           </div>
 

@@ -90,7 +90,7 @@ export default function CeramicsInventory() {
   ];
 
   return (
-    <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
+    <div className="flex min-h-screen text-gray-800 bg-blue-50">
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <div>
