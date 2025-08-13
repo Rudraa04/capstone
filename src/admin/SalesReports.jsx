@@ -1,17 +1,36 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FiBox, FiPackage, FiSettings, FiHeadphones, FiTrendingUp, FiLogOut, FiHome, FiUpload, FiDownload, FiGlobe,
+  FiBox,
+  FiPackage,
+  FiSettings,
+  FiHeadphones,
+  FiTrendingUp,
+  FiLogOut,
+  FiHome,
+  FiUpload,
+  FiDownload,
+  FiGlobe,
 } from "react-icons/fi";
 import Papa from "papaparse";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Legend,
 } from "recharts";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { api } from "../api";
+import * as XLSX from "xlsx";
 
 export default function SalesReports() {
   const navigate = useNavigate();
@@ -19,7 +38,10 @@ export default function SalesReports() {
   const [salesData, setSalesData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [sortConfig, setSortConfig] = useState({ key: "", direction: "ascending" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "",
+    direction: "ascending",
+  });
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -32,8 +54,11 @@ export default function SalesReports() {
   const CATEGORIES = ["Tile", "Sink", "Toilet", "Bathtub", "Granite", "Marble"];
 
   const INR = (n) =>
-    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 })
-      .format(Number(n || 0));
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 2,
+    }).format(Number(n || 0));
 
   const normCategory = (raw = "") => {
     const s = String(raw).toLowerCase();
@@ -48,18 +73,23 @@ export default function SalesReports() {
 
   /* ---------- PRICE/SQFT HELPERS (mirror OrderManagement) ---------- */
   const tagOf = (it = {}) =>
-    String(it.productType || it.category || it.kind || it.type || "").toLowerCase();
+    String(
+      it.productType || it.category || it.kind || it.type || ""
+    ).toLowerCase();
 
   const isSqftPriced = (it = {}) => {
     const tag = tagOf(it);
-    return tag.includes("tile") || tag.includes("granite") || tag.includes("marble");
+    return (
+      tag.includes("tile") || tag.includes("granite") || tag.includes("marble")
+    );
   };
 
   const parseSqftFromSize = (sizeStr = "") => {
     const s = String(sizeStr || "").toLowerCase();
     const m = s.match(/([\d.]+)\s*[x×]\s*([\d.]+)/i);
     if (!m) return 0;
-    const L = parseFloat(m[1]), W = parseFloat(m[2]);
+    const L = parseFloat(m[1]),
+      W = parseFloat(m[2]);
     if (!isFinite(L) || !isFinite(W)) return 0;
     return (L * W) / 144; // inches → sqft
   };
@@ -76,19 +106,23 @@ export default function SalesReports() {
     if (Number.isFinite(snap) && snap > 0) return snap;
 
     const specSqft =
-      Number(it?.specs?.sqftPerBox) ||
-      Number(it?.specs?.totalSqft) || 0;
+      Number(it?.specs?.sqftPerBox) || Number(it?.specs?.totalSqft) || 0;
     if (Number.isFinite(specSqft) && specSqft > 0) return specSqft;
 
     const sizeStr = it?.specs?.size || it?.size || "";
-    const key = String(sizeStr || "").toLowerCase().replace(/\s+/g, "").replace(/in\b|inch(es)?\b/g, "");
+    const key = String(sizeStr || "")
+      .toLowerCase()
+      .replace(/\s+/g, "")
+      .replace(/in\b|inch(es)?\b/g, "");
     if (BOX_CONFIG[key]) return BOX_CONFIG[key].sqftPerBox;
 
     return parseSqftFromSize(sizeStr);
   };
 
   const unitPriceOf = (it = {}) =>
-    Number(it?.unitPrice ?? it?.specs?.unitPrice ?? it?.price ?? it?.specs?.price) || 0;
+    Number(
+      it?.unitPrice ?? it?.specs?.unitPrice ?? it?.price ?? it?.specs?.price
+    ) || 0;
 
   const quantityOf = (it = {}) =>
     Number(it?.quantity ?? it?.specs?.quantity) || 0;
@@ -124,15 +158,17 @@ export default function SalesReports() {
 
         const rows = [];
         (Array.isArray(data) ? data : []).forEach((order) => {
-          const orderDate = order?.createdAt ? new Date(order.createdAt) : new Date();
+          const orderDate = order?.createdAt
+            ? new Date(order.createdAt)
+            : new Date();
           const dateStr = orderDate.toISOString().slice(0, 10); // yyyy-mm-dd
 
           (order.items || []).forEach((it) => {
             rows.push({
               product: it.name || "Unknown",
               category: normCategory(it.productType || it.category),
-              unitsSold: quantityOf(it),              // boxes for tile; counts for others
-              revenue: lineRevenueOf(it),             // <-- FIX: uses lineTotal or sqft math
+              unitsSold: quantityOf(it), // boxes for tile; counts for others
+              revenue: lineRevenueOf(it), // <-- FIX: uses lineTotal or sqft math
               date: dateStr,
             });
           });
@@ -154,7 +190,11 @@ export default function SalesReports() {
   const handleSort = (key) => {
     setSortConfig((prev) =>
       prev.key === key
-        ? { key, direction: prev.direction === "ascending" ? "descending" : "ascending" }
+        ? {
+            key,
+            direction:
+              prev.direction === "ascending" ? "descending" : "ascending",
+          }
         : { key, direction: "ascending" }
     );
     setPage(1);
@@ -162,9 +202,58 @@ export default function SalesReports() {
 
   // ----- filtering pipeline -----
   const categoryFiltered = useMemo(
-    () => (selectedCategory === "All" ? salesData : salesData.filter((i) => i.category === selectedCategory)),
+    () =>
+      selectedCategory === "All"
+        ? salesData
+        : salesData.filter((i) => i.category === selectedCategory),
     [salesData, selectedCategory]
   );
+
+  const handleUploadExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Strict Excel validation
+    const allowedExtensions = ["xlsx", "xls"];
+    const fileExtension = file.name.split(".").pop().toLowerCase();
+
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert("Only Excel files (.xlsx or .xls) are allowed!");
+      e.target.value = ""; // Reset the input
+      return;
+    }
+
+    // Optional: Double-check MIME type for better security
+    const allowedMimeTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+      "application/vnd.ms-excel", // .xls
+    ];
+    if (!allowedMimeTypes.includes(file.type)) {
+      alert("The selected file is not a valid Excel file.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      const parsed = jsonData.map((row) => ({
+        product: row.product,
+        category: row.category,
+        unitsSold: parseInt(row.unitsSold),
+        revenue: parseFloat(row.revenue),
+        date: row.date,
+      }));
+
+      setSalesData(parsed);
+      setPage(1);
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   const dateFiltered = useMemo(() => {
     if (!fromDate && !toDate) return categoryFiltered;
@@ -179,7 +268,8 @@ export default function SalesReports() {
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return dateFiltered;
     const out = [...dateFiltered].sort((a, b) => {
-      const A = a[sortConfig.key], B = b[sortConfig.key];
+      const A = a[sortConfig.key],
+        B = b[sortConfig.key];
       if (A < B) return sortConfig.direction === "ascending" ? -1 : 1;
       if (A > B) return sortConfig.direction === "ascending" ? 1 : -1;
       return 0;
@@ -206,8 +296,18 @@ export default function SalesReports() {
   const handleExportPDF = () => {
     const doc = new jsPDF();
     doc.text("Sales Report", 14, 16);
-    const tableData = sortedData.map((row) => [row.product, row.category, row.unitsSold, INR(row.revenue), row.date]);
-    doc.autoTable({ head: [["Product", "Category", "Units Sold", "Revenue (INR)", "Date"]], body: tableData, startY: 20 });
+    const tableData = sortedData.map((row) => [
+      row.product,
+      row.category,
+      row.unitsSold,
+      INR(row.revenue),
+      row.date,
+    ]);
+    doc.autoTable({
+      head: [["Product", "Category", "Units Sold", "Revenue (INR)", "Date"]],
+      body: tableData,
+      startY: 20,
+    });
     doc.save("sales_report.pdf");
   };
 
@@ -215,7 +315,8 @@ export default function SalesReports() {
     const file = e.target.files[0];
     if (!file) return;
     Papa.parse(file, {
-      header: true, skipEmptyLines: true,
+      header: true,
+      skipEmptyLines: true,
       complete: (results) => {
         const parsed = results.data.map((row) => ({
           product: row.product,
@@ -233,9 +334,13 @@ export default function SalesReports() {
   const getCategoryData = () => {
     const categoryMap = {};
     dateFiltered.forEach((item) => {
-      categoryMap[item.category] = (categoryMap[item.category] || 0) + item.unitsSold;
+      categoryMap[item.category] =
+        (categoryMap[item.category] || 0) + item.unitsSold;
     });
-    return Object.entries(categoryMap).map(([category, unitsSold]) => ({ category, unitsSold }));
+    return Object.entries(categoryMap).map(([category, unitsSold]) => ({
+      category,
+      unitsSold,
+    }));
   };
 
   const getTop3ForCategory = (category) => {
@@ -248,7 +353,8 @@ export default function SalesReports() {
       if (topRange === "month" && new Date(row.date) < startOfMonth) return;
 
       const key = row.product;
-      if (!agg.has(key)) agg.set(key, { product: row.product, units: 0, revenue: 0 });
+      if (!agg.has(key))
+        agg.set(key, { product: row.product, units: 0, revenue: 0 });
       const rec = agg.get(key);
       rec.units += Number(row.unitsSold || 0);
       rec.revenue += Number(row.revenue || 0);
@@ -260,13 +366,34 @@ export default function SalesReports() {
   };
 
   const getMonthlyRevenueData = () => {
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     let earliest = null;
-    salesData.forEach((r) => { const d = new Date(r.date); if (!earliest || d < earliest) earliest = d; });
+    salesData.forEach((r) => {
+      const d = new Date(r.date);
+      if (!earliest || d < earliest) earliest = d;
+    });
     const end = new Date();
-    const start = monthsBack === "all"
-      ? new Date(earliest || end)
-      : new Date(end.getFullYear(), end.getMonth() - (Number(monthsBack) - 1), 1);
+    const start =
+      monthsBack === "all"
+        ? new Date(earliest || end)
+        : new Date(
+            end.getFullYear(),
+            end.getMonth() - (Number(monthsBack) - 1),
+            1
+          );
 
     const bucket = {};
     salesData.forEach((row) => {
@@ -283,7 +410,9 @@ export default function SalesReports() {
     while (cursor <= end) {
       const key = `${cursor.getFullYear()}-${cursor.getMonth() + 1}`;
       out.push({
-        month: `${monthNames[cursor.getMonth()]} ${String(cursor.getFullYear()).slice(-2)}`,
+        month: `${monthNames[cursor.getMonth()]} ${String(
+          cursor.getFullYear()
+        ).slice(-2)}`,
         sales: bucket[key] || 0,
       });
       cursor.setMonth(cursor.getMonth() + 1);
@@ -294,7 +423,8 @@ export default function SalesReports() {
   const getRevenueOverTime = () => {
     const rows = dateFiltered;
     const outMap = new Map();
-    const add = (label, amt) => outMap.set(label, (outMap.get(label) || 0) + amt);
+    const add = (label, amt) =>
+      outMap.set(label, (outMap.get(label) || 0) + amt);
 
     rows.forEach((r) => {
       const d = new Date(r.date);
@@ -305,19 +435,30 @@ export default function SalesReports() {
         const y = d.getFullYear();
         const m = d.getMonth();
         const day = d.getDate();
-        const half = day <= 15 ? "1–15" : "16–" + new Date(y, m + 1, 0).getDate();
-        const label = `${half} ${d.toLocaleString("default", { month: "short" })} ${String(y).slice(-2)}`;
+        const half =
+          day <= 15 ? "1–15" : "16–" + new Date(y, m + 1, 0).getDate();
+        const label = `${half} ${d.toLocaleString("default", {
+          month: "short",
+        })} ${String(y).slice(-2)}`;
         add(label, amt);
       } else {
-        const label = `${d.toLocaleString("default", { month: "short" })} ${String(d.getFullYear()).slice(-2)}`;
+        const label = `${d.toLocaleString("default", {
+          month: "short",
+        })} ${String(d.getFullYear()).slice(-2)}`;
         add(label, amt);
       }
     });
 
-    return Array.from(outMap.entries()).map(([label, revenue]) => ({ label, revenue }));
+    return Array.from(outMap.entries()).map(([label, revenue]) => ({
+      label,
+      revenue,
+    }));
   };
 
-  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(sortedData.length / Number(pageSize)));
+  const totalPages =
+    pageSize === "all"
+      ? 1
+      : Math.max(1, Math.ceil(sortedData.length / Number(pageSize)));
   const canPrev = page > 1 && pageSize !== "all";
   const canNext = page < totalPages && pageSize !== "all";
 
@@ -393,8 +534,8 @@ export default function SalesReports() {
               <FiUpload />
               <input
                 type="file"
-                accept=".csv"
-                onChange={handleUploadCSV}
+                accept=".xlsx,.xls"
+                onChange={handleUploadExcel}
                 className="hidden"
               />
               Upload CSV
@@ -579,14 +720,21 @@ export default function SalesReports() {
                   ) : (
                     <ol className="space-y-2 list-decimal list-inside">
                       {top3.map((p, i) => (
-                        <li key={i} className="flex items-center justify-between">
+                        <li
+                          key={i}
+                          className="flex items-center justify-between"
+                        >
                           <div className="pr-2 truncate">{p.product}</div>
                           <div className="text-xs text-gray-600 text-right">
                             <div>
-                              Units: <span className="font-medium">{p.units}</span>
+                              Units:{" "}
+                              <span className="font-medium">{p.units}</span>
                             </div>
                             <div>
-                              Rev: <span className="font-medium">{INR(p.revenue)}</span>
+                              Rev:{" "}
+                              <span className="font-medium">
+                                {INR(p.revenue)}
+                              </span>
                             </div>
                           </div>
                         </li>
@@ -626,11 +774,21 @@ export default function SalesReports() {
                 margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" minTickGap={20} interval="preserveStartEnd" />
+                <XAxis
+                  dataKey="label"
+                  minTickGap={20}
+                  interval="preserveStartEnd"
+                />
                 <YAxis />
                 <Tooltip formatter={(v) => INR(v)} />
                 <Legend />
-                <Line type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} dot />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#2563eb"
+                  strokeWidth={2}
+                  dot
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -646,7 +804,11 @@ export default function SalesReports() {
                 margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" minTickGap={20} interval="preserveStartEnd" />
+                <XAxis
+                  dataKey="category"
+                  minTickGap={20}
+                  interval="preserveStartEnd"
+                />
                 <YAxis />
                 <Tooltip />
                 <Legend />
