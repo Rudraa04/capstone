@@ -66,16 +66,6 @@ export default function Login() {
     }
   }, [location, navigate]);
 
-  useEffect(() => {
-    if (toast.show && toast.type === "success") {
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { x: 0.95, y: 0.9 },
-      });
-    }
-  }, [toast]);
-
   // Forgot Password
   const handleForgotPassword = async () => {
     if (!email || !email.includes("@")) {
@@ -84,7 +74,10 @@ export default function Login() {
     }
     try {
       await sendPasswordResetEmail(auth, email);
-      triggerToast("📧 Password reset email sent! Check your inbox or spam.", "success");
+      triggerToast(
+        "📧 Password reset email sent! Check your inbox or spam.",
+        "success"
+      );
     } catch (error) {
       if (error.code === "auth/user-not-found") {
         triggerToast("❌ No account found with this email.", "error");
@@ -102,7 +95,11 @@ export default function Login() {
     setMessage("");
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const user = userCredential.user;
 
       if (!user.emailVerified) {
@@ -202,14 +199,20 @@ export default function Login() {
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
           <Link to="/" className="block text-center">
-            <h1 className="text-4xl font-bold text-blue-800 mb-3">Patel Ceramics</h1>
+            <h1 className="text-4xl font-bold text-blue-800 mb-3">
+              Patel Ceramics
+            </h1>
           </Link>
 
-          <h2 className="text-3xl font-extrabold text-center text-blue-600 mb-6">Log In</h2>
+          <h2 className="text-3xl font-extrabold text-center text-blue-600 mb-6">
+            Log In
+          </h2>
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">Email Address</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Email Address
+              </label>
               <div className="relative">
                 <input
                   type="email"
@@ -224,7 +227,9 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-1">Password</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -291,12 +296,17 @@ export default function Login() {
               alt=""
               className="w-5 h-5"
             />
-            <span className="font-medium text-gray-700">Continue with Google</span>
+            <span className="font-medium text-gray-700">
+              Continue with Google
+            </span>
           </button>
 
           <p className="mt-4 text-sm text-center text-gray-600">
             Don’t have an account?{" "}
-            <Link to="/signup" className="text-blue-700 font-semibold hover:underline">
+            <Link
+              to="/signup"
+              className="text-blue-700 font-semibold hover:underline"
+            >
               Sign up
             </Link>
           </p>
@@ -307,11 +317,18 @@ export default function Login() {
         <div
           onClick={() => setToast({ ...toast, show: false })}
           className={`fixed bottom-4 right-4 z-50 cursor-pointer shadow-xl transition-all duration-500 transform 
-            ${toast.type === "success" ? "bg-green-600 text-white animate-pulse" : "bg-red-600 text-white"} 
-            ${toast.size === "large" ? "max-w-xs sm:max-w-sm p-6 text-xl font-bold" : "p-4 text-sm"}
+            ${
+              toast.type === "success"
+                ? "bg-green-600 text-white animate-pulse"
+                : "bg-red-600 text-white"
+            } 
+            ${
+              toast.size === "large"
+                ? "max-w-xs sm:max-w-sm p-6 text-xl font-bold"
+                : "p-4 text-sm"
+            }
             rounded-lg animate-fadeInScale`}
         >
-          {toast.size === "large" && <div className="text-4xl mb-2 animate-bounce">🎉</div>}
           {toast.message}
         </div>
       )}
