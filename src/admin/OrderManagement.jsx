@@ -14,8 +14,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import { api } from "../api";
 
-/* ========= Pricing helpers (from customer OrderHistoryPanel) =========
-   Keep math identical so admin and customer views show the same numbers. */
+/* ========= Pricing helpers (kept identical to customer side) ========= */
 const isTilesItem = (it = {}) => {
   const tag = String(
     it.productType || it.category || it.kind || it.type || ""
@@ -39,21 +38,18 @@ const getBoxInfo = (sizeStr = "") => {
 };
 
 const computeLineTotal = (it = {}) => {
-  const price = parseFloat(it.price) || 0; // ₹/sqft for tiles, ₹/unit for others
-  const qty = parseInt(it.quantity) || 0;  // boxes or units
-
+  const price = parseFloat(it.price) || 0;
+  const qty = parseInt(it.quantity) || 0;
   if (isTilesItem(it)) {
     const sizeStr = it.specs?.size || it.size || "";
     const { sqftPerBox } = getBoxInfo(sizeStr);
-    return price * sqftPerBox * qty; // ₹/sqft × sqft/box × boxes
+    return price * sqftPerBox * qty;
   }
   return price * qty;
 };
 
-/** Decide per-item whether to use tile math or simple unit price (greedy to match order subtotal) */
 const makeLineCalculator = (order) => {
   const items = Array.isArray(order?.items) ? order.items : [];
-
   const targetSubtotal =
     Number(order?.subtotal ?? 0) ||
     Math.max(
@@ -76,9 +72,7 @@ const makeLineCalculator = (order) => {
     if (!isTilesItem(it)) return price * qty;
     const sizeStr = it?.specs?.size || it?.size || "";
     const { sqftPerBox } = getBoxInfo(sizeStr);
-
-    // Treat huge slabs as unit items (same heuristic used in your panel)
-    if (sqftPerBox > 25) return price * qty;
+    if (sqftPerBox > 25) return price * qty; // big slabs -> treat as unit
     return price * sqftPerBox * qty;
   });
 
@@ -113,7 +107,7 @@ const makeLineCalculator = (order) => {
 };
 /* ========= end pricing helpers ========= */
 
-/* ========= Simple modal (same pattern as your customer panel) ========= */
+/* ========= Simple modal ========= */
 function Modal({ isOpen, onClose, children }) {
   if (!isOpen) return null;
   const handleBackdropClick = (e) => {
@@ -146,12 +140,18 @@ export default function OrderManagement() {
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
+  const [displayOrders, setDisplayOrders] = useState([]); // filtered/sorted
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   // modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // ==== FILTER STATE ====
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [searchText, setSearchText] = useState("");
+  const [highValueFirst, setHighValueFirst] = useState(false);
 
   const money = (n) =>
     Number(n || 0).toLocaleString("en-IN", {
@@ -168,6 +168,7 @@ export default function OrderManagement() {
     unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setOrders([]);
+        setDisplayOrders([]);
         setLoading(false);
         setErr("Please log in as an admin.");
         return;
@@ -177,11 +178,21 @@ export default function OrderManagement() {
         const res = await api.get("/api/admin/orders", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setOrders(Array.isArray(res.data) ? res.data : []);
+        const list = Array.isArray(res.data) ? res.data : [];
+        // default sort: newest first
+        list.sort(
+          (a, b) =>
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime()
+        );
+        setOrders(list);
+        setDisplayOrders(list);
         setErr("");
       } catch (e) {
         console.error(e);
-        setErr(e?.response?.data?.error || e.message || "Failed to load orders");
+        setErr(
+          e?.response?.data?.error || e.message || "Failed to load orders"
+        );
       } finally {
         setLoading(false);
       }
@@ -189,6 +200,12 @@ export default function OrderManagement() {
 
     return () => unsub && unsub();
   }, []);
+
+  // Re-apply filters whenever the raw list changes
+  useEffect(() => {
+    applyFilters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
 
   // open/close modal
   const openModal = (order) => {
@@ -215,6 +232,9 @@ export default function OrderManagement() {
 
       const updated = res.data;
       setOrders((prev) => prev.map((o) => (o._id === orderId ? updated : o)));
+      setDisplayOrders((prev) =>
+        prev.map((o) => (o._id === orderId ? updated : o))
+      );
       if (selectedOrder && selectedOrder._id === orderId) {
         setSelectedOrder(updated);
       }
@@ -239,9 +259,86 @@ export default function OrderManagement() {
     }
   };
 
+  // ===== FILTER LOGIC =====
+  const norm = (s) => String(s || "").toLowerCase().trim();
+
+  const matchesSearch = (o, q) => {
+    if (!q) return true;
+    const needle = norm(q);
+    const hay = [
+      o._id,
+      o.userUid,
+      o.customerName,
+      o.paymentRef,
+      o.shippingAddress?.name,
+      o.shippingAddress?.email,
+      o.shippingAddress?.phone,
+      ...(o.items || []).flatMap((it) => [
+        it.name,
+        it.sku,
+        it.productType,
+        it.category,
+      ]),
+    ]
+      .filter(Boolean)
+      .map(norm)
+      .join(" | ");
+    return hay.includes(needle);
+  };
+
+  const applyFilters = () => {
+    let out = [...orders];
+
+    // Status
+    if (filterStatus !== "All") {
+      out = out.filter(
+        (o) => String(o.status || "Paid") === String(filterStatus)
+      );
+    }
+
+    // Search
+    if (searchText.trim()) {
+      out = out.filter((o) => matchesSearch(o, searchText));
+    }
+
+    // Sort
+    if (highValueFirst) {
+      out.sort(
+        (a, b) => Number(b.totalAmount || 0) - Number(a.totalAmount || 0)
+      );
+    } else {
+      // newest first
+      out.sort(
+        (a, b) =>
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime()
+      );
+    }
+
+    setDisplayOrders(out);
+  };
+
+  const clearFilters = () => {
+    setFilterStatus("All");
+    setSearchText("");
+    setHighValueFirst(false);
+    // reset to default sort (newest first)
+    const out = [...orders].sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime()
+    );
+    setDisplayOrders(out);
+  };
+
+  const onSearchKeyDown = (e) => {
+    if (e.key === "Enter") applyFilters();
+  };
+
+  // Table rows built from filtered list
   const rows = useMemo(
     () =>
-      orders.map((o) => {
+      displayOrders.map((o) => {
         const created = o.createdAt ? new Date(o.createdAt) : null;
         const firstItem = o.items?.[0];
         const productLabel =
@@ -266,7 +363,7 @@ export default function OrderManagement() {
           status: o.status || "Paid",
         };
       }),
-    [orders]
+    [displayOrders]
   );
 
   const calcLineModal = useMemo(
@@ -306,8 +403,7 @@ export default function OrderManagement() {
           </button>
           <button
             onClick={() => navigate("/admin/support")}
-            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md"
-          >
+            className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 rounded-md">
             <FiHeadphones /> Customer Support
           </button>
           <button
@@ -338,10 +434,59 @@ export default function OrderManagement() {
 
       {/* Main */}
       <main className="flex-1 px-10 py-8">
-        <div className="flex justify-between items-center mb-10">
+        <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-blue-800">Order Management</h1>
         </div>
 
+        {/* ===== Filter Bar ===== */}
+        <div className="bg-white rounded-xl shadow p-4 mb-6 flex items-center gap-3 flex-wrap">
+          <div className="text-sm text-gray-600">Status</div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-3 py-2 border rounded-md bg-white"
+          >
+            <option>All</option>
+            <option>Pending</option>
+            <option>Paid</option>
+            <option>Shipped</option>
+            <option>Delivered</option>
+            <option>Cancelled</option>
+          </select>
+
+          <input
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onKeyDown={onSearchKeyDown}
+            placeholder="Search order id, customer, email, phone, product, SKU, UID"
+            className="flex-1 min-w-[240px] px-3 py-2 border rounded-md"
+          />
+
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={highValueFirst}
+              onChange={(e) => setHighValueFirst(e.target.checked)}
+              className="w-4 h-4"
+            />
+            High value first
+          </label>
+
+          <button
+            onClick={applyFilters}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Apply
+          </button>
+          <button
+            onClick={clearFilters}
+            className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200"
+          >
+            Clear
+          </button>
+        </div>
+
+        {/* ===== Table ===== */}
         <div className="overflow-x-auto bg-white rounded-xl shadow">
           {loading ? (
             <div className="p-6 text-sm text-gray-500">Loading orders…</div>
@@ -363,7 +508,7 @@ export default function OrderManagement() {
               </thead>
               <tbody>
                 {rows.map((row) => {
-                  const serverOrder = orders.find((o) => o._id === row.id);
+                  const serverOrder = displayOrders.find((o) => o._id === row.id);
                   const status = row.status;
                   return (
                     <tr key={row.id} className="border-b">
@@ -385,7 +530,7 @@ export default function OrderManagement() {
                       <td className="py-2 px-2 text-center w-[300px]">
                         <div className="flex justify-center items-center gap-2">
                           <button
-                            onClick={() => openModal(serverOrder)} // ⬅️ open modal instead of navigate
+                            onClick={() => openModal(serverOrder)}
                             className="w-20 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                           >
                             View
@@ -415,6 +560,13 @@ export default function OrderManagement() {
                     </tr>
                   );
                 })}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-6 text-center text-gray-500">
+                      No orders match your filters.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           )}
@@ -427,7 +579,7 @@ export default function OrderManagement() {
           <div>Loading…</div>
         ) : (
           <div className="space-y-6">
-            {/* Header: ID, date, status, total */}
+            {/* Header */}
             <div className="flex flex-wrap justify-between gap-4">
               <div>
                 <div className="text-xs text-gray-500 uppercase">Order ID</div>
@@ -521,7 +673,7 @@ export default function OrderManagement() {
               </div>
             </div>
 
-            {/* Actions inside modal */}
+            {/* Actions in modal */}
             {selectedOrder.status !== "Delivered" &&
               selectedOrder.status !== "Cancelled" && (
                 <div className="flex gap-2 justify-end">
