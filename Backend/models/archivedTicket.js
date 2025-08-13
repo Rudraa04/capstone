@@ -1,39 +1,54 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-dotenv.config();
 
-// Same DB: Customer_Tickets
-const TicketsConn = mongoose.createConnection(process.env.TICKETS_URI);
+/**
+ * Same DB resolution as the live ticket model so archives stay together.
+ */
+function getTicketsDbName() {
+  const explicit = (process.env.TICKETS_DB_NAME || "").trim();
+  if (explicit) return explicit;
+
+  const uri = (process.env.TICKETS_URI || "").trim();
+  const m = uri.match(/\/([^/?]+)(?:[?]|$)/);
+  return (m && m[1]) || "Customer_Tickets";
+}
+
+const ticketsDb = mongoose.connection.useDb(getTicketsDbName(), { useCache: true });
 
 const ArchivedTicketSchema = new mongoose.Schema(
   {
-    originalId: { type: mongoose.Schema.Types.ObjectId, index: true },
-    ticketId: String,
+    ticketId: { type: String, index: true },
     customerId: String,
-    orderId: String,
     issue: String,
-    status: String,
     priority: String,
-    assignedTo: String,
-    replies: [
-      {
-        message: String,
-        repliedBy: String,
-        attachments: [{ url: String, name: String }],
-        createdAt: Date,
-      },
-    ],
+    status: String,
+    orderId: String,
+
     customerSnapshot: {
       name: String,
       email: String,
       phone: String,
     },
+
+    issueEmbedding: { type: [Number], default: [] },
+    replies: { type: Array, default: [] },
+
+    archivedAt: { type: Date, default: Date.now },
+
+    // keep originals if you move documents over from live collection
     createdAt: Date,
     updatedAt: Date,
-    archivedAt: { type: Date, default: Date.now },
   },
-  { timestamps: false }
+  {
+    collection: "archivedtickets",
+  }
 );
 
-// IMPORTANT: write to "archivedtickets" collection (inside Customer_Tickets DB)
-export default TicketsConn.model("ArchivedTicket", ArchivedTicketSchema, "archivedtickets");
+const ArchivedTicket = ticketsDb.model("ArchivedTicket", ArchivedTicketSchema);
+
+// Optional debug
+try {
+  // @ts-ignore
+  console.log(`[TICKETS MODEL] ArchivedTicket DB: ${ticketsDb.name} COLL: archivedtickets`);
+} catch {}
+
+export default ArchivedTicket;

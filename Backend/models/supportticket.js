@@ -1,72 +1,77 @@
 import mongoose from "mongoose";
-import crypto from "crypto";
-import dotenv from "dotenv";
-dotenv.config();
 
-// Connect specifically to the Customer_Tickets database
-const TicketsConn = mongoose.createConnection(process.env.TICKETS_URI);
+/**
+ * Resolve the MongoDB database name for tickets.
+ * Priority:
+ *   1) process.env.TICKETS_DB_NAME
+ *   2) last path segment of process.env.TICKETS_URI
+ *   3) "Customer_Tickets" (default)
+ */
+function getTicketsDbName() {
+  const explicit = (process.env.TICKETS_DB_NAME || "").trim();
+  if (explicit) return explicit;
 
+  const uri = (process.env.TICKETS_URI || "").trim();
+  const m = uri.match(/\/([^/?]+)(?:[?]|$)/);
+  return (m && m[1]) || "Customer_Tickets";
+}
+
+// Attach model to the specific DB (not the default connection DB)
+const ticketsDb = mongoose.connection.useDb(getTicketsDbName(), { useCache: true });
+
+/* ---------- Subdocuments ---------- */
 const ReplySchema = new mongoose.Schema(
   {
     message: { type: String, required: true },
-    //repliedBy: { type: String, required: true }, // "admin:<name>" or "user:<uid>"
-    attachments: [{ url: String, name: String }],
+    repliedBy: { type: String, required: true }, // e.g. "admin:rudra" | "customer"
   },
-  { _id: false, timestamps: { createdAt: true, updatedAt: false } }
+  {
+    _id: false,
+    timestamps: { createdAt: true, updatedAt: false },
+  }
 );
 
+/* ---------- Main Ticket Schema ---------- */
 const SupportTicketSchema = new mongoose.Schema(
   {
-    ticketId: { type: String, unique: true }, // we add the index below
-    customerId: { type: String, required: true, index: true }, // Firebase UID
-    orderId: { type: String, default: null },
+    ticketId: { type: String, unique: true, index: true }, // human-friendly ID like TKT-XXXXXX
+    customerId: { type: String, required: true },          // Firebase UID (strict)
     issue: { type: String, required: true },
-    status: {
-      type: String,
-      enum: ["Open", "In Progress", "Resolved"],
-      default: "Open",
-      index: true,
-    },
-    priority: {
-      type: String,
-      enum: ["Low", "Medium", "High"],
-      default: "Low",
-    },
-    assignedTo: { type: String, default: null },
-    replies: [ReplySchema],
+    priority: { type: String, enum: ["Low", "Medium", "High"], default: "Low" },
+    status: { type: String, enum: ["Open", "In Progress", "Resolved"], default: "Open" },
+
+    orderId: { type: String, default: null },
+
     customerSnapshot: {
       name: String,
       email: String,
       phone: String,
     },
-    // optional: stored for semantic dedupe; hidden by default
-    issueEmbedding: { type: [Number], select: false },
+
+    issueEmbedding: { type: [Number], default: [] },
+    replies: { type: [ReplySchema], default: [] },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    collection: "supporttickets",
+  }
 );
 
-// Generate TKT-XXXXXXXXXX (10 chars)
-function genTicketChunk(len = 10) {
-  let chunk = "";
-  while (chunk.length < len) {
-    const part = BigInt("0x" + crypto.randomBytes(8).toString("hex"))
-      .toString(36)
-      .toUpperCase();
-    chunk += part;
-  }
-  return chunk.slice(0, len);
-}
-
+// Generate ticketId once pre-save (avoid duplicate index warnings)
 SupportTicketSchema.pre("save", function (next) {
-  if (!this.ticketId) this.ticketId = `TKT-${genTicketChunk(10)}`;
+  if (!this.ticketId) {
+    const rand = Math.random().toString(36).toUpperCase().slice(2, 8);
+    this.ticketId = `TKT-${rand}`;
+  }
   next();
 });
 
-// Clean, non-duplicated indexes
-SupportTicketSchema.index({ ticketId: 1 }, { unique: true });
-SupportTicketSchema.index({ status: 1, createdAt: -1 });
-SupportTicketSchema.index({ createdAt: -1 });
-SupportTicketSchema.index({ "customerSnapshot.email": 1 });
+const SupportTicket = ticketsDb.model("SupportTicket", SupportTicketSchema);
 
-// IMPORTANT: write to "supporttickets" collection (inside Customer_Tickets DB)
-export default TicketsConn.model("SupportTicket", SupportTicketSchema, "supporttickets");
+// Optional debug (safe to keep)
+try {
+  // @ts-ignore - name exists on connection
+  console.log(`[TICKETS MODEL] SupportTicket DB: ${ticketsDb.name} COLL: supporttickets`);
+} catch {}
+
+export default SupportTicket;
