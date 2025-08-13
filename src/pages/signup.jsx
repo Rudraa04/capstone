@@ -101,6 +101,7 @@ export default function Signup() {
         email: user.email,
         fullName: user.displayName || "",
         role: "customer",
+        createdAt: serverTimestamp()
       });
 
       navigate("/");

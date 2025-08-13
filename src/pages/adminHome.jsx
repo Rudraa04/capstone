@@ -15,7 +15,17 @@ import {
 
 // 🔥 Firestore
 import { db } from "../firebase/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+  onSnapshot,
+  collection,
+  query,
+  where,
+  Timestamp,
+} from "firebase/firestore";
 
 /* ---------- Small helper: hover popover card with breakdown ---------- */
 function HoverBreakdownCard({ title, value, breakdown, formatter }) {
@@ -98,60 +108,99 @@ export default function AdminHome() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  /* 🔶 Fetch monthly target from Firestore (shared for all admins) */
+  /* 🔶 Live monthly target from Firestore (shared for all admins) */
   useEffect(() => {
-    const fetchTarget = async () => {
-      try {
-        const ref = doc(db, "adminSettings", "dashboard");
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          const val = Number(snap.data()?.monthlyTarget || 0);
-          if (val > 0) setMonthlyTarget(val);
-        }
-      } catch (e) {
-        console.error("Failed to load monthly target:", e);
-      } finally {
+    const ref = doc(db, "adminSettings", "dashboard");
+    // Optional: create the doc if missing so subscription returns something
+    getDoc(ref).then((snap) => {
+      if (!snap.exists()) {
+        setDoc(ref, { monthlyTarget: 100000, updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
+      }
+    });
+
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const val = Number(snap.data()?.monthlyTarget ?? 0);
+        if (Number.isFinite(val) && val >= 0) setMonthlyTarget(val || 0);
+        setTargetLoading(false);
+      },
+      (err) => {
+        console.error("Failed to subscribe to monthly target:", err);
         setTargetLoading(false);
       }
-    };
-    fetchTarget();
+    );
+    return () => unsub();
   }, []);
 
   const saveTarget = async () => {
+    const n = Number(monthlyTarget);
+    if (!Number.isFinite(n) || n < 0) {
+      alert("Please enter a valid non-negative number.");
+      return;
+    }
     try {
       setSavingTarget(true);
       const ref = doc(db, "adminSettings", "dashboard");
-      await setDoc(
-        ref,
-        {
-          monthlyTarget: Number(monthlyTarget) || 0,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+      await setDoc(ref, { monthlyTarget: n, updatedAt: serverTimestamp() }, { merge: true });
+      console.log("Monthly target saved:", n);
+      // onSnapshot above will reflect the saved value automatically
     } catch (e) {
       console.error("Failed to save monthly target:", e);
-      alert("Failed to save target. Check console for details.");
+      alert(
+        e?.code === "permission-denied"
+          ? "Permission denied: check your Firestore Security Rules or sign-in."
+          : "Failed to save target. Check console for details."
+      );
     } finally {
       setSavingTarget(false);
     }
   };
 
-  /* Fetch orders + low stock and build everything */
+  // Canonicalize product category labels (used in revenue/unit breakdowns)
+  const canonCategory = (raw) => {
+    const s = String(raw || "").trim().toLowerCase();
+    if (!s) return "Unknown";
+    if (s.startsWith("tile")) return "Tiles"; // unify Tile/Tiles
+    if (s.includes("granite")) return "Granite";
+    if (s.includes("marble")) return "Marble";
+    if (s.includes("bathtub")) return "Bathtub";
+    if (s.includes("sink")) return "Sink";
+    if (s.includes("toilet")) return "Toilet";
+    if (s === "slab" || s === "slabs") return "Slabs";
+    // Capitalize first letter of anything else
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+
+  /* ✅ NEW: Live “new users today” */
+  useEffect(() => {
+    // Start of "today" in local time
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startTs = Timestamp.fromDate(startOfToday);
+
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("createdAt", ">=", startTs));
+
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const count = snap.size; // number of user docs created today (with createdAt present)
+        setSummary((prev) => ({ ...prev, newUsers: count }));
+      },
+      (err) => {
+        console.error("New users listener failed:", err);
+        // If rules block it, keep UI safe (don’t crash)
+        setSummary((prev) => ({ ...prev, newUsers: 0 }));
+      }
+    );
+
+    return () => unsub();
+  }, [db]);
+
+  /* Fetch orders + low stock and build everything else */
   useEffect(() => {
     let mounted = true;
-
-    // put this helper above fetchAll
-const canonCategory = (raw) => {
-  const s = String(raw || "").trim().toLowerCase();
-  if (!s) return "Unknown";
-  if (s.startsWith("tile")) return "Tiles";   // unify Tile/Tiles
-  if (s.includes("granite")) return "Granite";
-  if (s.includes("marble")) return "Marble";
-  if (s === "slab" || s === "slabs") return "Slabs";
-  // Capitalize first letter of anything else
-  return s.charAt(0).toUpperCase() + s.slice(1);
-};
 
     const fetchAll = async () => {
       try {
@@ -165,18 +214,16 @@ const canonCategory = (raw) => {
         const orders = Array.isArray(ordersRes.data) ? ordersRes.data : [];
         const low = lowRes?.data?.items || [];
 
-        // ---- Build quick "recent" (not stored in state; used for notifications only) ----
+        // ---- Build quick "recent" for notifications ----
         const recent = [...orders]
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .slice(0, 5)
-
           .map((o) => {
             const amount =
               o.totalAmount != null
                 ? Number(o.totalAmount)
                 : (o.items || []).reduce(
-                    (s, it) =>
-                      s + Number(it.quantity || 0) * Number(it.price || 0),
+                    (s, it) => s + Number(it.quantity || 0) * Number(it.price || 0),
                     0
                   );
             return {
@@ -194,58 +241,34 @@ const canonCategory = (raw) => {
         const revenueByCat = {};
         const unitsByCat = {};
 
-        // put this helper above fetchAll
-const canonCategory = (raw) => {
-  const s = String(raw || "").trim().toLowerCase();
-  if (!s) return "Unknown";
-  if (s.startsWith("tile")) return "Tiles";   // unify Tile/Tiles
-  if (s.includes("granite")) return "Granite";
-  if (s.includes("marble")) return "Marble";
-  if (s.includes("bathtub")) return "Bathtub";
-  if (s.includes("sink")) return "Sink";
-  if (s.includes("toilet")) return "Toilet";
-  if (s === "slab" || s === "slabs") return "Slabs";
-  // Capitalize first letter of anything else
-  return s.charAt(0).toUpperCase() + s.slice(1);
-};
+        orders.forEach((o) => {
+          (o.items || []).forEach((it) => {
+            const catRaw =
+              it.productType ??
+              it.category ??
+              it.Category ??
+              it.collection ??
+              it.type ??
+              it.kind ??
+              "Unknown";
 
-// inside fetchAll(), replace your current orders.forEach block that sets
-// totalUnits/totalRevenue/revenueByCat/unitsByCat with:
-orders.forEach((o) => {
-  (o.items || []).forEach((it) => {
-    const catRaw =
-      it.productType ??
-      it.category ??
-      it.Category ??
-      it.collection ??
-      it.type ??
-      it.kind ??
-      "Unknown";
+            const cat = canonCategory(catRaw);
+            const qty = Number(it.quantity ?? it.qty ?? it.units ?? 0);
+            const price = Number(it.price ?? it.Price ?? it.unitPrice ?? 0);
+            const rev = qty * price;
 
-    const cat = canonCategory(catRaw);
-    const qty = Number(it.quantity ?? it.qty ?? it.units ?? 0);
-    const price = Number(it.price ?? it.Price ?? it.unitPrice ?? 0);
-    const rev = qty * price;
-
-    totalUnits += qty;
-    totalRevenue += rev;
-    unitsByCat[cat] = (unitsByCat[cat] || 0) + qty;
-    revenueByCat[cat] = (revenueByCat[cat] || 0) + rev;
-  });
-});
-
+            totalUnits += qty;
+            totalRevenue += rev;
+            unitsByCat[cat] = (unitsByCat[cat] || 0) + qty;
+            revenueByCat[cat] = (revenueByCat[cat] || 0) + rev;
+          });
+        });
 
         const now = new Date();
-        const startOfToday = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate()
-        );
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        const ordersToday = orders.filter(
-          (o) => new Date(o.createdAt) >= startOfToday
-        ).length;
+        const ordersToday = orders.filter((o) => new Date(o.createdAt) >= startOfToday).length;
 
         // 🔶 Month-To-Date Revenue (for target progress)
         const mtd = orders.reduce((sum, o) => {
@@ -255,8 +278,7 @@ orders.forEach((o) => {
               o.totalAmount != null
                 ? Number(o.totalAmount)
                 : (o.items || []).reduce(
-                    (s, it) =>
-                      s + Number(it.quantity || 0) * Number(it.price || 0),
+                    (s, it) => s + Number(it.quantity || 0) * Number(it.price || 0),
                     0
                   );
             return sum + r;
@@ -266,12 +288,13 @@ orders.forEach((o) => {
 
         if (!mounted) return;
 
-        setSummary({
+        setSummary((prev) => ({
+          ...prev,
           totalProductsSold: totalUnits,
           ordersToday,
-          newUsers: 0, // plug Firebase users if/when you want
           revenue: totalRevenue,
-        });
+          // newUsers stays as set by the live users listener
+        }));
         setByCategory({ revenue: revenueByCat, units: unitsByCat });
         setMtdRevenue(mtd);
 
@@ -292,27 +315,21 @@ orders.forEach((o) => {
           notifs.push({
             type: "new",
             title: "New order placed",
-            detail: `${latest.id} by ${latest.customer} — ${INR(
-              latest.amount
-            )}`,
+            detail: `${latest.id} by ${latest.customer} — ${INR(latest.amount)}`,
           });
         }
         if (pendingCount > 0) {
           notifs.push({
             type: "warn",
             title: "Pending orders",
-            detail: `${pendingCount} order${
-              pendingCount > 1 ? "s" : ""
-            } awaiting action`,
+            detail: `${pendingCount} order${pendingCount > 1 ? "s" : ""} awaiting action`,
           });
         }
         if (cancelledCount > 0) {
           notifs.push({
             type: "warn",
             title: "Cancelled orders",
-            detail: `${cancelledCount} order${
-              cancelledCount > 1 ? "s" : ""
-            } cancelled today`,
+            detail: `${cancelledCount} order${cancelledCount > 1 ? "s" : ""} cancelled today`,
           });
         }
         if (low.length > 0) {
@@ -352,9 +369,7 @@ orders.forEach((o) => {
 
   // Progress calc
   const progress =
-    monthlyTarget > 0
-      ? Math.min(100, Math.round((mtdRevenue / monthlyTarget) * 100))
-      : 0;
+    monthlyTarget > 0 ? Math.min(100, Math.round((mtdRevenue / monthlyTarget) * 100)) : 0;
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -498,7 +513,8 @@ orders.forEach((o) => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-blue-700">Monthly Target</h2>
             <div className="text-sm text-gray-600">
-              Period: {new Date().toLocaleString("default", { month: "long" })} {new Date().getFullYear()}
+              Period: {new Date().toLocaleString("default", { month: "long" })}{" "}
+              {new Date().getFullYear()}
             </div>
           </div>
 
@@ -554,12 +570,9 @@ orders.forEach((o) => {
         {/* Low Stock Panel */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-blue-700">
-              Low Stock Products
-            </h2>
+            <h2 className="text-xl font-bold text-blue-700">Low Stock Products</h2>
             <div className="text-sm text-gray-600">
-              Total low-stock items:{" "}
-              <span className="font-semibold">{lowStock.count}</span>
+              Total low-stock items: <span className="font-semibold">{lowStock.count}</span>
             </div>
           </div>
 
