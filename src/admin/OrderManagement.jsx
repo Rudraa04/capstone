@@ -30,7 +30,7 @@ export default function OrderManagement() {
 
   // Load ALL orders (admin endpoint)
   useEffect(() => {
-    let unsub = () => {};
+    let unsub = () => { };
     setLoading(true);
 
     unsub = onAuthStateChanged(auth, async (user) => {
@@ -207,56 +207,61 @@ export default function OrderManagement() {
                   <th className="py-3 px-4">Total</th>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Actions</th>
+                  <th className="text-center w-[300px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => {
                   const serverOrder = orders.find((o) => o._id === row.id);
                   const status = row.status;
-                return (
-                  <tr key={row.id} className="border-b">
-                    <td className="py-2 px-4">{row.id}</td>
-                    <td className="py-2 px-4">{row.customer}</td>
-                    <td className="py-2 px-4">{row.product}</td>
-                    <td className="py-2 px-4 text-center">{row.quantity}</td>
-                    <td className="py-2 px-4">{row.total}</td>
-                    <td className="py-2 px-4">{row.date}</td>
-                    <td className="py-2 px-4">
-                      <span
-                        className={`px-2 py-1 rounded text-sm font-medium ${getStatusStyle(
-                          status
-                        )}`}
-                      >
-                        {status}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 space-x-1">
-                      <button
-                        onClick={() => navigate(`/admin/orders/${row.id}`)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                      >
-                        View
-                      </button>
-                      {status !== "Delivered" && status !== "Cancelled" && (
-                        <>
+                  return (
+                    <tr key={row.id} className="border-b">
+                      <td className="py-2 px-4">{row.id}</td>
+                      <td className="py-2 px-4">{row.customer}</td>
+                      <td className="py-2 px-4">{row.product}</td>
+                      <td className="py-2 px-4 text-center">{row.quantity}</td>
+                      <td className="py-2 px-4">{row.total}</td>
+                      <td className="py-2 px-4">{row.date}</td>
+                      <td className="py-2 px-4">
+                        <span
+                          className={`px-2 py-1 rounded text-sm font-medium ${getStatusStyle(
+                            status
+                          )}`}
+                        >
+                          {status}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2 text-center w-[300px]">
+                        <div className="flex justify-center items-center gap-2">
                           <button
-                            onClick={() => handleStatusUpdate(row.id, "Delivered")}
-                            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                            onClick={() => navigate(`/admin/orders/${row.id}`)}
+                            className="w-20 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                           >
-                            Mark Delivered
+                            View
                           </button>
-                          <button
-                            onClick={() => handleStatusUpdate(row.id, "Cancelled")}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                )})}
+                          {status !== "Delivered" && status !== "Cancelled" && (
+                            <>
+                              <button
+                                onClick={() => handleStatusUpdate(row.id, "Delivered")}
+                                className="w-30 whitespace-nowrap px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                              >
+                                Mark Delivered
+                              </button>
+                              <button
+                                onClick={() => handleStatusUpdate(row.id, "Cancelled")}
+                                className="w-20 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+
+
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           )}

@@ -124,14 +124,14 @@ export default function Checkout() {
   }, []);
 
   useEffect(() => {
-  const load = () => {
-    const raw = localStorage.getItem("cart") ?? localStorage.getItem("cartItems");
-    setCartItems(raw ? JSON.parse(raw) : []);
-  };
-  load();
-  window.addEventListener("cartUpdated", load);
-  return () => window.removeEventListener("cartUpdated", load);
-}, []);
+    const load = () => {
+      const raw = localStorage.getItem("cart") ?? localStorage.getItem("cartItems");
+      setCartItems(raw ? JSON.parse(raw) : []);
+    };
+    load();
+    window.addEventListener("cartUpdated", load);
+    return () => window.removeEventListener("cartUpdated", load);
+  }, []);
 
 
   useEffect(() => {
@@ -324,69 +324,77 @@ export default function Checkout() {
       }
     }
   };
-async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
-  const user = auth.currentUser;
-  if (!user) return;
+  async function saveOrderAfterPayment(cartItems, grandTotal, paymentResult) {
+    const user = auth.currentUser;
+    if (!user) return;
 
-  const token = await user.getIdToken();
+    const token = await user.getIdToken();
 
-  const items = (cartItems || []).map(ci => ({
-    productId: ci._id || ci.id,
-    sku: ci.sku,
-     productType: normalizeProductType(ci.category || ci.type || ci.kind || ci.productType),
-    name: ci.name,
-    quantity: parseInt(ci.quantity || 1, 10),
-    price: Number(ci.price || 0) - Number(ci.discount || 0),
-    unit: ci.unit || "box",
-    image: ci.image,
-    specs: ci.specs || { size: ci.size, color: ci.color, finish: ci.finish },
-  }));
-
-  // snapshot selected address
-  const addr = addressList.find(a => a.id === selectedAddress) || {};
-  const shippingAddress = {
-    name: addr.fullName || "",
-    street: addr.street || "",
-    city: addr.city || "",
-    state: addr.state || "",
-    postalCode: addr.postalCode || "",
-    country: addr.country || "",
-    phone: addr.phone || "",
-  };
-
-  // optional totals (useful for detail view)
-  const subtotal = (cartItems || []).reduce((s, ci) => s + computeLineTotal(ci), 0);
-
-  const taxTotal = +(subtotal * 0.05).toFixed(2);
-  const shippingFee = 0;
-
-  const receiptUrl = paymentResult?.payment?.receipt_url;
-  const last4 = paymentResult?.payment?.card_details?.card?.last_4;
-  const brand = paymentResult?.payment?.card_details?.card?.card_brand;
-
-  await api.post(
-    "/api/orders",
-    {
-      items,
-      currency: "INR",                // display currency for your UI
-      subtotal,
-      taxTotal,
-      shippingFee,
-      totalAmount: Number(grandTotal.toFixed(2)),
-      status: "Paid",
-      customerName: shippingAddress.name,
-      shippingAddress,
-      payment: {
-        processor: "Square",
-        receiptUrl,
-        last4,
-        brand,
+    const items = (cartItems || []).map(ci => ({
+      productId: ci._id || ci.id,
+      sku: ci.sku,
+      productType: normalizeProductType(ci.category || ci.type || ci.kind || ci.productType),
+      name: ci.name,
+      quantity: parseInt(ci.quantity || 1, 10),
+      price: Number(ci.price || 0) - Number(ci.discount || 0),
+      unit: ci.unit || "box",
+      image: ci.image,
+      specs: ci.specs || {
+        size: ci.customSizeLabel || ci.size,   // Use custom size if available
+        color: ci.color,
+        finish: ci.finish,
+        totalSqft: ci.totalSqft || null,       // Store total sqft if available
+        customHeightIn: ci.customHeightIn || null, // Optional, for detailed display
+        customWidthIn: ci.customWidthIn || null,   // Optional, for detailed display
       },
-      timeline: [{ label: "Ordered", at: new Date().toISOString() }],
-    },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-}
+
+    }));
+
+    // snapshot selected address
+    const addr = addressList.find(a => a.id === selectedAddress) || {};
+    const shippingAddress = {
+      name: addr.fullName || "",
+      street: addr.street || "",
+      city: addr.city || "",
+      state: addr.state || "",
+      postalCode: addr.postalCode || "",
+      country: addr.country || "",
+      phone: addr.phone || "",
+    };
+
+    // optional totals (useful for detail view)
+    const subtotal = (cartItems || []).reduce((s, ci) => s + computeLineTotal(ci), 0);
+
+    const taxTotal = +(subtotal * 0.05).toFixed(2);
+    const shippingFee = 0;
+
+    const receiptUrl = paymentResult?.payment?.receipt_url;
+    const last4 = paymentResult?.payment?.card_details?.card?.last_4;
+    const brand = paymentResult?.payment?.card_details?.card?.card_brand;
+
+    await api.post(
+      "/api/orders",
+      {
+        items,
+        currency: "INR",                // display currency for your UI
+        subtotal,
+        taxTotal,
+        shippingFee,
+        totalAmount: Number(grandTotal.toFixed(2)),
+        status: "Paid",
+        customerName: shippingAddress.name,
+        shippingAddress,
+        payment: {
+          processor: "Square",
+          receiptUrl,
+          last4,
+          brand,
+        },
+        timeline: [{ label: "Ordered", at: new Date().toISOString() }],
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
 
 
   const handlePlaceOrder = async () => {
@@ -429,26 +437,26 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
       const data = await res.json(); // parses the response from your backend
 
       if (res.ok) {
-  // 1) Save order to backend
-  await saveOrderAfterPayment(cartItems, grandTotal, data.result); 
+        // 1) Save order to backend
+        await saveOrderAfterPayment(cartItems, grandTotal, data.result);
 
-  // 2) Clear cart (⚠️ your app loads from "cartItems", so clear BOTH keys)
-  localStorage.removeItem("cartItems");
-  localStorage.removeItem("cart");
-  window.dispatchEvent(new Event("cartUpdated"));
+        // 2) Clear cart (⚠️ your app loads from "cartItems", so clear BOTH keys)
+        localStorage.removeItem("cartItems");
+        localStorage.removeItem("cart");
+        window.dispatchEvent(new Event("cartUpdated"));
 
-  // 3) Success toast + redirect (go to Profile or Order History if you have a route)
-  localStorage.setItem(
-    "orderSuccessMessage",
-    "🎉 Your payment was successful! Thank you for your order."
-  );
+        // 3) Success toast + redirect (go to Profile or Order History if you have a route)
+        localStorage.setItem(
+          "orderSuccessMessage",
+          "🎉 Your payment was successful! Thank you for your order."
+        );
 
-  // Redirect to cart or profile — your choice:
-  // navigate("/profile"); // if your profile shows Order History
-  navigate("/cart"); // keep your current behavior if preferred
-} else {
-  triggerToast("❌ Payment failed: " + data.message, "error");
-}
+        // Redirect to cart or profile — your choice:
+        // navigate("/profile"); // if your profile shows Order History
+        navigate("/cart"); // keep your current behavior if preferred
+      } else {
+        triggerToast("❌ Payment failed: " + data.message, "error");
+      }
 
     } catch (err) {
       console.error(err);
@@ -678,12 +686,11 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
                 (paymentMethod === "credit" || paymentMethod === "debit") &&
                 !cardConfirmed
               }
-              className={`w-full sm:w-auto px-6 py-3 rounded-xl font-semibold shadow transition ${
-                (paymentMethod === "credit" || paymentMethod === "debit") &&
-                !cardConfirmed
+              className={`w-full sm:w-auto px-6 py-3 rounded-xl font-semibold shadow transition ${(paymentMethod === "credit" || paymentMethod === "debit") &&
+                  !cardConfirmed
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-green-600 text-white hover:bg-green-700"
-              }`}
+                }`}
             >
               Confirm & Pay ₹{grandTotal.toFixed(2)}
             </button>
@@ -699,69 +706,69 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
 
         {/* Right section - Order Summary */}
         <div className="space-y-4 bg-white p-6 rounded-2xl shadow h-fit">
-  <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-    📦 Order Summary
-  </h2>
-  {cartItems.length === 0 ? (
-    <p className="text-gray-500">No items in cart.</p>
-  ) : (
-    <div className="space-y-4">
-      {cartItems.map((item) => {
-        const price = parseFloat(item.price || 0);
-        const discount = parseFloat(item.discount || 0);
-        const finalPrice = price - discount;
-        const quantity = parseInt(item.quantity || 1);
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            📦 Order Summary
+          </h2>
+          {cartItems.length === 0 ? (
+            <p className="text-gray-500">No items in cart.</p>
+          ) : (
+            <div className="space-y-4">
+              {cartItems.map((item) => {
+                const price = parseFloat(item.price || 0);
+                const discount = parseFloat(item.discount || 0);
+                const finalPrice = price - discount;
+                const quantity = parseInt(item.quantity || 1);
 
-        return (
-          <div
-            key={`${item.id}-${item.customSizeLabel || item.size || ""}`} // separate items by size
-            className="flex items-center justify-between gap-4 border-b pb-4"
-          >
-            {/* Product Info */}
-            <div className="flex gap-4 items-center">
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-16 h-16 object-cover rounded border"
-              />
-              <div>
-                <h4 className="font-semibold text-base">{item.name}</h4>
+                return (
+                  <div
+                    key={`${item.id}-${item.customSizeLabel || item.size || ""}`} // separate items by size
+                    className="flex items-center justify-between gap-4 border-b pb-4"
+                  >
+                    {/* Product Info */}
+                    <div className="flex gap-4 items-center">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-16 h-16 object-cover rounded border"
+                      />
+                      <div>
+                        <h4 className="font-semibold text-base">{item.name}</h4>
 
-                {/* Show size for stone or tiles */}
-                {isStoneItem(item) && (item.customSizeLabel || item.size) && (
-                  <p className="text-xs text-gray-500">
-                    Size: {item.customSizeLabel || `${item.size} in`}
-                  </p>
-                )}
-                {isTilesItem(item) && item.size && (
-                  <p className="text-xs text-gray-500">Box Size: {item.size}</p>
-                )}
+                        {/* Show size for stone or tiles */}
+                        {isStoneItem(item) && (item.customSizeLabel || item.size) && (
+                          <p className="text-xs text-gray-500">
+                            Size: {item.customSizeLabel || `${item.size} in`}
+                          </p>
+                        )}
+                        {isTilesItem(item) && item.size && (
+                          <p className="text-xs text-gray-500">Box Size: {item.size}</p>
+                        )}
 
-                {/* Quantity */}
-                <p className="text-sm text-gray-500">Qty: {quantity}</p>
+                        {/* Quantity */}
+                        <p className="text-sm text-gray-500">Qty: {quantity}</p>
 
-                {/* Price per sqft or per unit */}
-                {isStoneItem(item) ? (
-                  <p className="text-sm text-gray-400">
-                    Price per Sqft: ₹{finalPrice.toFixed(2)}
-                  </p>
-                ) : isTilesItem(item) ? (
-                  <p className="text-sm text-gray-400">
-                    Price per Sqft: ₹{finalPrice.toFixed(2)}
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-400">
-                    Unit Price: ₹{finalPrice.toFixed(2)}
-                  </p>
-                )}
-              </div>
-            </div>
+                        {/* Price per sqft or per unit */}
+                        {isStoneItem(item) ? (
+                          <p className="text-sm text-gray-400">
+                            Price per Sqft: ₹{finalPrice.toFixed(2)}
+                          </p>
+                        ) : isTilesItem(item) ? (
+                          <p className="text-sm text-gray-400">
+                            Price per Sqft: ₹{finalPrice.toFixed(2)}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-400">
+                            Unit Price: ₹{finalPrice.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
-            {/* Line Total */}
-            <div className="text-right font-medium">
-              ₹{computeLineTotal(item).toFixed(2)}
-            </div>
-          </div>
+                    {/* Line Total */}
+                    <div className="text-right font-medium">
+                      ₹{computeLineTotal(item).toFixed(2)}
+                    </div>
+                  </div>
                 );
               })}
 
@@ -788,15 +795,13 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
       {toast.show && (
         <div
           onClick={() => setToast({ ...toast, show: false })}
-          className={`fixed bottom-4 right-4 z-50 animate-slideIn cursor-pointer shadow-xl transition-all duration-500 ${
-            toast.size === "large"
+          className={`fixed bottom-4 right-4 z-50 animate-slideIn cursor-pointer shadow-xl transition-all duration-500 ${toast.size === "large"
               ? "max-w-xs sm:max-w-sm p-6 text-xl font-bold"
               : "p-4 text-sm"
-          } rounded-lg ${
-            toast.type === "success"
+            } rounded-lg ${toast.type === "success"
               ? "bg-green-600 text-white"
               : "bg-red-600 text-white"
-          }`}
+            }`}
         >
           {toast.size === "large" && (
             <div className="text-4xl mb-2 animate-bounce">🎉</div>
