@@ -188,7 +188,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-50 flex flex-col relative">
+    <div className="min-h-screen bg-gray-50 flex flex-col relative">
       <button
         onClick={() => navigate(-1)}
         className="absolute top-5 left-5 text-gray-700 hover:text-black flex items-center gap-2 text-sm"

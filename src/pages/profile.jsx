@@ -132,7 +132,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-100 via-white to-blue-200 min-h-screen text-gray-900 font-sans">
+    <div className="bg-gray-50 min-h-screen text-gray-900 font-sans">
       <Header />
       <main className="py-16 px-4">
         <div className="max-w-7xl mx-auto">

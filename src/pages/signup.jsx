@@ -8,7 +8,7 @@ import {
   signInWithPopup,
 } from "firebase/auth";
 import { auth, db } from "../firebase/firebase";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, serverTimestamp } from "firebase/firestore"; // ⬅️ added serverTimestamp
 import { FaArrowLeft } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson } from "react-icons/md";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
@@ -21,6 +21,10 @@ export default function Signup() {
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // 👇 NEW: control visibility of password strength UI
+  const [showPwdUI, setShowPwdUI] = useState(false);
+
   const [strength, setStrength] = useState("");
   const [validations, setValidations] = useState({
     length: false,
@@ -101,7 +105,7 @@ export default function Signup() {
         email: user.email,
         fullName: user.displayName || "",
         role: "customer",
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(), // ✅ now imported
       });
 
       navigate("/");
@@ -111,7 +115,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-blue-50 flex flex-col relative">
+    <div className="min-h-screen bg-gray-50 flex flex-col relative">
       <button
         onClick={() => navigate(-1)}
         className="absolute top-5 left-5 text-gray-700 hover:text-black flex items-center gap-2 text-sm"
@@ -167,6 +171,8 @@ export default function Signup() {
                     setPassword(e.target.value);
                     evaluatePassword(e.target.value);
                   }}
+                  onFocus={() => setShowPwdUI(true)}             // 👈 show on focus
+                  onBlur={() => setShowPwdUI(Boolean(password))}  // 👈 hide if empty on blur
                   required
                   className="w-full border-b-2 border-black py-2 pl-10 pr-10 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
@@ -179,39 +185,43 @@ export default function Signup() {
                   {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                 </button>
               </div>
-              <div className="mt-2">
-                <div className="h-2 w-full bg-gray-200 rounded">
-                  <div
-                    className={`h-full rounded transition-all duration-300 ${
-                      strength === "Weak"
-                        ? "w-1/4 bg-red-500"
+
+              {/* Password strength + checklist appears only when focused/typed */}
+              {showPwdUI && (
+                <div className="mt-2">
+                  <div className="h-2 w-full bg-gray-200 rounded">
+                    <div
+                      className={`h-full rounded transition-all duration-300 ${
+                        strength === "Weak"
+                          ? "w-1/4 bg-red-500"
+                          : strength === "Medium"
+                          ? "w-2/4 bg-yellow-500"
+                          : strength === "Strong"
+                          ? "w-full bg-green-500"
+                          : "w-0"
+                      }`}
+                    ></div>
+                  </div>
+                  <p
+                    className={`text-sm mt-1 font-semibold ${
+                      strength === "Strong"
+                        ? "text-green-600"
                         : strength === "Medium"
-                        ? "w-2/4 bg-yellow-500"
-                        : strength === "Strong"
-                        ? "w-full bg-green-500"
-                        : "w-0"
+                        ? "text-yellow-600"
+                        : "text-red-600"
                     }`}
-                  ></div>
+                  >
+                    Strength: {strength || "N/A"}
+                  </p>
+                  <ul className="text-sm mt-1 space-y-1">
+                    <li className={validations.length ? "text-green-600" : "text-red-600"}>✓ At least 8 characters</li>
+                    <li className={validations.upper ? "text-green-600" : "text-red-600"}>✓ At least 1 uppercase letter</li>
+                    <li className={validations.lower ? "text-green-600" : "text-red-600"}>✓ At least 1 lowercase letter</li>
+                    <li className={validations.number ? "text-green-600" : "text-red-600"}>✓ At least 1 number</li>
+                    <li className={validations.special ? "text-green-600" : "text-red-600"}>✓ At least 1 special character</li>
+                  </ul>
                 </div>
-                <p
-                  className={`text-sm mt-1 font-semibold ${
-                    strength === "Strong"
-                      ? "text-green-600"
-                      : strength === "Medium"
-                      ? "text-yellow-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  Strength: {strength || "N/A"}
-                </p>
-                <ul className="text-sm mt-1 space-y-1">
-                  <li className={validations.length ? "text-green-600" : "text-red-600"}>✓ At least 8 characters</li>
-                  <li className={validations.upper ? "text-green-600" : "text-red-600"}>✓ At least 1 uppercase letter</li>
-                  <li className={validations.lower ? "text-green-600" : "text-red-600"}>✓ At least 1 lowercase letter</li>
-                  <li className={validations.number ? "text-green-600" : "text-red-600"}>✓ At least 1 number</li>
-                  <li className={validations.special ? "text-green-600" : "text-red-600"}>✓ At least 1 special character</li>
-                </ul>
-              </div>
+              )}
             </div>
 
             <div>
@@ -285,7 +295,7 @@ export default function Signup() {
             toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
           }`}
         >
-          {toast.size === "large" && <div className="text-4xl mb-2 animate-bounce">🎉</div>}
+          {/*{toast.size === "large" && <div className="text-4xl mb-2 animate-bounce">🎉</div>}*/}
           {toast.message}
         </div>
       )}

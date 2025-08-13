@@ -140,7 +140,7 @@ export default function CustomerSupport() {
     try {
       const updated = await replyToTicket(selected._id, {
         message: replyMsg.trim(),
-        repliedBy: "admin:rudra", // TODO: replace with real admin identity
+        //repliedBy: "admin:rudra", // TODO: replace with real admin identity
       });
       setSelected(updated);
       setTickets((prev) => prev.map((t) => (t._id === updated._id ? updated : t)));

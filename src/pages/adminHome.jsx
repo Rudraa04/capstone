@@ -14,7 +14,7 @@ import {
   FiGlobe,
 } from "react-icons/fi";
 
-// 🔥 Firestore
+// Firestore
 import { db } from "../firebase/firebase";
 import {
   doc,
