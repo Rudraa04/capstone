@@ -218,7 +218,7 @@ export default function CustomerSupport() {
 
   // --------------- layout ---------------
   return (
-    <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
+    <div className="flex min-h-screen overflow-x-hidden text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <button
@@ -240,7 +240,7 @@ export default function CustomerSupport() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1">
+      <main className="flex-1 min-w-0 overflow-x-hidden">
         <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-8">
           {/* Header */}
           <div className="mb-4">
@@ -295,7 +295,7 @@ export default function CustomerSupport() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto bg-white rounded-xl shadow">
+          <div className="max-w-full overflow-x-auto bg-white rounded-xl shadow">
             <table className="min-w-full table-fixed text-sm text-left text-gray-700">
               <colgroup>
                 <col style={{ width: "140px" }} />
@@ -304,7 +304,7 @@ export default function CustomerSupport() {
                 <col style={{ width: "110px" }} />
                 <col style={{ width: "120px" }} />
                 <col style={{ width: "170px" }} />
-                <col style={{ width: "360px" }} />
+                <col style={{ width: "320px" }} />
               </colgroup>
 
               <thead className="bg-blue-50 text-gray-700 text-xs uppercase sticky top-0">
