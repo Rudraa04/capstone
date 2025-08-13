@@ -8,6 +8,8 @@ import squareRestRoutes from "./routes/squareRestRoutes.js"; // Import squareRes
 import reportRoute from './routes/reportRoute.js';
 import ordersRouter from "./routes/orderRoutes.js";
 import supportticketRoutes from "./routes/supportticketroute.js";
+import inventoryRoutes from "./routes/inventoryRoutes.js";
+import lowStockRoutes from "./routes/lowStockRoutes.js";
 
 
 // Load environment variables
@@ -25,6 +27,9 @@ app.use("/", productRoutes);
 app.use('/api/reports', reportRoute); //route for reports
 app.use("/api", ordersRouter); 
 app.use("/api/supporttickets", supportticketRoutes); //route for support ticket
+app.use("/api/inventory", lowStockRoutes);
+app.use("/api/inventory", inventoryRoutes);
+
 // to fetch mongo string from env
 const MONGO_URI = process.env.MONGO_URI;
 
