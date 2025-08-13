@@ -1,44 +1,57 @@
-import express from "express"; /// Express helps us create routes (APIs)
-import axios from "axios"; //to call square API
-import { v4 as uuidv4 } from "uuid"; //this generates a unique id for each payment (prevent duplicate payments)
-import dotenv from "dotenv"; //to use environment variables
+import express from "express";
+import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
+import dotenv from "dotenv";
 
-dotenv.config(); // to start using environment variables
-const router = express.Router(); // create a new router instance
+dotenv.config();
+const router = express.Router();
 
-const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN; //get the Square access token from environment variables
+const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
 
-router.post("/payment", async (req, res) => { // handle payment requests from the frontend
-  const { sourceId, amount } = req.body; // get sourceId and amount from the request
+// Optional hard cap (e.g., CA$50,000 per payment)
+const MAX_PAYMENT_CENTS = 5_000_000;
 
+router.post("/payment", async (req, res) => {
   try {
+    const { sourceId, amount } = req.body;
+    if (!sourceId) return res.status(400).json({ message: "Missing sourceId" });
+    if (amount == null) return res.status(400).json({ message: "Missing amount" });
+
+    // ✅ Trust frontend to send cents. Coerce to integer and validate.
+    const amountCents = Math.round(Number(amount));
+
+    if (!Number.isFinite(amountCents) || amountCents < 1) {
+      return res.status(400).json({ message: "Invalid amount (must be integer cents ≥ 1)" });
+    }
+    if (amountCents > MAX_PAYMENT_CENTS) {
+      return res.status(400).json({ message: "Amount exceeds per-transaction limit" });
+    }
+
     const response = await axios.post(
-      "https://connect.squareupsandbox.com/v2/payments", // use axios to make a POST request to Square's sandbox  API
+      "https://connect.squareupsandbox.com/v2/payments",
       {
-        idempotency_key: uuidv4(), // create a unique id to prevent duplicate payments
-        source_id: sourceId,  // from frontend
+        idempotency_key: uuidv4(),
+        source_id: sourceId,
         amount_money: {
-          amount: amount, // already multiplied by 100 in frontend
-          currency: "CAD", 
+          amount: amountCents,       // <-- integer cents as-is
+          currency: "CAD",
         },
       },
-      { //extra information for the request to Square to avoid errors
+      {
         headers: {
-          "Square-Version": "2023-12-13", // exact version of Square API we are using
-          Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`, // use the Square access token for authorization
-          "Content-Type": "application/json",//tell Square that we are sending JSON data
+          "Square-Version": "2023-12-13",
+          Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
         },
       }
     );
 
-    console.log("Square response:", response.data); // log the response from Square for debugging
-    res.status(200).json({ message: "Payment successful", result: response.data }); // send a success response back to the frontend
-  }  catch (error) {
-  console.error("Payment error:", JSON.stringify(error, null, 2)); // Log the error details
-  res.status(500).json({ error: "Payment failed", details: error }); // Send an error response back to the frontend
-}
-
-  
+    console.log("Square response:", response.data);
+    res.status(200).json({ message: "Payment successful", result: response.data });
+  } catch (err) {
+    console.error("Square error:", err.response?.data || err.message);
+    res.status(err.response?.status || 500).json(err.response?.data || { message: err.message });
+  }
 });
 
-export default router; // export the router so it can be used in server.js to set up the route
+export default router;

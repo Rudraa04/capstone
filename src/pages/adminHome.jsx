@@ -97,6 +97,88 @@ function summarizeLowStock(items, maxPerCat = 4) {
   return { total: items.length, lines };
 }
 
+/* ---------- Sqft-aware pricing helpers (shared logic) ---------- */
+const tagOf = (it = {}) =>
+  String(it.productType || it.category || it.kind || it.type || "").toLowerCase();
+
+const isSqftPriced = (it = {}) => {
+  const tag = tagOf(it);
+  return tag.includes("tile") || tag.includes("granite") || tag.includes("marble");
+};
+
+const parseSqftFromSize = (sizeStr = "") => {
+  const s = String(sizeStr || "").toLowerCase();
+  const m = s.match(/([\d.]+)\s*[x×]\s*([\d.]+)/i);
+  if (!m) return 0;
+  const L = parseFloat(m[1]);
+  const W = parseFloat(m[2]);
+  if (!Number.isFinite(L) || !Number.isFinite(W)) return 0;
+  return (L * W) / 144; // inches -> sqft
+};
+
+const BOX_CONFIG = {
+  "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
+  "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
+  "12x18": { tilesPerBox: 6, sqftPerBox: 9 },
+  "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
+};
+
+const sqftPerUnit = (it = {}) => {
+  const snap = Number(it?.sqftPerUnit ?? it?.specs?.sqftPerUnit);
+  if (Number.isFinite(snap) && snap > 0) return snap;
+
+  const specSqft =
+    Number(it?.specs?.sqftPerBox) || Number(it?.specs?.totalSqft) || 0;
+  if (Number.isFinite(specSqft) && specSqft > 0) return specSqft;
+
+  const sizeStr = it?.specs?.size || it?.size || "";
+  const key = String(sizeStr || "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/in\b|inch(es)?\b/g, "");
+  if (BOX_CONFIG[key]) return BOX_CONFIG[key].sqftPerBox;
+
+  return parseSqftFromSize(sizeStr);
+};
+
+const unitPriceOf = (it = {}) =>
+  Number(
+    it?.unitPrice ?? it?.specs?.unitPrice ?? it?.price ?? it?.specs?.price
+  ) || 0;
+
+const quantityOf = (it = {}) =>
+  Number(it?.quantity ?? it?.qty ?? it?.units ?? it?.specs?.quantity) || 0;
+
+// Exact charged amount for one line item
+const lineRevenueOf = (it = {}) => {
+  const lt = Number(it?.lineTotal ?? it?.specs?.lineTotal);
+  if (Number.isFinite(lt) && lt > 0) return lt;
+
+  const unit = unitPriceOf(it);
+  const qty = quantityOf(it);
+  if (isSqftPriced(it)) {
+    const s = sqftPerUnit(it);
+    if (s > 0) return unit * s * qty; // ₹/sqft × sqft × boxes
+  }
+  return unit * qty;
+};
+
+// Order subtotal (pre-tax/ship) with safe fallbacks
+const orderSubtotal = (o = {}) => {
+  const sub = Number(o?.subtotal);
+  if (Number.isFinite(sub) && sub >= 0) return sub;
+
+  const items = Array.isArray(o?.items) ? o.items : [];
+  const sumLines = items.reduce((s, it) => s + lineRevenueOf(it), 0);
+  if (sumLines > 0) return sumLines;
+
+  const total = Number(o?.totalAmount) || 0;
+  const tax = Number(o?.taxTotal) || 0;
+  const ship = Number(o?.shippingFee) || 0;
+  const guess = total - tax - ship;
+  return Number.isFinite(guess) && guess > 0 ? guess : total;
+};
+
 export default function AdminHome() {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -263,13 +345,8 @@ export default function AdminHome() {
           head && {
             id: "#" + String(head._id).slice(-5),
             customer: head.customerName || head.userUid || "Unknown",
-            amount:
-              head.totalAmount != null
-                ? Number(head.totalAmount)
-                : (head.items || []).reduce(
-                    (s, it) => s + Number(it.quantity || 0) * Number(it.price || 0),
-                    0
-                  ),
+            // show what was actually charged if present; else fall back to computed subtotal
+            amount: Number(head.totalAmount ?? orderSubtotal(head)),
             createdAt: head.createdAt,
           };
 
@@ -280,7 +357,7 @@ export default function AdminHome() {
           (o) => (o.status || "").toLowerCase() === "cancelled"
         ).length;
 
-        // ---- Summary + breakdowns ----
+        // ---- Summary + breakdowns (sqft-aware) ----
         let totalUnits = 0;
         let totalRevenue = 0;
         const revenueByCat = {};
@@ -298,9 +375,8 @@ export default function AdminHome() {
               "Unknown";
             const cat = canonCategory(catRaw);
 
-            const qty = Number(it.quantity ?? it.qty ?? it.units ?? 0);
-            const price = Number(it.price ?? it.Price ?? it.unitPrice ?? 0);
-            const rev = qty * price;
+            const qty = quantityOf(it);
+            const rev = lineRevenueOf(it);
 
             totalUnits += qty;
             totalRevenue += rev;
@@ -315,19 +391,10 @@ export default function AdminHome() {
 
         const ordersToday = orders.filter((o) => new Date(o.createdAt) >= startOfToday).length;
 
-        // 🔶 Month-To-Date Revenue (for target progress)
+        // 🔶 Month-To-Date Revenue (sum of order subtotals)
         const mtd = orders.reduce((sum, o) => {
           const d = new Date(o.createdAt);
-          if (d >= startOfMonth) {
-            const r =
-              o.totalAmount != null
-                ? Number(o.totalAmount)
-                : (o.items || []).reduce(
-                    (s, it) => s + Number(it.quantity || 0) * Number(it.price || 0),
-                    0
-                  );
-            return sum + r;
-          }
+          if (d >= startOfMonth) return sum + orderSubtotal(o);
           return sum;
         }, 0);
 
@@ -488,7 +555,7 @@ export default function AdminHome() {
                   </div>
                 )}
 
-                {/* Status chips — fixed to avoid rendering a stray 0 */}
+                {/* Status chips */}
                 {pendingCount + cancelledCount > 0 && (
                   <div className="mb-3 flex gap-2 flex-wrap">
                     {pendingCount ? (
@@ -530,7 +597,7 @@ export default function AdminHome() {
                       {lowSummary.lines.map(({ cat, items, extra }) => (
                         <div key={cat}>
                           <div className="text-xs font-semibold text-gray-600 mb-1">{cat}</div>
-                          <ul className="text-sm text-gray-800 list-disc ml-5 space-y-0.5">
+                          <ul className="text-sm text-gray-8 00 list-disc ml-5 space-y-0.5">
                             {items.map((ln, i) => (
                               <li key={i}>{ln}</li>
                             ))}
@@ -579,7 +646,8 @@ export default function AdminHome() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-blue-700">Monthly Target</h2>
             <div className="text-sm text-gray-600">
-              Period: {new Date().toLocaleString("default", { month: "long" })} {new Date().getFullYear()}
+              Period: {new Date().toLocaleString("default", { month: "long" })}{" "}
+              {new Date().getFullYear()}
             </div>
           </div>
 

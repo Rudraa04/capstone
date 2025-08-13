@@ -15,11 +15,24 @@ import { auth } from "../firebase/firebase";
 import { api } from "../api";
 
 /* ========= Pricing helpers (kept identical to customer side) ========= */
+// Treat Tile, Marble, Granite as sqft-priced lines
+const tagOf = (it = {}) =>
+  String(it.productType || it.category || it.kind || it.type || "").toLowerCase();
+
 const isTilesItem = (it = {}) => {
-  const tag = String(
-    it.productType || it.category || it.kind || it.type || ""
-  ).toLowerCase();
-  return tag.includes("tile");
+  const tag = tagOf(it);
+  return tag.includes("tile") || tag.includes("marble") || tag.includes("granite");
+};
+
+// parse "24x23", "24 x 23", "24x23 in", "24×23", etc. -> sqft per piece
+const parseSqftFromSize = (sizeStr = "") => {
+  const s = String(sizeStr || "").toLowerCase();
+  const m = s.match(/([\d.]+)\s*[x×]\s*([\d.]+)/i);
+  if (!m) return 0;
+  const L = parseFloat(m[1]);
+  const W = parseFloat(m[2]);
+  if (!isFinite(L) || !isFinite(W)) return 0;
+  return (L * W) / 144; // inches -> sqft
 };
 
 const BOX_CONFIG = {
@@ -29,23 +42,50 @@ const BOX_CONFIG = {
   "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
 };
 
-const getBoxInfo = (sizeStr = "") => {
-  const key = String(sizeStr || "").replace(/\s+/g, "");
-  if (BOX_CONFIG[key]) return BOX_CONFIG[key];
-  const [L, W] = key.split("x").map(Number);
-  const sqftPerTile = L && W ? (L * W) / 144 : 0;
-  return { tilesPerBox: 1, sqftPerBox: sqftPerTile };
+// prefer backend snapshot sqft/unit when available
+const sqftPerUnit = (it = {}) => {
+  const snap = parseFloat(it?.sqftPerUnit);
+  if (Number.isFinite(snap) && snap > 0) return snap;
+
+  // prefer explicit sqft in specs if present
+  const specSqft =
+    parseFloat(it?.specs?.sqftPerBox) ||
+    parseFloat(it?.specs?.totalSqft) ||
+    0;
+  if (isFinite(specSqft) && specSqft > 0) return specSqft;
+
+  const sizeStr = it?.specs?.size || it?.size || "";
+
+  // try BOX_CONFIG on a clean key (e.g., "24x24")
+  const key = String(sizeStr || "")
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/in\b|inch(es)?\b/g, "");
+  if (BOX_CONFIG[key]) return BOX_CONFIG[key].sqftPerBox;
+
+  // robust regex fallback (handles "24x23 in", "24×23", etc.)
+  return parseSqftFromSize(sizeStr);
 };
 
+const unitPriceOf = (it = {}) =>
+  parseFloat(it?.unitPrice ?? it?.price) || 0;
+
 const computeLineTotal = (it = {}) => {
-  const price = parseFloat(it.price) || 0;
+  const price = unitPriceOf(it);
   const qty = parseInt(it.quantity) || 0;
+
   if (isTilesItem(it)) {
-    const sizeStr = it.specs?.size || it.size || "";
-    const { sqftPerBox } = getBoxInfo(sizeStr);
-    return price * sqftPerBox * qty;
+    const s = sqftPerUnit(it);
+    return (s > 0 ? price * s : price) * qty;
   }
   return price * qty;
+};
+
+// Prefer backend lineTotal if present; otherwise use calculator (or compute)
+const getLineAmount = (it, idx, calcFn) => {
+  const lt = Number(it?.lineTotal);
+  if (Number.isFinite(lt) && lt > 0) return lt;
+  return calcFn ? calcFn(it, idx) : computeLineTotal(it);
 };
 
 const makeLineCalculator = (order) => {
@@ -59,21 +99,28 @@ const makeLineCalculator = (order) => {
         Number(order?.shippingFee || 0)
     );
 
+  // simple unit totals (no sqft)
   const unitTotals = items.map((it) => {
-    const price = parseFloat(it?.price) || 0;
+    const price = unitPriceOf(it);
     const qty = parseInt(it?.quantity) || 0;
     return price * qty;
   });
 
+  // sqft-aware totals for Tile/Marble/Granite
   const tileTotals = items.map((it) => {
-    const price = parseFloat(it?.price) || 0;
+    const price = unitPriceOf(it);
     const qty = parseInt(it?.quantity) || 0;
-
     if (!isTilesItem(it)) return price * qty;
-    const sizeStr = it?.specs?.size || it?.size || "";
-    const { sqftPerBox } = getBoxInfo(sizeStr);
-    if (sqftPerBox > 25) return price * qty; // big slabs -> treat as unit
-    return price * sqftPerBox * qty;
+
+    const s = sqftPerUnit(it);
+
+    // For huge ceramic tiles you may keep unit pricing; NOT for granite/marble
+    const tag = tagOf(it);
+    if (tag.includes("tile") && !tag.includes("granite") && !tag.includes("marble")) {
+      if (s > 25) return price * qty; // treat only huge ceramic tiles as unit
+    }
+
+    return (s > 0 ? price * s : price) * qty;
   });
 
   const unitSum = unitTotals.reduce((a, b) => a + b, 0);
@@ -140,7 +187,7 @@ export default function OrderManagement() {
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
-  const [displayOrders, setDisplayOrders] = useState([]); // filtered/sorted
+  const [displayOrders, setDisplayOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -179,7 +226,6 @@ export default function OrderManagement() {
           headers: { Authorization: `Bearer ${token}` },
         });
         const list = Array.isArray(res.data) ? res.data : [];
-        // default sort: newest first
         list.sort(
           (a, b) =>
             new Date(b.createdAt || 0).getTime() -
@@ -201,13 +247,11 @@ export default function OrderManagement() {
     return () => unsub && unsub();
   }, []);
 
-  // Re-apply filters whenever the raw list changes
   useEffect(() => {
     applyFilters();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
 
-  // open/close modal
   const openModal = (order) => {
     setSelectedOrder(order);
     setShowModal(true);
@@ -217,7 +261,6 @@ export default function OrderManagement() {
     setSelectedOrder(null);
   };
 
-  // also update the selected order after status change
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
       const user = auth.currentUser;
@@ -289,25 +332,21 @@ export default function OrderManagement() {
   const applyFilters = () => {
     let out = [...orders];
 
-    // Status
     if (filterStatus !== "All") {
       out = out.filter(
         (o) => String(o.status || "Paid") === String(filterStatus)
       );
     }
 
-    // Search
     if (searchText.trim()) {
       out = out.filter((o) => matchesSearch(o, searchText));
     }
 
-    // Sort
     if (highValueFirst) {
       out.sort(
         (a, b) => Number(b.totalAmount || 0) - Number(a.totalAmount || 0)
       );
     } else {
-      // newest first
       out.sort(
         (a, b) =>
           new Date(b.createdAt || 0).getTime() -
@@ -322,7 +361,6 @@ export default function OrderManagement() {
     setFilterStatus("All");
     setSearchText("");
     setHighValueFirst(false);
-    // reset to default sort (newest first)
     const out = [...orders].sort(
       (a, b) =>
         new Date(b.createdAt || 0).getTime() -
@@ -335,7 +373,6 @@ export default function OrderManagement() {
     if (e.key === "Enter") applyFilters();
   };
 
-  // Table rows built from filtered list
   const rows = useMemo(
     () =>
       displayOrders.map((o) => {
@@ -639,7 +676,7 @@ export default function OrderManagement() {
                     </div>
                     <div className="text-right font-bold text-gray-800">
                       {money(
-                        (calcLineModal ? calcLineModal(it, idx) : computeLineTotal(it)) || 0
+                        getLineAmount(it, idx, calcLineModal) || 0
                       )}
                     </div>
                   </div>

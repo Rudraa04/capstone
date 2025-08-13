@@ -1,33 +1,17 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
-  FiBox,
-  FiPackage,
-  FiSettings,
-  FiHeadphones,
-  FiTrendingUp,
-  FiLogOut,
-  FiHome,
-  FiUpload,
-  FiDownload,
-  FiGlobe,
+  FiBox, FiPackage, FiSettings, FiHeadphones, FiTrendingUp, FiLogOut, FiHome, FiUpload, FiDownload, FiGlobe,
 } from "react-icons/fi";
 import Papa from "papaparse";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Legend,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend,
 } from "recharts";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase/firebase";
+import { api } from "../api";
 
 export default function SalesReports() {
   const navigate = useNavigate();
@@ -35,58 +19,136 @@ export default function SalesReports() {
   const [salesData, setSalesData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // sorting
   const [sortConfig, setSortConfig] = useState({ key: "", direction: "ascending" });
-
-  // filters
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [fromDate, setFromDate] = useState(""); // yyyy-mm-dd
-  const [toDate, setToDate] = useState("");     // yyyy-mm-dd
-
-  // pagination
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(15); // 15 by default, can be "all"
-
-  // bottom chart: monthly range
+  const [pageSize, setPageSize] = useState(15);
   const [monthsBack, setMonthsBack] = useState(6);
+  const [topRange, setTopRange] = useState("month");
+  const [revScale, setRevScale] = useState("biweekly");
 
-  // top-3 range
-  const [topRange, setTopRange] = useState("month"); // "month" | "all"
-
-  // revenue-over-time scale
-  const [revScale, setRevScale] = useState("biweekly"); // "daily" | "biweekly" | "monthly"
-
-  const CATEGORIES = ["Tiles", "Sinks", "Toilets", "Bathtubs", "Granite", "Marble"];
+  const CATEGORIES = ["Tile", "Sink", "Toilet", "Bathtub", "Granite", "Marble"];
 
   const INR = (n) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 2,
-    }).format(Number(n || 0));
+    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 })
+      .format(Number(n || 0));
 
-  // fetch
+  const normCategory = (raw = "") => {
+    const s = String(raw).toLowerCase();
+    if (s.startsWith("tile")) return "Tile";
+    if (s.startsWith("sink")) return "Sink";
+    if (s.startsWith("toilet") || s === "wc") return "Toilet";
+    if (s.startsWith("bathtub") || s === "tub") return "Bathtub";
+    if (s.startsWith("granite")) return "Granite";
+    if (s.startsWith("marble")) return "Marble";
+    return "Other";
+  };
+
+  /* ---------- PRICE/SQFT HELPERS (mirror OrderManagement) ---------- */
+  const tagOf = (it = {}) =>
+    String(it.productType || it.category || it.kind || it.type || "").toLowerCase();
+
+  const isSqftPriced = (it = {}) => {
+    const tag = tagOf(it);
+    return tag.includes("tile") || tag.includes("granite") || tag.includes("marble");
+  };
+
+  const parseSqftFromSize = (sizeStr = "") => {
+    const s = String(sizeStr || "").toLowerCase();
+    const m = s.match(/([\d.]+)\s*[x×]\s*([\d.]+)/i);
+    if (!m) return 0;
+    const L = parseFloat(m[1]), W = parseFloat(m[2]);
+    if (!isFinite(L) || !isFinite(W)) return 0;
+    return (L * W) / 144; // inches → sqft
+  };
+
+  const BOX_CONFIG = {
+    "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
+    "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
+    "12x18": { tilesPerBox: 6, sqftPerBox: 9 },
+    "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
+  };
+
+  const sqftPerUnit = (it = {}) => {
+    const snap = Number(it?.sqftPerUnit ?? it?.specs?.sqftPerUnit);
+    if (Number.isFinite(snap) && snap > 0) return snap;
+
+    const specSqft =
+      Number(it?.specs?.sqftPerBox) ||
+      Number(it?.specs?.totalSqft) || 0;
+    if (Number.isFinite(specSqft) && specSqft > 0) return specSqft;
+
+    const sizeStr = it?.specs?.size || it?.size || "";
+    const key = String(sizeStr || "").toLowerCase().replace(/\s+/g, "").replace(/in\b|inch(es)?\b/g, "");
+    if (BOX_CONFIG[key]) return BOX_CONFIG[key].sqftPerBox;
+
+    return parseSqftFromSize(sizeStr);
+  };
+
+  const unitPriceOf = (it = {}) =>
+    Number(it?.unitPrice ?? it?.specs?.unitPrice ?? it?.price ?? it?.specs?.price) || 0;
+
+  const quantityOf = (it = {}) =>
+    Number(it?.quantity ?? it?.specs?.quantity) || 0;
+
+  // exact charged amount from DB if present; else compute properly
+  const lineRevenueOf = (it = {}) => {
+    const lt = Number(it?.lineTotal ?? it?.specs?.lineTotal);
+    if (Number.isFinite(lt) && lt > 0) return lt;
+
+    const unit = unitPriceOf(it);
+    const qty = quantityOf(it);
+    if (isSqftPriced(it)) {
+      const s = sqftPerUnit(it) || 0;
+      if (s > 0) return unit * s * qty; // ₹/sqft × sqft × boxes
+    }
+    return unit * qty;
+  };
+  /* ------------------------------------------------------------------ */
+
+  // ===== Fetch from source of truth =====
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/reports/all-orders")
-      .then((res) => {
-        const transformed = [];
-        (res.data || []).forEach((order) => {
-          (order.items || []).forEach((item) => {
-            transformed.push({
-              product: item.name || "Unknown",
-              category: item.productType || "Unknown",
-              unitsSold: Number(item.quantity || 0),
-              revenue: Number(item.price || 0) * Number(item.quantity || 0),
-              date: new Date(order.createdAt).toISOString().split("T")[0], // yyyy-mm-dd
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
+      try {
+        if (!user) {
+          setSalesData([]);
+          return;
+        }
+        const token = await user.getIdToken();
+        const { data } = await api.get("/api/admin/orders", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const rows = [];
+        (Array.isArray(data) ? data : []).forEach((order) => {
+          const orderDate = order?.createdAt ? new Date(order.createdAt) : new Date();
+          const dateStr = orderDate.toISOString().slice(0, 10); // yyyy-mm-dd
+
+          (order.items || []).forEach((it) => {
+            rows.push({
+              product: it.name || "Unknown",
+              category: normCategory(it.productType || it.category),
+              unitsSold: quantityOf(it),              // boxes for tile; counts for others
+              revenue: lineRevenueOf(it),             // <-- FIX: uses lineTotal or sqft math
+              date: dateStr,
             });
           });
         });
-        setSalesData(transformed);
-      })
-      .catch((err) => console.error("Failed to fetch order data:", err))
-      .finally(() => setLoading(false));
+
+        setSalesData(rows);
+      } catch (e) {
+        console.error("Failed to load orders for reports:", e);
+        setSalesData([]);
+      } finally {
+        setLoading(false);
+      }
+    });
+    return () => unsub();
   }, []);
+  /* -------------------- end data fetch -------------------- */
 
   // sort handler
   const handleSort = (key) => {
@@ -99,11 +161,10 @@ export default function SalesReports() {
   };
 
   // ----- filtering pipeline -----
-  const categoryFiltered = useMemo(() => {
-    return selectedCategory === "All"
-      ? salesData
-      : salesData.filter((item) => item.category === selectedCategory);
-  }, [salesData, selectedCategory]);
+  const categoryFiltered = useMemo(
+    () => (selectedCategory === "All" ? salesData : salesData.filter((i) => i.category === selectedCategory)),
+    [salesData, selectedCategory]
+  );
 
   const dateFiltered = useMemo(() => {
     if (!fromDate && !toDate) return categoryFiltered;
@@ -118,16 +179,14 @@ export default function SalesReports() {
   const sortedData = useMemo(() => {
     if (!sortConfig.key) return dateFiltered;
     const out = [...dateFiltered].sort((a, b) => {
-      const valA = a[sortConfig.key];
-      const valB = b[sortConfig.key];
-      if (valA < valB) return sortConfig.direction === "ascending" ? -1 : 1;
-      if (valA > valB) return sortConfig.direction === "ascending" ? 1 : -1;
+      const A = a[sortConfig.key], B = b[sortConfig.key];
+      if (A < B) return sortConfig.direction === "ascending" ? -1 : 1;
+      if (A > B) return sortConfig.direction === "ascending" ? 1 : -1;
       return 0;
     });
     return out;
   }, [dateFiltered, sortConfig]);
 
-  // pagination slice
   const totalRows = sortedData.length;
   const pagedData = useMemo(() => {
     if (pageSize === "all") return sortedData;
@@ -135,7 +194,6 @@ export default function SalesReports() {
     return sortedData.slice(start, start + Number(pageSize));
   }, [sortedData, page, pageSize]);
 
-  // export helpers
   const handleExportCSV = () => {
     const csv = Papa.unparse(sortedData);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -148,18 +206,8 @@ export default function SalesReports() {
   const handleExportPDF = () => {
     const doc = new jsPDF();
     doc.text("Sales Report", 14, 16);
-    const tableData = sortedData.map((row) => [
-      row.product,
-      row.category,
-      row.unitsSold,
-      INR(row.revenue),
-      row.date,
-    ]);
-    doc.autoTable({
-      head: [["Product", "Category", "Units Sold", "Revenue (INR)", "Date"]],
-      body: tableData,
-      startY: 20,
-    });
+    const tableData = sortedData.map((row) => [row.product, row.category, row.unitsSold, INR(row.revenue), row.date]);
+    doc.autoTable({ head: [["Product", "Category", "Units Sold", "Revenue (INR)", "Date"]], body: tableData, startY: 20 });
     doc.save("sales_report.pdf");
   };
 
@@ -167,12 +215,11 @@ export default function SalesReports() {
     const file = e.target.files[0];
     if (!file) return;
     Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
+      header: true, skipEmptyLines: true,
       complete: (results) => {
         const parsed = results.data.map((row) => ({
           product: row.product,
-          category: row.category,
+          category: normCategory(row.category),
           unitsSold: parseInt(row.unitsSold),
           revenue: parseFloat(row.revenue),
           date: row.date,
@@ -183,7 +230,6 @@ export default function SalesReports() {
     });
   };
 
-  // aggregated helpers
   const getCategoryData = () => {
     const categoryMap = {};
     dateFiltered.forEach((item) => {
@@ -192,55 +238,37 @@ export default function SalesReports() {
     return Object.entries(categoryMap).map(([category, unitsSold]) => ({ category, unitsSold }));
   };
 
-  // top sellers this month
-  const getTopSellersThisMonth = (limit = 5) => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const agg = new Map();
-    salesData.forEach((row) => {
-      const d = new Date(row.date);
-      if (d >= startOfMonth) {
-        const key = `${row.product}__${row.category}`;
-        if (!agg.has(key)) agg.set(key, { product: row.product, category: row.category, units: 0, revenue: 0 });
-        const rec = agg.get(key);
-        rec.units += Number(row.unitsSold || 0);
-        rec.revenue += Number(row.revenue || 0);
-      }
-    });
-    return Array.from(agg.values()).sort((a, b) => b.units - a.units || b.revenue - a.revenue).slice(0, limit);
-  };
-
-  // top-3 products per category (month/all)
   const getTop3ForCategory = (category) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const agg = new Map();
+
     salesData.forEach((row) => {
       if (row.category !== category) return;
       if (topRange === "month" && new Date(row.date) < startOfMonth) return;
+
       const key = row.product;
       if (!agg.has(key)) agg.set(key, { product: row.product, units: 0, revenue: 0 });
       const rec = agg.get(key);
       rec.units += Number(row.unitsSold || 0);
       rec.revenue += Number(row.revenue || 0);
     });
-    return Array.from(agg.values()).sort((a, b) => b.units - a.units || b.revenue - a.revenue).slice(0, 3);
+
+    return Array.from(agg.values())
+      .sort((a, b) => b.units - a.units || b.revenue - a.revenue)
+      .slice(0, 3);
   };
 
-  // monthly revenue for bottom chart (unchanged)
   const getMonthlyRevenueData = () => {
     const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     let earliest = null;
-    salesData.forEach((r) => {
-      const d = new Date(r.date);
-      if (!earliest || d < earliest) earliest = d;
-    });
+    salesData.forEach((r) => { const d = new Date(r.date); if (!earliest || d < earliest) earliest = d; });
     const end = new Date();
     const start = monthsBack === "all"
       ? new Date(earliest || end)
       : new Date(end.getFullYear(), end.getMonth() - (Number(monthsBack) - 1), 1);
 
-    const bucket = {}; // YYYY-M -> revenue
+    const bucket = {};
     salesData.forEach((row) => {
       const d = new Date(row.date);
       if (d >= start && d <= end) {
@@ -263,47 +291,41 @@ export default function SalesReports() {
     return out;
   };
 
-  // NEW: revenue over time with scale
   const getRevenueOverTime = () => {
-    const rows = dateFiltered; // respect filters
+    const rows = dateFiltered;
     const outMap = new Map();
-
-    const add = (label, amt) => {
-      outMap.set(label, (outMap.get(label) || 0) + amt);
-    };
+    const add = (label, amt) => outMap.set(label, (outMap.get(label) || 0) + amt);
 
     rows.forEach((r) => {
       const d = new Date(r.date);
       const amt = Number(r.revenue || 0);
-
       if (revScale === "daily") {
-        const label = r.date; // yyyy-mm-dd
-        add(label, amt);
+        add(r.date, amt);
       } else if (revScale === "biweekly") {
-        // bucket into 1–15 and 16–end-of-month
         const y = d.getFullYear();
-        const m = d.getMonth(); // 0-11
+        const m = d.getMonth();
         const day = d.getDate();
         const half = day <= 15 ? "1–15" : "16–" + new Date(y, m + 1, 0).getDate();
         const label = `${half} ${d.toLocaleString("default", { month: "short" })} ${String(y).slice(-2)}`;
         add(label, amt);
       } else {
-        // monthly
         const label = `${d.toLocaleString("default", { month: "short" })} ${String(d.getFullYear()).slice(-2)}`;
         add(label, amt);
       }
     });
 
-    // stable order by date-ish: we can parse first number when biweekly, otherwise rely on insertion
     return Array.from(outMap.entries()).map(([label, revenue]) => ({ label, revenue }));
   };
 
-  const topSellers = getTopSellersThisMonth();
-
-  // pagination helpers
-  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(totalRows / Number(pageSize)));
+  const totalPages = pageSize === "all" ? 1 : Math.max(1, Math.ceil(sortedData.length / Number(pageSize)));
   const canPrev = page > 1 && pageSize !== "all";
   const canNext = page < totalPages && pageSize !== "all";
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set();
+    salesData.forEach((r) => set.add(r.category));
+    return Array.from(set);
+  }, [salesData]);
 
   return (
     <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
@@ -316,13 +338,48 @@ export default function SalesReports() {
         </button>
 
         <nav className="space-y-4 text-sm">
-          <button onClick={() => navigate("/admin/slabs")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"><FiBox /> Slabs Inventory</button>
-          <button onClick={() => navigate("/admin/ceramics")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"><FiPackage /> Ceramics Inventory</button>
-          <button onClick={() => navigate("/admin/orders")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"><FiSettings /> Orders</button>
-          <button onClick={() => navigate("/admin/support")} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"><FiHeadphones /> Customer Support</button>
-          <button className="w-full flex items-center gap-3 px-4 py-2 bg-gray-200 rounded-md font-semibold"><FiTrendingUp /> Sales & Reports</button>
-          <button onClick={() => navigate("/", { state: { fromAdmin: true } })} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"><FiGlobe /> Customer Homepage</button>
-          <button onClick={() => { localStorage.removeItem("isAdminLoggedIn"); navigate("/login"); }} className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-100 rounded-md"><FiLogOut /> Logout</button>
+          <button
+            onClick={() => navigate("/admin/slabs")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiBox /> Slabs Inventory
+          </button>
+          <button
+            onClick={() => navigate("/admin/ceramics")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiPackage /> Ceramics Inventory
+          </button>
+          <button
+            onClick={() => navigate("/admin/orders")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiSettings /> Orders
+          </button>
+          <button
+            onClick={() => navigate("/admin/support")}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md"
+          >
+            <FiHeadphones /> Customer Support
+          </button>
+          <button className="w-full flex items-center gap-3 px-4 py-2 bg-gray-200 rounded-md font-semibold">
+            <FiTrendingUp /> Sales & Reports
+          </button>
+          <button
+            onClick={() => navigate("/", { state: { fromAdmin: true } })}
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-100 rounded-md text-green-600"
+          >
+            <FiGlobe /> Customer Homepage
+          </button>
+          <button
+            onClick={() => {
+              localStorage.removeItem("isAdminLoggedIn");
+              navigate("/login");
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-100 rounded-md"
+          >
+            <FiLogOut /> Logout
+          </button>
         </nav>
       </aside>
 
@@ -334,13 +391,20 @@ export default function SalesReports() {
           <div className="flex gap-3">
             <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded shadow cursor-pointer hover:bg-blue-700 transition">
               <FiUpload />
-              <input type="file" accept=".csv" onChange={handleUploadCSV} className="hidden" />
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleUploadCSV}
+                className="hidden"
+              />
               Upload CSV
             </label>
-            <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition"
+            >
               <FiDownload /> Export CSV
             </button>
-            {/* PDF available if you want */}
             {/* <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700 transition">
               <FiDownload /> Export PDF
             </button> */}
@@ -350,19 +414,40 @@ export default function SalesReports() {
             <label className="text-sm text-gray-700">Category</label>
             <select
               value={selectedCategory}
-              onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setPage(1);
+              }}
               className="px-3 py-2 border rounded-md shadow-sm bg-white text-sm"
             >
               <option value="All">All</option>
-              {[...new Set(salesData.map((item) => item.category))].map((category) => (
-                <option key={category} value={category}>{category}</option>
+              {categoryOptions.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
               ))}
             </select>
 
             <label className="text-sm text-gray-700 ml-2">From</label>
-            <input type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(1); }} className="px-3 py-2 border rounded-md shadow-sm bg-white text-sm"/>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-2 border rounded-md shadow-sm bg-white text-sm"
+            />
             <label className="text-sm text-gray-700">To</label>
-            <input type="date" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(1); }} className="px-3 py-2 border rounded-md shadow-sm bg-white text-sm"/>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-2 border rounded-md shadow-sm bg-white text-sm"
+            />
           </div>
         </div>
 
@@ -372,13 +457,21 @@ export default function SalesReports() {
             <div className="text-sm text-gray-600">
               {pageSize === "all"
                 ? `Showing all ${totalRows} rows`
-                : `Showing ${(page - 1) * Number(pageSize) + 1}-${Math.min(page * Number(pageSize), totalRows)} of ${totalRows}`}
+                : `Showing ${(page - 1) * Number(pageSize) + 1}-${Math.min(
+                    page * Number(pageSize),
+                    totalRows
+                  )} of ${totalRows}`}
             </div>
             <div className="flex items-center gap-3">
               <label className="text-sm text-gray-700">Rows per page</label>
               <select
                 value={pageSize}
-                onChange={(e) => { setPageSize(e.target.value === "all" ? "all" : Number(e.target.value)); setPage(1); }}
+                onChange={(e) => {
+                  setPageSize(
+                    e.target.value === "all" ? "all" : Number(e.target.value)
+                  );
+                  setPage(1);
+                }}
                 className="px-2 py-1 border rounded"
               >
                 <option value={15}>15</option>
@@ -406,19 +499,37 @@ export default function SalesReports() {
           <table className="w-full text-sm text-left text-gray-600 mt-2">
             <thead className="bg-blue-100 text-gray-700 text-sm uppercase">
               <tr>
-                {["product", "category", "unitsSold", "revenue", "date"].map((key) => (
-                  <th key={key} onClick={() => handleSort(key)} className="py-3 px-4 cursor-pointer hover:bg-blue-200 transition">
-                    {key.charAt(0).toUpperCase() + key.slice(1)}
-                    {sortConfig.key === key && <span className="ml-2">{sortConfig.direction === "ascending" ? "⬆️" : "⬇️"}</span>}
-                  </th>
-                ))}
+                {["product", "category", "unitsSold", "revenue", "date"].map(
+                  (key) => (
+                    <th
+                      key={key}
+                      onClick={() => handleSort(key)}
+                      className="py-3 px-4 cursor-pointer hover:bg-blue-200 transition"
+                    >
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                      {sortConfig.key === key && (
+                        <span className="ml-2">
+                          {sortConfig.direction === "ascending" ? "⬆️" : "⬇️"}
+                        </span>
+                      )}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="py-6 text-center text-gray-500">Loading...</td></tr>
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-gray-500">
+                    Loading...
+                  </td>
+                </tr>
               ) : pagedData.length === 0 ? (
-                <tr><td colSpan={5} className="py-4 text-center text-gray-500">No data found.</td></tr>
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-gray-500">
+                    No data found.
+                  </td>
+                </tr>
               ) : (
                 pagedData.map((item, idx) => (
                   <tr key={idx} className="border-b">
@@ -435,13 +546,17 @@ export default function SalesReports() {
           <div className="h-3" />
         </div>
 
-        {/* Top sellers (same) */}
+        {/* Top sellers */}
         <div className="bg-white rounded-xl p-6 shadow">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-blue-700">Top Sellers</h2>
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600">Range:</label>
-              <select value={topRange} onChange={(e) => setTopRange(e.target.value)} className="px-3 py-2 border rounded-md bg-white text-sm">
+              <select
+                value={topRange}
+                onChange={(e) => setTopRange(e.target.value)}
+                className="px-3 py-2 border rounded-md bg-white text-sm"
+              >
                 <option value="month">This month</option>
                 <option value="all">All time</option>
               </select>
@@ -455,7 +570,9 @@ export default function SalesReports() {
                 <div key={cat} className="border rounded-lg p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-blue-700">{cat}</h3>
-                    <span className="text-xs text-gray-500">{topRange === "month" ? "This month" : "All time"}</span>
+                    <span className="text-xs text-gray-500">
+                      {topRange === "month" ? "This month" : "All time"}
+                    </span>
                   </div>
                   {top3.length === 0 ? (
                     <div className="text-sm text-gray-500">No sales data.</div>
@@ -465,8 +582,12 @@ export default function SalesReports() {
                         <li key={i} className="flex items-center justify-between">
                           <div className="pr-2 truncate">{p.product}</div>
                           <div className="text-xs text-gray-600 text-right">
-                            <div>Units: <span className="font-medium">{p.units}</span></div>
-                            <div>Rev: <span className="font-medium">{INR(p.revenue)}</span></div>
+                            <div>
+                              Units: <span className="font-medium">{p.units}</span>
+                            </div>
+                            <div>
+                              Rev: <span className="font-medium">{INR(p.revenue)}</span>
+                            </div>
                           </div>
                         </li>
                       ))}
@@ -483,7 +604,9 @@ export default function SalesReports() {
           {/* Revenue over time with scale */}
           <div className="bg-white rounded-xl p-6 shadow min-h-[350px]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-blue-700">Revenue Over Time</h2>
+              <h2 className="text-lg font-bold text-blue-700">
+                Revenue Over Time
+              </h2>
               <div className="flex items-center gap-2">
                 <label className="text-sm text-gray-600">Scale:</label>
                 <select
@@ -498,7 +621,10 @@ export default function SalesReports() {
               </div>
             </div>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={getRevenueOverTime()} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <LineChart
+                data={getRevenueOverTime()}
+                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="label" minTickGap={20} interval="preserveStartEnd" />
                 <YAxis />
@@ -509,11 +635,16 @@ export default function SalesReports() {
             </ResponsiveContainer>
           </div>
 
-          {/* Units by category (unchanged except it respects date filter) */}
+          {/* Units by category */}
           <div className="bg-white rounded-xl p-6 shadow min-h-[350px]">
-            <h2 className="text-lg font-bold mb-4 text-blue-700">Units Sold by Category</h2>
+            <h2 className="text-lg font-bold mb-4 text-blue-700">
+              Units Sold by Category
+            </h2>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getCategoryData()} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <BarChart
+                data={getCategoryData()}
+                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="category" minTickGap={20} interval="preserveStartEnd" />
                 <YAxis />
@@ -528,12 +659,18 @@ export default function SalesReports() {
         {/* Bottom chart: monthly revenue with range selector */}
         <div className="bg-white rounded-xl p-6 shadow min-h-[350px] mt-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-blue-700">Sales Overview (Monthly Revenue)</h2>
+            <h2 className="text-lg font-bold text-blue-700">
+              Sales Overview (Monthly Revenue)
+            </h2>
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600">Range:</label>
               <select
                 value={monthsBack}
-                onChange={(e) => setMonthsBack(e.target.value === "all" ? "all" : Number(e.target.value))}
+                onChange={(e) =>
+                  setMonthsBack(
+                    e.target.value === "all" ? "all" : Number(e.target.value)
+                  )
+                }
                 className="px-3 py-2 border rounded-md bg-white text-sm"
               >
                 <option value={6}>Last 6 months</option>
@@ -545,7 +682,10 @@ export default function SalesReports() {
           </div>
 
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={getMonthlyRevenueData()} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+            <BarChart
+              data={getMonthlyRevenueData()}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />

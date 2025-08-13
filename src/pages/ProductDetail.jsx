@@ -83,13 +83,19 @@ export default function ProductDetail() {
 
   // Azure voice search
   const location = useLocation();
-  const fromTab = location.state?.fromTab;
   const recognizerRef = useRef(null);
   const [voiceStatus, setVoiceStatus] = useState("");
 
+  // Custom size (stone)
   const [customHeight, setCustomHeight] = useState("");
   const [customWidth, setCustomWidth] = useState("");
   const [customSqft, setCustomSqft] = useState(0);
+
+  // NEW: size validation & flags
+  const [sizeError, setSizeError] = useState("");
+  const isStone = type === "marble" || type === "granite";
+  const hasCustomSize =
+    isStone && Number(customHeight) > 0 && Number(customWidth) > 0;
 
   // ---------------- Effects ----------------
   useEffect(() => {
@@ -174,18 +180,17 @@ export default function ProductDetail() {
     }
   }, [type, id]);
 
+  // Compute sqft for stone only when both dims are present
   useEffect(() => {
-    if (type === "marble" || type === "granite") {
-      const h = parseFloat(customHeight);
-      const w = parseFloat(customWidth);
-      if (h > 0 && w > 0) {
-        const sqft = (h * w) / 144;
-        setCustomSqft(sqft);
-      } else {
-        setCustomSqft(0);
-      }
+    if (isStone && hasCustomSize) {
+      const h = Number(customHeight);
+      const w = Number(customWidth);
+      const sqft = (h * w) / 144;
+      setCustomSqft(sqft);
+    } else {
+      setCustomSqft(0);
     }
-  }, [customHeight, customWidth, type]);
+  }, [customHeight, customWidth, type]); // keep deps simple
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -320,11 +325,8 @@ export default function ProductDetail() {
   };
 
   // ---------------- Pricing logic ----------------
-  // ---------------- Pricing logic ----------------
-  const pricePer = Number(product.price) || 0; // price per sqft (tiles & stone) or per unit (others)
+  const pricePer = Number(product.price) || 0; // per sqft (tiles/stone) or per unit (others)
   const qty = Math.max(1, parseInt((pendingQty ?? "").trim(), 10) || 1);
-
-  const isStone = type === "marble" || type === "granite";
 
   let totalUnits = qty; // default (non-tiles = units/pieces)
   let totalSqft = 0;
@@ -336,15 +338,17 @@ export default function ProductDetail() {
     totalSqft = qty * sqftPerBox; // total sqft
     finalTotalPrice = totalSqft * pricePer; // sqft × price/sqft
   } else if (isStone) {
-    // For marble/granite: if custom size entered, use it. Multiply by quantity (pieces).
-    const perPieceSqft = customSqft > 0 ? customSqft : 0;
-    totalSqft = perPieceSqft * qty; // total sqft across quantity
-    finalTotalPrice =
-      perPieceSqft > 0
-        ? totalSqft * pricePer // sqft × price/sqft
-        : qty * pricePer; // fallback to unit price if no custom size entered
+    // REQUIRE custom size
+    if (hasCustomSize) {
+      const perPieceSqft = customSqft; // computed in effect
+      totalSqft = perPieceSqft * qty;
+      finalTotalPrice = totalSqft * pricePer;
+    } else {
+      totalSqft = 0;
+      finalTotalPrice = 0; // show 0 until size entered
+    }
   } else {
-    // sinks/toilets/bathtubs as before
+    // sinks/toilets/bathtubs
     finalTotalPrice = qty * pricePer; // units × price
   }
 
@@ -392,9 +396,17 @@ export default function ProductDetail() {
       return;
     }
 
-    // Reuse earlier computed values
-    const isStone = type === "marble" || type === "granite";
-    const qty = quantity;
+    // 👉 Guard for stone: size required
+    if (isStone && !hasCustomSize) {
+      setSizeError("Please provide Height and Width (in inches) for custom cutting.");
+      toast.error("Enter Height and Width to calculate sqft before adding to cart.", {
+        position: "bottom-right",
+        autoClose: 2500,
+      });
+      return;
+    }
+
+    const qtyFinal = quantity;
 
     // For marble/granite, capture the custom size the user typed
     const customSizeLabel =
@@ -407,7 +419,7 @@ export default function ProductDetail() {
 
     const totalSqftForLine =
       isStone && customSqft > 0
-        ? customSqft * qty
+        ? customSqft * qtyFinal
         : type === "tiles"
         ? totalSqft
         : undefined;
@@ -417,14 +429,14 @@ export default function ProductDetail() {
       ...product,
       kind: type,
       category: type,
-      quantity: qty, // boxes for tiles, units otherwise
+      quantity: qtyFinal, // boxes for tiles, units otherwise
 
       // keep existing tiles fields
       totalTiles: type === "tiles" ? totalUnits : undefined,
       totalSqft: totalSqftForLine,
       totalPrice: finalTotalPrice,
 
-      // NEW: persist the custom size context for stone
+      // persist the custom size context for stone
       ...(isStone
         ? {
             customHeightIn: customHeight ? Number(customHeight) : undefined,
@@ -437,33 +449,24 @@ export default function ProductDetail() {
 
     const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
 
-    // IMPORTANT: change how we decide "same item"
+    // Same item logic (variant-aware)
     const existingIndex = existingCart.findIndex((item) => {
-      // Must be same product and same category
-      if (
-        item.name !== cartItem.name ||
-        (item.kind || item.category) !== cartItem.kind
-      )
+      if (item.name !== cartItem.name || (item.kind || item.category) !== cartItem.kind)
         return false;
 
-      // Tiles: same size string must match to merge
       if (type === "tiles") {
         return (item.size || "") === (cartItem.size || "");
       }
 
-      // Stone (marble/granite): also require the SAME custom size label
       if (isStone) {
-        return (
-          (item.customSizeLabel || "") === (cartItem.customSizeLabel || "")
-        );
+        return (item.customSizeLabel || "") === (cartItem.customSizeLabel || "");
       }
 
-      // Other products (sinks, toilets, bathtubs): just merge by name/kind
-      return true;
+      return true; // sinks/toilets/bathtubs
     });
 
     if (existingIndex !== -1) {
-      // merge quantities and totals for the exact same variant
+      // merge quantities & totals
       existingCart[existingIndex].quantity += cartItem.quantity;
 
       if (type === "tiles") {
@@ -474,7 +477,6 @@ export default function ProductDetail() {
           (existingCart[existingIndex].totalSqft || 0) +
           (cartItem.totalSqft || 0);
       } else if (isStone) {
-        // keep sqft consistent for stone too
         existingCart[existingIndex].totalSqft =
           (existingCart[existingIndex].totalSqft || 0) +
           (cartItem.totalSqft || 0);
@@ -515,51 +517,24 @@ export default function ProductDetail() {
       .toLowerCase()
       .replace(/[^\w\s]/gi, "");
     const routeMap = [
-      {
-        keywords: ["exterior wall tiles", "exterior wall"],
-        route: "/exterior?sub=Exterior%20Wall%20Tiles",
-      },
-      {
-        keywords: ["exterior floor tiles", "exterior floor"],
-        route: "/exterior?sub=Exterior%20Floor%20Tiles",
-      },
-      {
-        keywords: ["interior floor tiles", "interior floor"],
-        route: "/interior?sub=Interior%20Floor%20Tiles",
-      },
-      {
-        keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"],
-        route: "/interior?sub=Bathroom%20Wall%20Tiles",
-      },
-      {
-        keywords: ["kitchen wall tiles", "kitchen tiles", "kitchen"],
-        route: "/interior?sub=Kitchen%20Wall%20Tiles",
-      },
+      { keywords: ["exterior wall tiles", "exterior wall"], route: "/exterior?sub=Exterior%20Wall%20Tiles" },
+      { keywords: ["exterior floor tiles", "exterior floor"], route: "/exterior?sub=Exterior%20Floor%20Tiles" },
+      { keywords: ["interior floor tiles", "interior floor"], route: "/interior?sub=Interior%20Floor%20Tiles" },
+      { keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"], route: "/interior?sub=Bathroom%20Wall%20Tiles" },
+      { keywords: ["kitchen wall tiles", "kitchen tiles", "kitchen"], route: "/interior?sub=Kitchen%20Wall%20Tiles" },
       { keywords: ["interior", "interior tiles"], route: "/interior" },
       { keywords: ["exterior", "exterior tiles"], route: "/exterior" },
-      {
-        keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"],
-        route: "/sanitary",
-      },
+      { keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"], route: "/sanitary" },
       { keywords: ["slab", "slabs", "granite", "marble"], route: "/slabs" },
-      {
-        keywords: ["ceramic", "ceramics", "tile", "tiles"],
-        route: "/ceramics?type=tiles",
-      },
-      {
-        keywords: ["bathroom", "washroom"],
-        suggest: ["tiles", "bathtubs", "sinks", "toilets"],
-      },
+      { keywords: ["ceramic", "ceramics", "tile", "tiles"], route: "/ceramics?type=tiles" },
+      { keywords: ["bathroom", "washroom"], suggest: ["tiles", "bathtubs", "sinks", "toilets"] },
     ];
     for (const entry of routeMap) {
       if (entry.route && entry.keywords.some((k) => trimmedQuery.includes(k))) {
         navigate(entry.route);
         return;
       }
-      if (
-        entry.suggest &&
-        entry.keywords.some((k) => trimmedQuery.includes(k))
-      ) {
+      if (entry.suggest && entry.keywords.some((k) => trimmedQuery.includes(k))) {
         alert(`You might be looking for: ${entry.suggest.join(", ")}`);
         return;
       }
@@ -569,9 +544,7 @@ export default function ProductDetail() {
   };
   const handleVoiceInput = () => {
     if (!recognizerRef.current) {
-      setVoiceStatus(
-        "Speech recognizer not initialized. Please check your credentials."
-      );
+      setVoiceStatus("Speech recognizer not initialized. Please check your credentials.");
       return;
     }
     setVoiceStatus("Listening... Speak now.");
@@ -608,22 +581,18 @@ export default function ProductDetail() {
     return <div className="text-center p-10">Loading Product...</div>;
   }
 
+  const addDisabled = isStone && !hasCustomSize;
+
   return (
     <div className="bg-white text-gray-900 font-sans">
       {/* HEADER */}
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleBack}
-              className="text-blue-700 hover:text-blue-900"
-            >
+            <button onClick={handleBack} className="text-blue-700 hover:text-blue-900">
               <FaArrowLeft size={18} />
             </button>
-            <Link
-              to="/"
-              className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
-            >
+            <Link to="/" className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide">
               PATEL CERAMICS
             </Link>
           </div>
@@ -692,9 +661,7 @@ export default function ProductDetail() {
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
-            <Link to="/" className={`uppercase ${underlineHover}`}>
-              Home
-            </Link>
+            <Link to="/" className={`uppercase ${underlineHover}`}>Home</Link>
 
             <div className="relative" ref={dropdownRef}>
               <button
@@ -717,11 +684,7 @@ export default function ProductDetail() {
                       { name: "Bathtubs", to: "/ceramics?type=bathtub" },
                       { name: "Toilets", to: "/ceramics?type=toilets" },
                     ].map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.to}
-                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                      >
+                      <Link key={item.name} to={item.to} className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors">
                         {item.name}
                       </Link>
                     ))}
@@ -731,32 +694,13 @@ export default function ProductDetail() {
                       WALL / FLOOR TILES
                     </h3>
                     {[
-                      {
-                        name: "Exterior Floor Tiles",
-                        to: "/exterior?sub=Exterior Floor Tiles",
-                      },
-                      {
-                        name: "Exterior Wall Tiles",
-                        to: "/exterior?sub=Exterior Wall Tiles",
-                      },
-                      {
-                        name: "Kitchen Wall Tiles",
-                        to: "/interior?sub=Kitchen Wall Tiles",
-                      },
-                      {
-                        name: "Bathroom Wall Tiles",
-                        to: "/interior?sub=Bathroom Wall Tiles",
-                      },
-                      {
-                        name: "Interior Floor Tiles",
-                        to: "/interior?sub=Interior Floor Tiles",
-                      },
+                      { name: "Exterior Floor Tiles", to: "/exterior?sub=Exterior Floor Tiles" },
+                      { name: "Exterior Wall Tiles", to: "/exterior?sub=Exterior Wall Tiles" },
+                      { name: "Kitchen Wall Tiles", to: "/interior?sub=Kitchen Wall Tiles" },
+                      { name: "Bathroom Wall Tiles", to: "/interior?sub=Bathroom Wall Tiles" },
+                      { name: "Interior Floor Tiles", to: "/interior?sub=Interior Floor Tiles" },
                     ].map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.to}
-                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
-                      >
+                      <Link key={item.name} to={item.to} className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors">
                         {item.name}
                       </Link>
                     ))}
@@ -767,47 +711,28 @@ export default function ProductDetail() {
 
             {user ? (
               <>
-                <Link
-                  to="/cart"
-                  className={`uppercase ${underlineHover} flex items-center gap-1`}
-                >
+                <Link to="/cart" className={`uppercase ${underlineHover} flex items-center gap-1`}>
                   <FaShoppingCart />
                   Cart
-                  {cartCount > 0 && (
-                    <span className="ml-1 font-bold text-blue-600">
-                      ({cartCount})
-                    </span>
-                  )}
+                  {cartCount > 0 && <span className="ml-1 font-bold text-blue-600">({cartCount})</span>}
                 </Link>
                 <Link
                   to="/profile"
-                  state={
-                    localStorage.getItem("fromAdmin") === "true"
-                      ? { fromAdmin: true }
-                      : {}
-                  }
+                  state={localStorage.getItem("fromAdmin") === "true" ? { fromAdmin: true } : {}}
                   className={`uppercase ${underlineHover} flex items-center gap-1`}
                 >
                   Profile
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className={`uppercase text-red-500 hover:text-red-600 ${underlineHover}`}
-                >
+                <button onClick={handleLogout} className={`uppercase text-red-500 hover:text-red-600 ${underlineHover}`}>
                   Logout
                 </button>
               </>
             ) : (
-              <Link to="/login" className={`uppercase ${underlineHover}`}>
-                Login/Signup
-              </Link>
+              <Link to="/login" className={`uppercase ${underlineHover}`}>Login/Signup</Link>
             )}
           </nav>
 
-          <button
-            className="md:hidden text-xl"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
+          <button className="md:hidden text-xl" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <FaTimes /> : <FaBars />}
           </button>
         </div>
@@ -835,10 +760,7 @@ export default function ProductDetail() {
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   className="flex-1 bg-transparent outline-none text-base text-gray-700 font-medium"
                 />
-                <button
-                  onClick={() => handleSearch()}
-                  className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center"
-                >
+                <button onClick={() => handleSearch()} className="ml-2 text-blue-600 hover:text-blue-800 flex items-center justify-center">
                   <FaSearch size={18} />
                 </button>
               </div>
@@ -850,9 +772,7 @@ export default function ProductDetail() {
                       key={index}
                       className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
                       onClick={() => {
-                        navigate(
-                          `/product/${p.category.toLowerCase()}/${p._id}`
-                        );
+                        navigate(`/product/${p.category.toLowerCase()}/${p._id}`);
                         setSuggestions([]);
                         setQuery("");
                       }}
@@ -872,42 +792,25 @@ export default function ProductDetail() {
               )}
             </div>
             <div className="flex flex-col gap-4 text-[16px] font-medium text-gray-700">
-              <Link to="/" className="uppercase">
-                Home
-              </Link>
-              <Link to="/slabs" className="uppercase">
-                Slabs
-              </Link>
-              <Link to="/ceramics" className="uppercase">
-                Ceramics
-              </Link>
+              <Link to="/" className="uppercase">Home</Link>
+              <Link to="/slabs" className="uppercase">Slabs</Link>
+              <Link to="/ceramics" className="uppercase">Ceramics</Link>
               {user ? (
                 <>
-                  <Link to="/cart" className="uppercase">
-                    Cart
-                  </Link>
+                  <Link to="/cart" className="uppercase">Cart</Link>
                   <Link
                     to="/profile"
-                    state={
-                      localStorage.getItem("fromAdmin") === "true"
-                        ? { fromAdmin: true }
-                        : {}
-                    }
+                    state={localStorage.getItem("fromAdmin") === "true" ? { fromAdmin: true } : {}}
                     className={`uppercase ${underlineHover} flex items-center gap-1`}
                   >
                     Profile
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="uppercase text-left text-red-500"
-                  >
+                  <button onClick={handleLogout} className="uppercase text-left text-red-500">
                     Logout
                   </button>
                 </>
               ) : (
-                <Link to="/login" className="uppercase">
-                  Login/Signup
-                </Link>
+                <Link to="/login" className="uppercase">Login/Signup</Link>
               )}
             </div>
           </div>
@@ -961,9 +864,7 @@ export default function ProductDetail() {
                 {showShareMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border shadow-lg rounded-md p-3 z-50 space-y-2 text-sm">
                     <a
-                      href={`https://wa.me/?text=${encodeURIComponent(
-                        productURL
-                      )}`}
+                      href={`https://wa.me/?text=${encodeURIComponent(productURL)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-green-600 hover:underline"
@@ -971,9 +872,7 @@ export default function ProductDetail() {
                       <FaWhatsapp /> Share on WhatsApp
                     </a>
                     <a
-                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                        productURL
-                      )}`}
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productURL)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-blue-600 hover:underline"
@@ -981,9 +880,7 @@ export default function ProductDetail() {
                       <FaFacebook /> Share on Facebook
                     </a>
                     <a
-                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                        productURL
-                      )}`}
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(productURL)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-sky-600 hover:underline"
@@ -1006,30 +903,20 @@ export default function ProductDetail() {
 
             <p className="text-base text-gray-600">{product.description}</p>
 
-            {/* Info card per type (unchanged styles) */}
+            {/* Info cards */}
             {type === "tiles" && (
               <div className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold">
                     Ceramic Tile
                   </span>
-                  <span className="text-xs text-gray-500">
-                    (Category: Tiles)
-                  </span>
+                  <span className="text-xs text-gray-500">(Category: Tiles)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li>
-                    <strong>Size:</strong> {product.size}
-                  </li>
-                  <li>
-                    <strong>Usage Type:</strong> {product.subcategory}
-                  </li>
-                  <li>
-                    <strong>Manufacturer:</strong> {product.manufacturer}
-                  </li>
-                  <li>
-                    <strong>Color:</strong> {product.color}
-                  </li>
+                  <li><strong>Size:</strong> {product.size}</li>
+                  <li><strong>Usage Type:</strong> {product.subcategory}</li>
+                  <li><strong>Manufacturer:</strong> {product.manufacturer}</li>
+                  <li><strong>Color:</strong> {product.color}</li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -1048,7 +935,6 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* ... (sinks / bathtubs / toilets / marble / granite info cards remain identical to your version) */}
             {type === "sinks" && (
               <div className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4 ">
                 <div className="flex items-center gap-2">
@@ -1058,18 +944,10 @@ export default function ProductDetail() {
                   <span className="text-xs text-gray-500">(Sanitary Ware)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li>
-                    <strong>Size:</strong> {product.size}
-                  </li>
-                  <li>
-                    <strong>Usage Type:</strong> {product.subcategory}
-                  </li>
-                  <li>
-                    <strong>Manufacturer:</strong> {product.manufacturer}
-                  </li>
-                  <li>
-                    <strong>Color:</strong> {product.color}
-                  </li>
+                  <li><strong>Size:</strong> {product.size}</li>
+                  <li><strong>Usage Type:</strong> {product.subcategory}</li>
+                  <li><strong>Manufacturer:</strong> {product.manufacturer}</li>
+                  <li><strong>Color:</strong> {product.color}</li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -1080,13 +958,12 @@ export default function ProductDetail() {
                   </li>
                   <li>
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                 </ul>
               </div>
             )}
+
             {type === "bathtubs" && (
               <div className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4">
                 <div className="flex items-center gap-2">
@@ -1096,12 +973,8 @@ export default function ProductDetail() {
                   <span className="text-xs text-gray-500">(Sanitary Ware)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li>
-                    <strong>Size:</strong> {product.size}
-                  </li>
-                  <li>
-                    <strong>Color:</strong> {product.color}
-                  </li>
+                  <li><strong>Size:</strong> {product.size}</li>
+                  <li><strong>Color:</strong> {product.color}</li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -1112,13 +985,12 @@ export default function ProductDetail() {
                   </li>
                   <li>
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                 </ul>
               </div>
             )}
+
             {type === "toilets" && (
               <div className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4">
                 <div className="flex items-center gap-2">
@@ -1128,27 +1000,14 @@ export default function ProductDetail() {
                   <span className="text-xs text-gray-500">(Sanitary Ware)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li>
-                    <strong>Type:</strong> {product.type || "N/A"}
-                  </li>
-                  <li>
-                    <strong>Size:</strong> {product.size || "N/A"}
-                  </li>
-                  <li>
-                    <strong>Color:</strong> {product.color || "N/A"}
-                  </li>
-                  <li>
-                    <strong>Manufacturer:</strong>{" "}
-                    {product.manufacturer || "N/A"}
-                  </li>
-                  <li>
-                    <strong>Flush Type:</strong> {product.flush || "N/A"}
-                  </li>
+                  <li><strong>Type:</strong> {product.type || "N/A"}</li>
+                  <li><strong>Size:</strong> {product.size || "N/A"}</li>
+                  <li><strong>Color:</strong> {product.color || "N/A"}</li>
+                  <li><strong>Manufacturer:</strong> {product.manufacturer || "N/A"}</li>
+                  <li><strong>Flush Type:</strong> {product.flush || "N/A"}</li>
                   <li>
                     <strong>Price:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                   <li>
                     <strong>Stock:</strong>{" "}
@@ -1161,6 +1020,7 @@ export default function ProductDetail() {
                 </ul>
               </div>
             )}
+
             {type === "marble" && (
               <div className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4">
                 <div className="flex items-center gap-2">
@@ -1170,15 +1030,9 @@ export default function ProductDetail() {
                   <span className="text-xs text-gray-500">(Natural Stone)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li>
-                    <strong>Size:</strong> {product.size}
-                  </li>
-                  <li>
-                    <strong>Color:</strong> {product.color}
-                  </li>
-                  <li>
-                    <strong>Origin:</strong> {product.origin}
-                  </li>
+                  <li><strong>Size:</strong> {product.size}</li>
+                  <li><strong>Color:</strong> {product.color}</li>
+                  <li><strong>Origin:</strong> {product.origin}</li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -1189,9 +1043,7 @@ export default function ProductDetail() {
                   </li>
                   <li>
                     <strong>Price per Square Feet:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                 </ul>
               </div>
@@ -1206,15 +1058,9 @@ export default function ProductDetail() {
                   <span className="text-xs text-gray-500">(Natural Stone)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li>
-                    <strong>Size:</strong> {product.size}
-                  </li>
-                  <li>
-                    <strong>Color:</strong> {product.color}
-                  </li>
-                  <li>
-                    <strong>Origin:</strong> {product.origin}
-                  </li>
+                  <li><strong>Size:</strong> {product.size}</li>
+                  <li><strong>Color:</strong> {product.color}</li>
+                  <li><strong>Origin:</strong> {product.origin}</li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -1225,9 +1071,7 @@ export default function ProductDetail() {
                   </li>
                   <li>
                     <strong>Price per Square Feet:</strong>{" "}
-                    <span className="text-green-700 font-semibold">
-                      ₹{product.price}
-                    </span>
+                    <span className="text-green-700 font-semibold">₹{product.price}</span>
                   </li>
                 </ul>
               </div>
@@ -1237,29 +1081,44 @@ export default function ProductDetail() {
             {(type === "marble" || type === "granite") && (
               <div className="mt-6 space-y-2">
                 <label className="block text-sm font-semibold text-gray-800">
-                  Customize Size (in inches)
+                  Customize Size (in inches) <span className="text-red-600">*</span>
                 </label>
                 <div className="flex gap-4">
                   <input
                     type="number"
+                    min="1"
                     placeholder="Height"
+                    required
                     value={customHeight}
-                    onChange={(e) => setCustomHeight(e.target.value)}
+                    onChange={(e) => {
+                      setCustomHeight(e.target.value);
+                      setSizeError("");
+                    }}
                     className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     type="number"
+                    min="1"
                     placeholder="Width"
+                    required
                     value={customWidth}
-                    onChange={(e) => setCustomWidth(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      setCustomWidth(e.target.value);
+                      setSizeError("");
+                    }}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow  focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+                {!hasCustomSize && (
+                  <p className="text-xs text-red-600">
+                   
+                  </p>
+                )}
+                {sizeError && <p className="text-xs text-red-600">{sizeError}</p>}
               </div>
             )}
 
             {/* ===== Quantity & Pricing ===== */}
-            {/* Shared qty UI (meaning differs by type) */}
             <div className="mt-6 space-y-2">
               <label className="block text-sm font-semibold text-gray-800">
                 Quantity{type === "tiles" ? " (Boxes)" : ""}
@@ -1268,11 +1127,7 @@ export default function ProductDetail() {
                 <input
                   type="number"
                   min="1"
-                  max={
-                    product.stock !== "N/A"
-                      ? parseInt(product.stock)
-                      : undefined
-                  }
+                  max={product.stock !== "N/A" ? parseInt(product.stock) : undefined}
                   value={pendingQty}
                   onChange={handleQtyChange}
                   onBlur={handleQtyBlur}
@@ -1294,9 +1149,7 @@ export default function ProductDetail() {
                   </button>
                 )}
               </div>
-              {stockError && (
-                <p className="text-red-600 text-sm mt-1">{stockError}</p>
-              )}
+              {stockError && <p className="text-red-600 text-sm mt-1">{stockError}</p>}
             </div>
 
             {/* Pricing summary */}
@@ -1307,15 +1160,11 @@ export default function ProductDetail() {
                   return (
                     <>
                       <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                        <span className="text-sm text-gray-600 font-medium">
-                          Tiles per Box
-                        </span>
+                        <span className="text-sm text-gray-600 font-medium">Tiles per Box</span>
                         <span className="font-semibold">{tilesPerBox}</span>
                       </div>
                       <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                        <span className="text-sm text-gray-600 font-medium">
-                          Sqft per Box
-                        </span>
+                        <span className="text-sm text-gray-600 font-medium">Sqft per Box</span>
                         <span className="font-semibold">{sqftPerBox}</span>
                       </div>
                     </>
@@ -1326,9 +1175,7 @@ export default function ProductDetail() {
                 <span className="text-sm text-gray-600 font-medium">
                   {type === "tiles" ? "Total Units (Tiles)" : "Total Units"}
                 </span>
-                <span className="text-green-600 font-bold text-sm">
-                  {totalUnits}
-                </span>
+                <span className="text-green-600 font-bold text-sm">{totalUnits}</span>
               </div>
 
               <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
@@ -1337,35 +1184,36 @@ export default function ProductDetail() {
                     ? "Price Per Square Feet"
                     : "Price Per Unit"}
                 </span>
-
-                <span className="text-green-600 font-bold text-sm">
-                  {formatINR(pricePer)}
-                </span>
+                <span className="text-green-600 font-bold text-sm">{formatINR(pricePer)}</span>
               </div>
 
               {type === "tiles" && (
                 <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                  <span className="text-sm text-gray-600 font-medium">
-                    Total Sqft
-                  </span>
+                  <span className="text-sm text-gray-600 font-medium">Total Sqft</span>
                   <span className="font-semibold">{totalSqft}</span>
                 </div>
               )}
 
+              {isStone && hasCustomSize && (
+                <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                  <span className="text-sm text-gray-600 font-medium">Total Sqft</span>
+                  <span className="font-semibold">{totalSqft.toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                <span className="text-base font-semibold text-gray-800">
-                  Total Price
-                </span>
-                <span className="text-blue-700 text-lg font-bold">
-                  {formatINR(finalTotalPrice)}
-                </span>
+                <span className="text-base font-semibold text-gray-800">Total Price</span>
+                <span className="text-blue-700 text-lg font-bold">{formatINR(finalTotalPrice)}</span>
               </div>
             </div>
 
             {/* Add to Cart */}
             <button
               onClick={handleAddToCart}
-              className="mt-6 w-full py-3 px-6 bg-blue-600 text-white text-base rounded-xl font-semibold shadow-md hover:bg-blue-700 transition"
+              disabled={addDisabled}
+              className={`mt-6 w-full py-3 px-6 text-white text-base rounded-xl font-semibold shadow-md transition ${
+                addDisabled ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
               🛒 Add to Cart
             </button>
@@ -1379,10 +1227,7 @@ export default function ProductDetail() {
           className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
           onClick={() => setIsImageModalOpen(false)}
         >
-          <div
-            className="relative max-w-[90%] max-h-[90%]"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="relative max-w-[90%] max-h-[90%]" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setIsImageModalOpen(false)}
               className="absolute top-0 right-0 m-3 text-white text-3xl font-bold z-50 hover:text-red-400"
