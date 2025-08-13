@@ -361,7 +361,7 @@ export default function CustomerSupport() {
                                 View
                               </ActionButton>
                               <ActionButton
-                                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                                className="bg-green-600 text-white hover:bg-emerald-700"
                                 onClick={() => openTicket(t._id, true)}
                               >
                                 Reply

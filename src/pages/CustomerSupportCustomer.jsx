@@ -447,10 +447,6 @@ const CustomerSupport = () => {
                 </svg>
               )}
             </div>
-            <div className="text-xs text-gray-400 mt-1">
-              We’ll email updates to your account address. This field is for
-              extra contact info (optional).
-            </div>
           </div>
 
           {/* Country */}
