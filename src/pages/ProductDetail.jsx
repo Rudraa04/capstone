@@ -87,6 +87,10 @@ export default function ProductDetail() {
   const recognizerRef = useRef(null);
   const [voiceStatus, setVoiceStatus] = useState("");
 
+  const [customHeight, setCustomHeight] = useState("");
+  const [customWidth, setCustomWidth] = useState("");
+  const [customSqft, setCustomSqft] = useState(0);
+
   // ---------------- Effects ----------------
   useEffect(() => {
     const updateCartCount = () => {
@@ -169,6 +173,19 @@ export default function ProductDetail() {
         .catch((err) => console.error("Failed to fetch bathtub:", err));
     }
   }, [type, id]);
+
+  useEffect(() => {
+    if (type === "marble" || type === "granite") {
+      const h = parseFloat(customHeight);
+      const w = parseFloat(customWidth);
+      if (h > 0 && w > 0) {
+        const sqft = (h * w) / 144;
+        setCustomSqft(sqft);
+      } else {
+        setCustomSqft(0);
+      }
+    }
+  }, [customHeight, customWidth, type]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -283,7 +300,8 @@ export default function ProductDetail() {
     product = null;
   }
 
-  if (!product) return <div className="text-center p-10">Loading Product...</div>;
+  if (!product)
+    return <div className="text-center p-10">Loading Product...</div>;
 
   // ---- Quantity handlers (typing-friendly) ----
   const handleQtyChange = (e) => setPendingQty(e.target.value);
@@ -302,20 +320,32 @@ export default function ProductDetail() {
   };
 
   // ---------------- Pricing logic ----------------
- const pricePer = Number(product.price) || 0; // per sqft (tiles) or per unit (others)
-  const boxesForCalc = Math.max(1, parseInt((pendingQty ?? "").trim(), 10) || 1);
+  // ---------------- Pricing logic ----------------
+  const pricePer = Number(product.price) || 0; // price per sqft (tiles & stone) or per unit (others)
+  const qty = Math.max(1, parseInt((pendingQty ?? "").trim(), 10) || 1);
 
-  let totalUnits = boxesForCalc; // default units
+  const isStone = type === "marble" || type === "granite";
+
+  let totalUnits = qty; // default (non-tiles = units/pieces)
   let totalSqft = 0;
   let finalTotalPrice = 0;
 
   if (type === "tiles") {
     const { tilesPerBox, sqftPerBox } = getBoxInfo(product.size);
-    totalUnits = boxesForCalc * tilesPerBox; // total tiles
-    totalSqft = boxesForCalc * sqftPerBox;   // total sqft
-    finalTotalPrice = totalSqft * pricePer;  // sqft × price/sqft
+    totalUnits = qty * tilesPerBox; // total tiles
+    totalSqft = qty * sqftPerBox; // total sqft
+    finalTotalPrice = totalSqft * pricePer; // sqft × price/sqft
+  } else if (isStone) {
+    // For marble/granite: if custom size entered, use it. Multiply by quantity (pieces).
+    const perPieceSqft = customSqft > 0 ? customSqft : 0;
+    totalSqft = perPieceSqft * qty; // total sqft across quantity
+    finalTotalPrice =
+      perPieceSqft > 0
+        ? totalSqft * pricePer // sqft × price/sqft
+        : qty * pricePer; // fallback to unit price if no custom size entered
   } else {
-    finalTotalPrice = boxesForCalc * pricePer; // units × price
+    // sinks/toilets/bathtubs as before
+    finalTotalPrice = qty * pricePer; // units × price
   }
 
   // ---------------- Actions ----------------
@@ -346,7 +376,7 @@ export default function ProductDetail() {
     }
   };
 
-const handleAddToCart = () => {
+  const handleAddToCart = () => {
     if (!user) {
       toast.error("You must be logged in to add items to your cart.", {
         position: "bottom-right",
@@ -362,22 +392,80 @@ const handleAddToCart = () => {
       return;
     }
 
+    // Reuse earlier computed values
+    const isStone = type === "marble" || type === "granite";
+    const qty = quantity;
+
+    // For marble/granite, capture the custom size the user typed
+    const customSizeLabel =
+      isStone && customHeight && customWidth
+        ? `${Number(customHeight)}x${Number(customWidth)} in`
+        : undefined;
+
+    const customSqftPerPiece =
+      isStone && customSqft > 0 ? Number(customSqft) : undefined;
+
+    const totalSqftForLine =
+      isStone && customSqft > 0
+        ? customSqft * qty
+        : type === "tiles"
+        ? totalSqft
+        : undefined;
+
     const cartItem = {
       id: Date.now(),
       ...product,
       kind: type,
       category: type,
-      quantity, // boxes for tiles, units otherwise
+      quantity: qty, // boxes for tiles, units otherwise
+
+      // keep existing tiles fields
       totalTiles: type === "tiles" ? totalUnits : undefined,
-      totalSqft: type === "tiles" ? totalSqft : undefined,
+      totalSqft: totalSqftForLine,
       totalPrice: finalTotalPrice,
+
+      // NEW: persist the custom size context for stone
+      ...(isStone
+        ? {
+            customHeightIn: customHeight ? Number(customHeight) : undefined,
+            customWidthIn: customWidth ? Number(customWidth) : undefined,
+            customSizeLabel, // e.g. "24x48 in"
+            customSqftPerPiece, // sqft for one piece at that custom size
+          }
+        : {}),
     };
+
     const existingCart = JSON.parse(localStorage.getItem("cart")) || [];
-    const existingIndex = existingCart.findIndex(
-      (item) => item.name === cartItem.name && item.size === cartItem.size
-    );
+
+    // IMPORTANT: change how we decide "same item"
+    const existingIndex = existingCart.findIndex((item) => {
+      // Must be same product and same category
+      if (
+        item.name !== cartItem.name ||
+        (item.kind || item.category) !== cartItem.kind
+      )
+        return false;
+
+      // Tiles: same size string must match to merge
+      if (type === "tiles") {
+        return (item.size || "") === (cartItem.size || "");
+      }
+
+      // Stone (marble/granite): also require the SAME custom size label
+      if (isStone) {
+        return (
+          (item.customSizeLabel || "") === (cartItem.customSizeLabel || "")
+        );
+      }
+
+      // Other products (sinks, toilets, bathtubs): just merge by name/kind
+      return true;
+    });
+
     if (existingIndex !== -1) {
+      // merge quantities and totals for the exact same variant
       existingCart[existingIndex].quantity += cartItem.quantity;
+
       if (type === "tiles") {
         existingCart[existingIndex].totalTiles =
           (existingCart[existingIndex].totalTiles || 0) +
@@ -385,11 +473,18 @@ const handleAddToCart = () => {
         existingCart[existingIndex].totalSqft =
           (existingCart[existingIndex].totalSqft || 0) +
           (cartItem.totalSqft || 0);
+      } else if (isStone) {
+        // keep sqft consistent for stone too
+        existingCart[existingIndex].totalSqft =
+          (existingCart[existingIndex].totalSqft || 0) +
+          (cartItem.totalSqft || 0);
       }
+
       existingCart[existingIndex].totalPrice += cartItem.totalPrice;
     } else {
       existingCart.push(cartItem);
     }
+
     localStorage.setItem("cart", JSON.stringify(existingCart));
     window.dispatchEvent(new Event("cartUpdated"));
     toast.success("🛒 Added to cart!", {
@@ -420,24 +515,51 @@ const handleAddToCart = () => {
       .toLowerCase()
       .replace(/[^\w\s]/gi, "");
     const routeMap = [
-      { keywords: ["exterior wall tiles", "exterior wall"], route: "/exterior?sub=Exterior%20Wall%20Tiles" },
-      { keywords: ["exterior floor tiles", "exterior floor"], route: "/exterior?sub=Exterior%20Floor%20Tiles" },
-      { keywords: ["interior floor tiles", "interior floor"], route: "/interior?sub=Interior%20Floor%20Tiles" },
-      { keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"], route: "/interior?sub=Bathroom%20Wall%20Tiles" },
-      { keywords: ["kitchen wall tiles", "kitchen tiles", "kitchen"], route: "/interior?sub=Kitchen%20Wall%20Tiles" },
+      {
+        keywords: ["exterior wall tiles", "exterior wall"],
+        route: "/exterior?sub=Exterior%20Wall%20Tiles",
+      },
+      {
+        keywords: ["exterior floor tiles", "exterior floor"],
+        route: "/exterior?sub=Exterior%20Floor%20Tiles",
+      },
+      {
+        keywords: ["interior floor tiles", "interior floor"],
+        route: "/interior?sub=Interior%20Floor%20Tiles",
+      },
+      {
+        keywords: ["bathroom tiles", "bathroom wall", "bathroom wall tiles"],
+        route: "/interior?sub=Bathroom%20Wall%20Tiles",
+      },
+      {
+        keywords: ["kitchen wall tiles", "kitchen tiles", "kitchen"],
+        route: "/interior?sub=Kitchen%20Wall%20Tiles",
+      },
       { keywords: ["interior", "interior tiles"], route: "/interior" },
       { keywords: ["exterior", "exterior tiles"], route: "/exterior" },
-      { keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"], route: "/sanitary" },
+      {
+        keywords: ["sanitary", "sanitaryware", "toilet", "sink", "bathtub"],
+        route: "/sanitary",
+      },
       { keywords: ["slab", "slabs", "granite", "marble"], route: "/slabs" },
-      { keywords: ["ceramic", "ceramics", "tile", "tiles"], route: "/ceramics?type=tiles" },
-      { keywords: ["bathroom", "washroom"], suggest: ["tiles", "bathtubs", "sinks", "toilets"] },
+      {
+        keywords: ["ceramic", "ceramics", "tile", "tiles"],
+        route: "/ceramics?type=tiles",
+      },
+      {
+        keywords: ["bathroom", "washroom"],
+        suggest: ["tiles", "bathtubs", "sinks", "toilets"],
+      },
     ];
     for (const entry of routeMap) {
       if (entry.route && entry.keywords.some((k) => trimmedQuery.includes(k))) {
         navigate(entry.route);
         return;
       }
-      if (entry.suggest && entry.keywords.some((k) => trimmedQuery.includes(k))) {
+      if (
+        entry.suggest &&
+        entry.keywords.some((k) => trimmedQuery.includes(k))
+      ) {
         alert(`You might be looking for: ${entry.suggest.join(", ")}`);
         return;
       }
@@ -447,14 +569,19 @@ const handleAddToCart = () => {
   };
   const handleVoiceInput = () => {
     if (!recognizerRef.current) {
-      setVoiceStatus("Speech recognizer not initialized. Please check your credentials.");
+      setVoiceStatus(
+        "Speech recognizer not initialized. Please check your credentials."
+      );
       return;
     }
     setVoiceStatus("Listening... Speak now.");
     recognizerRef.current.startContinuousRecognitionAsync();
     recognizerRef.current.recognized = (s, e) => {
       if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-        let transcribedText = e.result.text.trim().toLowerCase().replace(/[^\w\s]/gi, "");
+        let transcribedText = e.result.text
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w\s]/gi, "");
         setQuery(transcribedText);
         setVoiceStatus(`Transcription: ${transcribedText}`);
         handleSearch(transcribedText);
@@ -487,10 +614,16 @@ const handleAddToCart = () => {
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <button onClick={handleBack} className="text-blue-700 hover:text-blue-900">
+            <button
+              onClick={handleBack}
+              className="text-blue-700 hover:text-blue-900"
+            >
               <FaArrowLeft size={18} />
             </button>
-            <Link to="/" className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide">
+            <Link
+              to="/"
+              className="text-2xl md:text-3xl font-extrabold text-blue-700 tracking-wide"
+            >
               PATEL CERAMICS
             </Link>
           </div>
@@ -559,10 +692,15 @@ const handleAddToCart = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-[16px] font-medium text-gray-700">
-            <Link to="/" className={`uppercase ${underlineHover}`}>Home</Link>
+            <Link to="/" className={`uppercase ${underlineHover}`}>
+              Home
+            </Link>
 
             <div className="relative" ref={dropdownRef}>
-              <button onClick={() => setShowProductDropdown(!showProductDropdown)} className={`uppercase ${underlineHover}`}>
+              <button
+                onClick={() => setShowProductDropdown(!showProductDropdown)}
+                className={`uppercase ${underlineHover}`}
+              >
                 Products
               </button>
               {showProductDropdown && (
@@ -579,7 +717,11 @@ const handleAddToCart = () => {
                       { name: "Bathtubs", to: "/ceramics?type=bathtub" },
                       { name: "Toilets", to: "/ceramics?type=toilets" },
                     ].map((item) => (
-                      <Link key={item.name} to={item.to} className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors">
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
                         {item.name}
                       </Link>
                     ))}
@@ -589,13 +731,32 @@ const handleAddToCart = () => {
                       WALL / FLOOR TILES
                     </h3>
                     {[
-                      { name: "Exterior Floor Tiles", to: "/exterior?sub=Exterior Floor Tiles" },
-                      { name: "Exterior Wall Tiles", to: "/exterior?sub=Exterior Wall Tiles" },
-                      { name: "Kitchen Wall Tiles", to: "/interior?sub=Kitchen Wall Tiles" },
-                      { name: "Bathroom Wall Tiles", to: "/interior?sub=Bathroom Wall Tiles" },
-                      { name: "Interior Floor Tiles", to: "/interior?sub=Interior Floor Tiles" },
+                      {
+                        name: "Exterior Floor Tiles",
+                        to: "/exterior?sub=Exterior Floor Tiles",
+                      },
+                      {
+                        name: "Exterior Wall Tiles",
+                        to: "/exterior?sub=Exterior Wall Tiles",
+                      },
+                      {
+                        name: "Kitchen Wall Tiles",
+                        to: "/interior?sub=Kitchen Wall Tiles",
+                      },
+                      {
+                        name: "Bathroom Wall Tiles",
+                        to: "/interior?sub=Bathroom Wall Tiles",
+                      },
+                      {
+                        name: "Interior Floor Tiles",
+                        to: "/interior?sub=Interior Floor Tiles",
+                      },
                     ].map((item) => (
-                      <Link key={item.name} to={item.to} className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors">
+                      <Link
+                        key={item.name}
+                        to={item.to}
+                        className="block text-gray-700 hover:text-blue-600 mb-3 transition-colors"
+                      >
                         {item.name}
                       </Link>
                     ))}
@@ -606,28 +767,47 @@ const handleAddToCart = () => {
 
             {user ? (
               <>
-                <Link to="/cart" className={`uppercase ${underlineHover} flex items-center gap-1`}>
+                <Link
+                  to="/cart"
+                  className={`uppercase ${underlineHover} flex items-center gap-1`}
+                >
                   <FaShoppingCart />
                   Cart
-                  {cartCount > 0 && <span className="ml-1 font-bold text-blue-600">({cartCount})</span>}
+                  {cartCount > 0 && (
+                    <span className="ml-1 font-bold text-blue-600">
+                      ({cartCount})
+                    </span>
+                  )}
                 </Link>
                 <Link
                   to="/profile"
-                  state={localStorage.getItem("fromAdmin") === "true" ? { fromAdmin: true } : {}}
+                  state={
+                    localStorage.getItem("fromAdmin") === "true"
+                      ? { fromAdmin: true }
+                      : {}
+                  }
                   className={`uppercase ${underlineHover} flex items-center gap-1`}
                 >
                   Profile
                 </Link>
-                <button onClick={handleLogout} className={`uppercase text-red-500 hover:text-red-600 ${underlineHover}`}>
+                <button
+                  onClick={handleLogout}
+                  className={`uppercase text-red-500 hover:text-red-600 ${underlineHover}`}
+                >
                   Logout
                 </button>
               </>
             ) : (
-              <Link to="/login" className={`uppercase ${underlineHover}`}>Login/Signup</Link>
+              <Link to="/login" className={`uppercase ${underlineHover}`}>
+                Login/Signup
+              </Link>
             )}
           </nav>
 
-          <button className="md:hidden text-xl" onClick={() => setMenuOpen(!menuOpen)}>
+          <button
+            className="md:hidden text-xl"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
             {menuOpen ? <FaTimes /> : <FaBars />}
           </button>
         </div>
@@ -670,7 +850,9 @@ const handleAddToCart = () => {
                       key={index}
                       className="flex items-center gap-3 p-2 hover:bg-gray-100 cursor-pointer"
                       onClick={() => {
-                        navigate(`/product/${p.category.toLowerCase()}/${p._id}`);
+                        navigate(
+                          `/product/${p.category.toLowerCase()}/${p._id}`
+                        );
                         setSuggestions([]);
                         setQuery("");
                       }}
@@ -690,25 +872,42 @@ const handleAddToCart = () => {
               )}
             </div>
             <div className="flex flex-col gap-4 text-[16px] font-medium text-gray-700">
-              <Link to="/" className="uppercase">Home</Link>
-              <Link to="/slabs" className="uppercase">Slabs</Link>
-              <Link to="/ceramics" className="uppercase">Ceramics</Link>
+              <Link to="/" className="uppercase">
+                Home
+              </Link>
+              <Link to="/slabs" className="uppercase">
+                Slabs
+              </Link>
+              <Link to="/ceramics" className="uppercase">
+                Ceramics
+              </Link>
               {user ? (
                 <>
-                  <Link to="/cart" className="uppercase">Cart</Link>
+                  <Link to="/cart" className="uppercase">
+                    Cart
+                  </Link>
                   <Link
                     to="/profile"
-                    state={localStorage.getItem("fromAdmin") === "true" ? { fromAdmin: true } : {}}
+                    state={
+                      localStorage.getItem("fromAdmin") === "true"
+                        ? { fromAdmin: true }
+                        : {}
+                    }
                     className={`uppercase ${underlineHover} flex items-center gap-1`}
                   >
                     Profile
                   </Link>
-                  <button onClick={handleLogout} className="uppercase text-left text-red-500">
+                  <button
+                    onClick={handleLogout}
+                    className="uppercase text-left text-red-500"
+                  >
                     Logout
                   </button>
                 </>
               ) : (
-                <Link to="/login" className="uppercase">Login/Signup</Link>
+                <Link to="/login" className="uppercase">
+                  Login/Signup
+                </Link>
               )}
             </div>
           </div>
@@ -736,7 +935,11 @@ const handleAddToCart = () => {
           {/* Right column */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className={`text-3xl font-bold ${type === "marble" ? "text-gray-800 italic" : "text-gray-900"}`}>
+              <h1
+                className={`text-3xl font-bold ${
+                  type === "marble" ? "text-gray-800 italic" : "text-gray-900"
+                }`}
+              >
                 {product.name}
               </h1>
 
@@ -758,7 +961,9 @@ const handleAddToCart = () => {
                 {showShareMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border shadow-lg rounded-md p-3 z-50 space-y-2 text-sm">
                     <a
-                      href={`https://wa.me/?text=${encodeURIComponent(productURL)}`}
+                      href={`https://wa.me/?text=${encodeURIComponent(
+                        productURL
+                      )}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-green-600 hover:underline"
@@ -766,7 +971,9 @@ const handleAddToCart = () => {
                       <FaWhatsapp /> Share on WhatsApp
                     </a>
                     <a
-                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productURL)}`}
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                        productURL
+                      )}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-blue-600 hover:underline"
@@ -774,7 +981,9 @@ const handleAddToCart = () => {
                       <FaFacebook /> Share on Facebook
                     </a>
                     <a
-                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(productURL)}`}
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
+                        productURL
+                      )}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-sky-600 hover:underline"
@@ -804,13 +1013,23 @@ const handleAddToCart = () => {
                   <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold">
                     Ceramic Tile
                   </span>
-                  <span className="text-xs text-gray-500">(Category: Tiles)</span>
+                  <span className="text-xs text-gray-500">
+                    (Category: Tiles)
+                  </span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li><strong>Size:</strong> {product.size}</li>
-                  <li><strong>Usage Type:</strong> {product.subcategory}</li>
-                  <li><strong>Manufacturer:</strong> {product.manufacturer}</li>
-                  <li><strong>Color:</strong> {product.color}</li>
+                  <li>
+                    <strong>Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>Usage Type:</strong> {product.subcategory}
+                  </li>
+                  <li>
+                    <strong>Manufacturer:</strong> {product.manufacturer}
+                  </li>
+                  <li>
+                    <strong>Color:</strong> {product.color}
+                  </li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -821,7 +1040,9 @@ const handleAddToCart = () => {
                   </li>
                   <li>
                     <strong>Price per Sqft:</strong>{" "}
-                    <span className="text-green-700 font-semibold">{formatINR(product.price)}</span>
+                    <span className="text-green-700 font-semibold">
+                      {formatINR(product.price)}
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -837,10 +1058,18 @@ const handleAddToCart = () => {
                   <span className="text-xs text-gray-500">(Sanitary Ware)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li><strong>Size:</strong> {product.size}</li>
-                  <li><strong>Usage Type:</strong> {product.subcategory}</li>
-                  <li><strong>Manufacturer:</strong> {product.manufacturer}</li>
-                  <li><strong>Color:</strong> {product.color}</li>
+                  <li>
+                    <strong>Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>Usage Type:</strong> {product.subcategory}
+                  </li>
+                  <li>
+                    <strong>Manufacturer:</strong> {product.manufacturer}
+                  </li>
+                  <li>
+                    <strong>Color:</strong> {product.color}
+                  </li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -849,7 +1078,12 @@ const handleAddToCart = () => {
                       ? `Only ${product.stock} left`
                       : "N/A"}
                   </li>
-                  <li><strong>Price:</strong> <span className="text-green-700 font-semibold">₹{product.price}</span></li>
+                  <li>
+                    <strong>Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
                 </ul>
               </div>
             )}
@@ -862,8 +1096,12 @@ const handleAddToCart = () => {
                   <span className="text-xs text-gray-500">(Sanitary Ware)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li><strong>Size:</strong> {product.size}</li>
-                  <li><strong>Color:</strong> {product.color}</li>
+                  <li>
+                    <strong>Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>Color:</strong> {product.color}
+                  </li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -872,7 +1110,12 @@ const handleAddToCart = () => {
                       ? `Only ${product.stock} left`
                       : "N/A"}
                   </li>
-                  <li><strong>Price:</strong> <span className="text-green-700 font-semibold">₹{product.price}</span></li>
+                  <li>
+                    <strong>Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
                 </ul>
               </div>
             )}
@@ -885,12 +1128,28 @@ const handleAddToCart = () => {
                   <span className="text-xs text-gray-500">(Sanitary Ware)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li><strong>Type:</strong> {product.type || "N/A"}</li>
-                  <li><strong>Size:</strong> {product.size || "N/A"}</li>
-                  <li><strong>Color:</strong> {product.color || "N/A"}</li>
-                  <li><strong>Manufacturer:</strong> {product.manufacturer || "N/A"}</li>
-                  <li><strong>Flush Type:</strong> {product.flush || "N/A"}</li>
-                  <li><strong>Price:</strong> <span className="text-green-700 font-semibold">₹{product.price}</span></li>
+                  <li>
+                    <strong>Type:</strong> {product.type || "N/A"}
+                  </li>
+                  <li>
+                    <strong>Size:</strong> {product.size || "N/A"}
+                  </li>
+                  <li>
+                    <strong>Color:</strong> {product.color || "N/A"}
+                  </li>
+                  <li>
+                    <strong>Manufacturer:</strong>{" "}
+                    {product.manufacturer || "N/A"}
+                  </li>
+                  <li>
+                    <strong>Flush Type:</strong> {product.flush || "N/A"}
+                  </li>
+                  <li>
+                    <strong>Price:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -911,9 +1170,15 @@ const handleAddToCart = () => {
                   <span className="text-xs text-gray-500">(Natural Stone)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li><strong>Size:</strong> {product.size}</li>
-                  <li><strong>Color:</strong> {product.color}</li>
-                  <li><strong>Origin:</strong> {product.origin}</li>
+                  <li>
+                    <strong>Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>Color:</strong> {product.color}
+                  </li>
+                  <li>
+                    <strong>Origin:</strong> {product.origin}
+                  </li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -922,10 +1187,16 @@ const handleAddToCart = () => {
                       ? `Only ${product.stock} left`
                       : "N/A"}
                   </li>
-                  <li><strong>Price:</strong> <span className="text-green-700 font-semibold">₹{product.price}</span></li>
+                  <li>
+                    <strong>Price per Square Feet:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
                 </ul>
               </div>
             )}
+
             {type === "granite" && (
               <div className="p-6 bg-gradient-to-br from-white to-gray-100 border border-gray-200 rounded-xl shadow-md space-y-4">
                 <div className="flex items-center gap-2">
@@ -935,9 +1206,15 @@ const handleAddToCart = () => {
                   <span className="text-xs text-gray-500">(Natural Stone)</span>
                 </div>
                 <ul className="text-base text-gray-800 leading-relaxed space-y-2">
-                  <li><strong>Size:</strong> {product.size}</li>
-                  <li><strong>Color:</strong> {product.color}</li>
-                  <li><strong>Origin:</strong> {product.origin}</li>
+                  <li>
+                    <strong>Size:</strong> {product.size}
+                  </li>
+                  <li>
+                    <strong>Color:</strong> {product.color}
+                  </li>
+                  <li>
+                    <strong>Origin:</strong> {product.origin}
+                  </li>
                   <li>
                     <strong>Stock:</strong>{" "}
                     {product.stock !== "N/A" && parseInt(product.stock) > 10
@@ -946,8 +1223,38 @@ const handleAddToCart = () => {
                       ? `Only ${product.stock} left`
                       : "N/A"}
                   </li>
-                  <li><strong>Price:</strong> <span className="text-green-700 font-semibold">₹{product.price}</span></li>
+                  <li>
+                    <strong>Price per Square Feet:</strong>{" "}
+                    <span className="text-green-700 font-semibold">
+                      ₹{product.price}
+                    </span>
+                  </li>
                 </ul>
+              </div>
+            )}
+
+            {/* ===== Customize Size (only for marble/granite) ===== */}
+            {(type === "marble" || type === "granite") && (
+              <div className="mt-6 space-y-2">
+                <label className="block text-sm font-semibold text-gray-800">
+                  Customize Size (in inches)
+                </label>
+                <div className="flex gap-4">
+                  <input
+                    type="number"
+                    placeholder="Height"
+                    value={customHeight}
+                    onChange={(e) => setCustomHeight(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Width"
+                    value={customWidth}
+                    onChange={(e) => setCustomWidth(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2 text-sm shadow focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             )}
 
@@ -961,7 +1268,11 @@ const handleAddToCart = () => {
                 <input
                   type="number"
                   min="1"
-                  max={product.stock !== "N/A" ? parseInt(product.stock) : undefined}
+                  max={
+                    product.stock !== "N/A"
+                      ? parseInt(product.stock)
+                      : undefined
+                  }
                   value={pendingQty}
                   onChange={handleQtyChange}
                   onBlur={handleQtyBlur}
@@ -983,51 +1294,71 @@ const handleAddToCart = () => {
                   </button>
                 )}
               </div>
-              {stockError && <p className="text-red-600 text-sm mt-1">{stockError}</p>}
+              {stockError && (
+                <p className="text-red-600 text-sm mt-1">{stockError}</p>
+              )}
             </div>
 
             {/* Pricing summary */}
             <div className="mt-6 grid gap-4">
-              {type === "tiles" && (() => {
-                const { tilesPerBox, sqftPerBox } = getBoxInfo(product.size);
-                return (
-                  <>
-                    <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                      <span className="text-sm text-gray-600 font-medium">Tiles per Box</span>
-                      <span className="font-semibold">{tilesPerBox}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                      <span className="text-sm text-gray-600 font-medium">Sqft per Box</span>
-                      <span className="font-semibold">{sqftPerBox}</span>
-                    </div>
-                  </>
-                );
-              })()}
+              {type === "tiles" &&
+                (() => {
+                  const { tilesPerBox, sqftPerBox } = getBoxInfo(product.size);
+                  return (
+                    <>
+                      <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                        <span className="text-sm text-gray-600 font-medium">
+                          Tiles per Box
+                        </span>
+                        <span className="font-semibold">{tilesPerBox}</span>
+                      </div>
+                      <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+                        <span className="text-sm text-gray-600 font-medium">
+                          Sqft per Box
+                        </span>
+                        <span className="font-semibold">{sqftPerBox}</span>
+                      </div>
+                    </>
+                  );
+                })()}
 
               <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                 <span className="text-sm text-gray-600 font-medium">
                   {type === "tiles" ? "Total Units (Tiles)" : "Total Units"}
                 </span>
-                <span className="text-green-600 font-bold text-sm">{totalUnits}</span>
+                <span className="text-green-600 font-bold text-sm">
+                  {totalUnits}
+                </span>
               </div>
 
               <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
                 <span className="text-sm text-gray-600 font-medium">
-                  {type === "tiles" ? "Price Per Sqft" : "Price Per Unit"}
+                  {["tiles", "marble", "granite"].includes(type)
+                    ? "Price Per Square Feet"
+                    : "Price Per Unit"}
                 </span>
-                <span className="text-green-600 font-bold text-sm">{formatINR(pricePer)}</span>
+
+                <span className="text-green-600 font-bold text-sm">
+                  {formatINR(pricePer)}
+                </span>
               </div>
 
               {type === "tiles" && (
                 <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                  <span className="text-sm text-gray-600 font-medium">Total Sqft</span>
+                  <span className="text-sm text-gray-600 font-medium">
+                    Total Sqft
+                  </span>
                   <span className="font-semibold">{totalSqft}</span>
                 </div>
               )}
 
               <div className="flex justify-between items-center bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
-                <span className="text-base font-semibold text-gray-800">Total Price</span>
-                <span className="text-blue-700 text-lg font-bold">{formatINR(finalTotalPrice)}</span>
+                <span className="text-base font-semibold text-gray-800">
+                  Total Price
+                </span>
+                <span className="text-blue-700 text-lg font-bold">
+                  {formatINR(finalTotalPrice)}
+                </span>
               </div>
             </div>
 

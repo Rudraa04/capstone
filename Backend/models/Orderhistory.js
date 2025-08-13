@@ -7,76 +7,86 @@ const orderConnection = mongoose.createConnection(process.env.MONGO_URI, {
   dbName: 'Order_History',
 });
 
+// Canonical set (all lowercase, singular)
+const PRODUCT_TYPES = ['tile','sink','toilet','bathtub','granite','marble','sanitaryware'];
+
+// Map common variants → canonical
+const normalizeType = (t = '') => {
+  const x = String(t).toLowerCase().trim();
+  const map = {
+    tiles: 'tile',
+    sinks: 'sink',
+    toilets: 'toilet',
+    bathtubs: 'bathtub',
+    sanitary: 'sanitaryware',
+    sanitaryware: 'sanitaryware',
+    tile: 'tile', sink: 'sink', toilet: 'toilet', bathtub: 'bathtub',
+    granite: 'granite', marble: 'marble',
+  };
+  return map[x] || x;
+};
+
 const OrderItemSchema = new mongoose.Schema(
   {
-    productId: { type: mongoose.Schema.Types.ObjectId, required: false },
+    productId: { type: mongoose.Schema.Types.ObjectId, required: false }, // keep optional
     sku: String,
-    name: String,                  // snapshot name
-    image: String,                 // snapshot image URL
-    specs: Object,                 // { color, size, finish, ... } free-form
+    name: String,
+    image: String,
+    specs: Object,
     productType: {
       type: String,
-      enum: ['Tile', 'Sink', 'Toilet', 'Granite', 'Marble'],
+      enum: PRODUCT_TYPES,
       required: true,
+      lowercase: true,
+      trim: true,
+      set: normalizeType, // normalize on assignment
     },
-    unit: { type: String, default: 'box' },  // 'box' | 'piece' | etc.
+    unit: { type: String, default: 'box' }, // 'piece' for toilets/bathtubs at write time if you prefer
     quantity: { type: Number, required: true },
-    price: { type: Number, required: true }, // unit price charged (pre-tax)
-    lineTotal: { type: Number },             // convenience: price * quantity
+    price: { type: Number, required: true },
+    lineTotal: { type: Number },
   },
   { _id: false }
 );
 
+// Convenience: compute lineTotal if missing
+OrderItemSchema.pre('validate', function (next) {
+  if (this.price != null && this.quantity != null && this.lineTotal == null) {
+    this.lineTotal = this.price * this.quantity;
+  }
+  next();
+});
+
 const OrderSchema = new mongoose.Schema(
   {
-    // Who
     userUid: { type: String, required: true },
-
-    // What
     items: { type: [OrderItemSchema], required: true },
 
-    // Totals (store a snapshot so UI never has to recompute)
-    subtotal: Number,            // sum of lineTotals (pre-tax, pre-discount)
+    subtotal: Number,
     discountTotal: { type: Number, default: 0 },
     taxTotal: { type: Number, default: 0 },
     shippingFee: { type: Number, default: 0 },
-    currency: { type: String, default: 'INR' }, // show ₹ in UI
-    totalAmount: { type: Number, required: true }, // grand total charged
+    currency: { type: String, default: 'INR' }, // you’re charging in INR via Square
 
-    // Shipping snapshot
+    totalAmount: { type: Number, required: true },
+
     shippingAddress: {
-      name: String,
-      phone: String,
-      street: String,
-      city: String,
-      state: String,
-      postalCode: String,
-      country: String,
+      name: String, phone: String, street: String, city: String,
+      state: String, postalCode: String, country: String,
     },
 
-    // Delivery (outsourced) – fill when the partner sends you data
     tracking: {
-      provider: String,          // e.g., Delhivery, BlueDart, etc.
-      trackingCode: String,      // partner’s code
-      trackingUrl: String,       // deep link to partner tracking page
+      provider: String, trackingCode: String, trackingUrl: String,
       expectedDelivery: Date,
     },
 
-    // Optional status timeline for pretty UI (use when you want)
-    timeline: [
-      {
-        label: String,           // 'Ordered', 'Shipped', 'Delivered'
-        at: { type: Date, default: Date.now },
-        note: String,
-      },
-    ],
+    timeline: [{ label: String, at: { type: Date, default: Date.now }, note: String }],
 
-    // Payment snapshot
     payment: {
-      method: String,            // 'Card', 'UPI', etc.
-      processor: String,         // 'Square', 'Razorpay', etc.
-      referenceId: String,       // payment id/receipt
-      receiptUrl: String,        // link if available
+      method: String,
+      processor: String,
+      referenceId: String,
+      receiptUrl: String,
     },
 
     status: {
@@ -85,10 +95,7 @@ const OrderSchema = new mongoose.Schema(
       default: 'Pending',
     },
   },
-  {
-    timestamps: true,
-    collection: 'Customer_Order',
-  }
+  { timestamps: true, collection: 'Customer_Order' }
 );
 
 OrderSchema.index({ userUid: 1, createdAt: -1 });

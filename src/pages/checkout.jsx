@@ -9,19 +9,21 @@ import { db } from "../firebase/firebase";
 import { api } from "../api";
 
 /* replace your isTile/looksLikeTile + computeLineTotal with this: */
-
+// --- helpers: copy/paste from Cart ---
 function isTilesItem(it = {}) {
   const tag = String(it.kind || it.type || it.category || it.productType || "").toLowerCase();
-  return /tile/.test(tag); // only treat real “Tiles” as tiles
+  return /tile/.test(tag);
 }
-
+function isStoneItem(it = {}) {
+  const tag = String(it.kind || it.type || it.category || it.productType || "").toLowerCase();
+  return tag.includes("marble") || tag.includes("granite");
+}
 const BOX_CONFIG = {
   "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
   "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
   "12x18": { tilesPerBox: 6, sqftPerBox: 9 },
   "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
 };
-
 function getBoxInfo(sizeStr = "") {
   const key = String(sizeStr || "").replace(/\s+/g, "");
   if (BOX_CONFIG[key]) return BOX_CONFIG[key];
@@ -29,20 +31,20 @@ function getBoxInfo(sizeStr = "") {
   const sqftPerTile = L && W ? (L * W) / 144 : 0;
   return { tilesPerBox: 1, sqftPerBox: sqftPerTile };
 }
-
 function computeLineTotal(it = {}) {
   const price = parseFloat(it.price) || 0;
   const qty = parseInt(it.quantity) || 0;
 
   if (isTilesItem(it)) {
-    const sizeStr = it.size || it.specs?.size || "";
-    const { sqftPerBox } = getBoxInfo(sizeStr);
+    const { sqftPerBox } = getBoxInfo(it.size || it.specs?.size || "");
     return price * sqftPerBox * qty; // ₹/sqft × sqft/box × boxes
   }
-
-  // all non-tiles (granite, marble, sinks, toilets...) are price × qty
-  return price * qty;
+  if (isStoneItem(it) && it.totalSqft) {
+    return price * it.totalSqft;      // ₹/sqft × total sqft (custom size × qty)
+  }
+  return price * qty;                 // sinks, toilets, bathtubs...
 }
+
 function normalizeProductType(v) {
   const s = String(v || "").toLowerCase();
   if (s.includes("tile")) return "Tile";
@@ -697,42 +699,69 @@ async function saveOrderAfterPayment(cartItems,grandTotal, paymentResult) {
 
         {/* Right section - Order Summary */}
         <div className="space-y-4 bg-white p-6 rounded-2xl shadow h-fit">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            📦 Order Summary
-          </h2>
-          {cartItems.length === 0 ? (
-            <p className="text-gray-500">No items in cart.</p>
-          ) : (
-            <div className="space-y-4">
-              {cartItems.map((item) => {
-                const price = parseFloat(item.price || 0);
-                const discount = parseFloat(item.discount || 0);
-                const finalPrice = price - discount;
-                const quantity = parseInt(item.quantity || 1);
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-4 border-b pb-4"
-                  >
-                    <div className="flex gap-4 items-center">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded border"
-                      />
-                      <div>
-                        <h4 className="font-semibold text-base">{item.name}</h4>
-                        <p className="text-sm text-gray-500">Qty: {quantity}</p>
-                        <p className="text-sm text-gray-400">
-  {isTilesItem(item) ? "Price per Sqft" : "Unit Price"}: ₹{finalPrice.toFixed(2)}
-</p>
+  <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+    📦 Order Summary
+  </h2>
+  {cartItems.length === 0 ? (
+    <p className="text-gray-500">No items in cart.</p>
+  ) : (
+    <div className="space-y-4">
+      {cartItems.map((item) => {
+        const price = parseFloat(item.price || 0);
+        const discount = parseFloat(item.discount || 0);
+        const finalPrice = price - discount;
+        const quantity = parseInt(item.quantity || 1);
 
-                      </div>
-                    </div>
-                   <div className="text-right font-medium">
-  ₹{computeLineTotal(item).toFixed(2)}
-</div>
-                  </div>
+        return (
+          <div
+            key={`${item.id}-${item.customSizeLabel || item.size || ""}`} // separate items by size
+            className="flex items-center justify-between gap-4 border-b pb-4"
+          >
+            {/* Product Info */}
+            <div className="flex gap-4 items-center">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-16 h-16 object-cover rounded border"
+              />
+              <div>
+                <h4 className="font-semibold text-base">{item.name}</h4>
+
+                {/* Show size for stone or tiles */}
+                {isStoneItem(item) && (item.customSizeLabel || item.size) && (
+                  <p className="text-xs text-gray-500">
+                    Size: {item.customSizeLabel || `${item.size} in`}
+                  </p>
+                )}
+                {isTilesItem(item) && item.size && (
+                  <p className="text-xs text-gray-500">Box Size: {item.size}</p>
+                )}
+
+                {/* Quantity */}
+                <p className="text-sm text-gray-500">Qty: {quantity}</p>
+
+                {/* Price per sqft or per unit */}
+                {isStoneItem(item) ? (
+                  <p className="text-sm text-gray-400">
+                    Price per Sqft: ₹{finalPrice.toFixed(2)}
+                  </p>
+                ) : isTilesItem(item) ? (
+                  <p className="text-sm text-gray-400">
+                    Price per Sqft: ₹{finalPrice.toFixed(2)}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    Unit Price: ₹{finalPrice.toFixed(2)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Line Total */}
+            <div className="text-right font-medium">
+              ₹{computeLineTotal(item).toFixed(2)}
+            </div>
+          </div>
                 );
               })}
 

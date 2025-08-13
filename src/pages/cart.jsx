@@ -10,8 +10,14 @@ import Footer from "../components/Footer";
 
 function isTilesItem(it = {}) {
   const tag = String(it.kind || it.type || it.category || it.productType || "").toLowerCase();
-  return /tile/.test(tag); // only treat real “Tiles” as tiles
+  return /tile/.test(tag); // only real tiles
 }
+
+function isStoneItem(it = {}) {
+  const tag = String(it.kind || it.type || it.category || it.productType || "").toLowerCase();
+  return tag.includes("marble") || tag.includes("granite");
+}
+
 
 const BOX_CONFIG = {
   "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
@@ -38,9 +44,14 @@ function computeLineTotal(it = {}) {
     return price * sqftPerBox * qty; // ₹/sqft × sqft/box × boxes
   }
 
-  // all non-tiles (granite, marble, sinks, toilets...) are price × qty
-  return price * qty;
+  if (isStoneItem(it) && it.totalSqft) {
+    return price * it.totalSqft; // ₹/sqft × total sqft for that custom size × qty
+  }
+
+  return price * qty; // sinks, toilets, bathtubs, etc.
 }
+
+
 
 
 
@@ -90,14 +101,30 @@ export default function Cart() { // export so it can be used in other files
 
   const [discount, setDiscount] = useState(0); // used to store the discount value
 
-  const handleQuantityChange = (id, newQuantity) => { // this function takes two things id and new quantity
-    const updated = cartItems.map((item) => // going through each item in the cart one by one 
-      item.name === id ? { ...item, quantity: newQuantity } : item // If the item's name matches the given id, Copy everything.But update the quantity to newQuantity.
-    );
-    setCartItems(updated); // Update the cart items state
-    localStorage.setItem("cart", JSON.stringify(updated)); // save updated cart to local storage so it doesnt changes on reload and jsonstringfy convert it into string from object as local storage can only store strings
-    window.dispatchEvent(new Event("cartUpdated")); // Notify other parts of the app that the cart has been updated
-  };
+const handleQuantityChange = (id, newQuantity) => {
+  const updated = cartItems.map((item) => {
+    if (item.name !== id) return item;
+
+    const qty = Math.max(1, parseInt(newQuantity) || 1);
+    let updatedItem = { ...item, quantity: qty };
+
+    if (isTilesItem(item)) {
+      const { sqftPerBox } = getBoxInfo(item.size || item.specs?.size || "");
+      updatedItem.totalSqft = sqftPerBox * qty;
+    } else if (isStoneItem(item)) {
+      const perPiece = Number(item.customSqftPerPiece || 0);
+      updatedItem.totalSqft = perPiece > 0 ? perPiece * qty : item.totalSqft;
+    }
+
+    return updatedItem;
+  });
+
+  setCartItems(updated);
+  localStorage.setItem("cart", JSON.stringify(updated));
+  window.dispatchEvent(new Event("cartUpdated"));
+};
+
+
 
   const handleRemoveItem = (id) => { // this function takes an id and removes the item with that id from the cart
     const filtered = cartItems.filter((item) => item.name !== id);  // filters the cart items to remove the item with the given id
@@ -184,6 +211,13 @@ export default function Cart() { // export so it can be used in other files
                               ? `Only ${item.stock} left`
                               : "In Stock"}
                           </p>
+  {isStoneItem(item) && (item.customSizeLabel || item.size) && (
+  <p className="text-sm text-gray-500">
+    {item.customSizeLabel || `${item.size} in`}
+  </p>
+)}
+
+
                           
                         </div>
                         <div className="text-right">

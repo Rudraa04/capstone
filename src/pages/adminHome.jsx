@@ -141,6 +141,18 @@ export default function AdminHome() {
   useEffect(() => {
     let mounted = true;
 
+    // put this helper above fetchAll
+const canonCategory = (raw) => {
+  const s = String(raw || "").trim().toLowerCase();
+  if (!s) return "Unknown";
+  if (s.startsWith("tile")) return "Tiles";   // unify Tile/Tiles
+  if (s.includes("granite")) return "Granite";
+  if (s.includes("marble")) return "Marble";
+  if (s === "slab" || s === "slabs") return "Slabs";
+  // Capitalize first letter of anything else
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
     const fetchAll = async () => {
       try {
         const [ordersRes, lowRes] = await Promise.all([
@@ -157,6 +169,7 @@ export default function AdminHome() {
         const recent = [...orders]
           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           .slice(0, 5)
+
           .map((o) => {
             const amount =
               o.totalAmount != null
@@ -181,18 +194,46 @@ export default function AdminHome() {
         const revenueByCat = {};
         const unitsByCat = {};
 
-        orders.forEach((o) => {
-          (o.items || []).forEach((it) => {
-            const cat = it.productType || "Unknown";
-            const qty = Number(it.quantity || 0);
-            const rev = qty * Number(it.price || 0);
+        // put this helper above fetchAll
+const canonCategory = (raw) => {
+  const s = String(raw || "").trim().toLowerCase();
+  if (!s) return "Unknown";
+  if (s.startsWith("tile")) return "Tiles";   // unify Tile/Tiles
+  if (s.includes("granite")) return "Granite";
+  if (s.includes("marble")) return "Marble";
+  if (s.includes("bathtub")) return "Bathtub";
+  if (s.includes("sink")) return "Sink";
+  if (s.includes("toilet")) return "Toilet";
+  if (s === "slab" || s === "slabs") return "Slabs";
+  // Capitalize first letter of anything else
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 
-            totalUnits += qty;
-            totalRevenue += rev;
-            unitsByCat[cat] = (unitsByCat[cat] || 0) + qty;
-            revenueByCat[cat] = (revenueByCat[cat] || 0) + rev;
-          });
-        });
+// inside fetchAll(), replace your current orders.forEach block that sets
+// totalUnits/totalRevenue/revenueByCat/unitsByCat with:
+orders.forEach((o) => {
+  (o.items || []).forEach((it) => {
+    const catRaw =
+      it.productType ??
+      it.category ??
+      it.Category ??
+      it.collection ??
+      it.type ??
+      it.kind ??
+      "Unknown";
+
+    const cat = canonCategory(catRaw);
+    const qty = Number(it.quantity ?? it.qty ?? it.units ?? 0);
+    const price = Number(it.price ?? it.Price ?? it.unitPrice ?? 0);
+    const rev = qty * price;
+
+    totalUnits += qty;
+    totalRevenue += rev;
+    unitsByCat[cat] = (unitsByCat[cat] || 0) + qty;
+    revenueByCat[cat] = (revenueByCat[cat] || 0) + rev;
+  });
+});
+
 
         const now = new Date();
         const startOfToday = new Date(
