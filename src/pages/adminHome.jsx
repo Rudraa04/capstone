@@ -1,4 +1,3 @@
-// src/pages/AdminHome.jsx
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -14,15 +13,16 @@ import {
   FiGlobe,
 } from "react-icons/fi";
 
-// Firestore
+// 🔥 Firestore
 import { db } from "../firebase/firebase";
 import {
   doc,
   getDoc,
   setDoc,
   serverTimestamp,
-  onSnapshot,
+  // NEW for "New Users today"
   collection,
+  onSnapshot,
   query,
   where,
   Timestamp,
@@ -65,120 +65,6 @@ function HoverBreakdownCard({ title, value, breakdown, formatter }) {
   );
 }
 
-/* ---------- Utilities for the bell dropdown ---------- */
-function formatRelative(dateLike) {
-  if (!dateLike) return "";
-  const d = new Date(dateLike);
-  const diff = (Date.now() - d.getTime()) / 1000; // seconds
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return d.toLocaleString();
-}
-
-function summarizeLowStock(items, maxPerCat = 4) {
-  if (!items?.length) return { total: 0, lines: [] };
-  const byCat = items.reduce((m, it) => {
-    (m[it.category || "Other"] ||= []).push(it);
-    return m;
-  }, {});
-  const lines = Object.entries(byCat).map(([cat, list]) => {
-    const top = list
-      .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0))
-      .slice(0, maxPerCat)
-      .map(
-        (it) =>
-          `${it.name} — ${it.stock ?? 0} left (min ${it.reorderLevel ?? "-"})`
-      );
-    const extra =
-      list.length > maxPerCat ? `+${list.length - maxPerCat} more` : null;
-    return { cat, items: top, extra };
-  });
-  return { total: items.length, lines };
-}
-
-/* ---------- Sqft-aware pricing helpers (shared logic) ---------- */
-const tagOf = (it = {}) =>
-  String(it.productType || it.category || it.kind || it.type || "").toLowerCase();
-
-const isSqftPriced = (it = {}) => {
-  const tag = tagOf(it);
-  return tag.includes("tile") || tag.includes("granite") || tag.includes("marble");
-};
-
-const parseSqftFromSize = (sizeStr = "") => {
-  const s = String(sizeStr || "").toLowerCase();
-  const m = s.match(/([\d.]+)\s*[x×]\s*([\d.]+)/i);
-  if (!m) return 0;
-  const L = parseFloat(m[1]);
-  const W = parseFloat(m[2]);
-  if (!Number.isFinite(L) || !Number.isFinite(W)) return 0;
-  return (L * W) / 144; // inches -> sqft
-};
-
-const BOX_CONFIG = {
-  "48x24": { tilesPerBox: 2, sqftPerBox: 16 },
-  "24x24": { tilesPerBox: 4, sqftPerBox: 16 },
-  "12x18": { tilesPerBox: 6, sqftPerBox: 9 },
-  "12x12": { tilesPerBox: 8, sqftPerBox: 8 },
-};
-
-const sqftPerUnit = (it = {}) => {
-  const snap = Number(it?.sqftPerUnit ?? it?.specs?.sqftPerUnit);
-  if (Number.isFinite(snap) && snap > 0) return snap;
-
-  const specSqft =
-    Number(it?.specs?.sqftPerBox) || Number(it?.specs?.totalSqft) || 0;
-  if (Number.isFinite(specSqft) && specSqft > 0) return specSqft;
-
-  const sizeStr = it?.specs?.size || it?.size || "";
-  const key = String(sizeStr || "")
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/in\b|inch(es)?\b/g, "");
-  if (BOX_CONFIG[key]) return BOX_CONFIG[key].sqftPerBox;
-
-  return parseSqftFromSize(sizeStr);
-};
-
-const unitPriceOf = (it = {}) =>
-  Number(
-    it?.unitPrice ?? it?.specs?.unitPrice ?? it?.price ?? it?.specs?.price
-  ) || 0;
-
-const quantityOf = (it = {}) =>
-  Number(it?.quantity ?? it?.qty ?? it?.units ?? it?.specs?.quantity) || 0;
-
-// Exact charged amount for one line item
-const lineRevenueOf = (it = {}) => {
-  const lt = Number(it?.lineTotal ?? it?.specs?.lineTotal);
-  if (Number.isFinite(lt) && lt > 0) return lt;
-
-  const unit = unitPriceOf(it);
-  const qty = quantityOf(it);
-  if (isSqftPriced(it)) {
-    const s = sqftPerUnit(it);
-    if (s > 0) return unit * s * qty; // ₹/sqft × sqft × boxes
-  }
-  return unit * qty;
-};
-
-// Order subtotal (pre-tax/ship) with safe fallbacks
-const orderSubtotal = (o = {}) => {
-  const sub = Number(o?.subtotal);
-  if (Number.isFinite(sub) && sub >= 0) return sub;
-
-  const items = Array.isArray(o?.items) ? o.items : [];
-  const sumLines = items.reduce((s, it) => s + lineRevenueOf(it), 0);
-  if (sumLines > 0) return sumLines;
-
-  const total = Number(o?.totalAmount) || 0;
-  const tax = Number(o?.taxTotal) || 0;
-  const ship = Number(o?.shippingFee) || 0;
-  const guess = total - tax - ship;
-  return Number.isFinite(guess) && guess > 0 ? guess : total;
-};
-
 export default function AdminHome() {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -189,21 +75,17 @@ export default function AdminHome() {
   const [summary, setSummary] = useState({
     totalProductsSold: 0,
     ordersToday: 0,
-    newUsers: 0,
+    newUsers: 0, // <-- we'll keep this in sync via Firestore live listeners
     revenue: 0,
   });
   const [byCategory, setByCategory] = useState({ revenue: {}, units: {} });
+  const [notifications, setNotifications] = useState([]);
 
   // Low stock
   const [lowStock, setLowStock] = useState({ items: [], count: 0 });
   const [lowLoading, setLowLoading] = useState(true);
 
-  // Orders slice for notifications
-  const [latestOrder, setLatestOrder] = useState(null);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [cancelledCount, setCancelledCount] = useState(0);
-
-  //  Monthly Target (shared in Firestore)
+  // 🔶 Monthly Target (shared in Firestore)
   const [monthlyTarget, setMonthlyTarget] = useState(100000); // default if none set
   const [targetLoading, setTargetLoading] = useState(true);
   const [savingTarget, setSavingTarget] = useState(false);
@@ -227,99 +109,88 @@ export default function AdminHome() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  /*  Live monthly target from Firestore (shared for all admins) */
+  /* 🔶 Fetch monthly target from Firestore (shared for all admins) */
   useEffect(() => {
-    const ref = doc(db, "adminSettings", "dashboard");
-    // ensure doc exists so subscription has something to read
-    getDoc(ref).then((snap) => {
-      if (!snap.exists()) {
-        setDoc(
-          ref,
-          { monthlyTarget: 100000, updatedAt: serverTimestamp() },
-          { merge: true }
-        ).catch(() => {});
-      }
-    });
-
-    const unsub = onSnapshot(
-      ref,
-      (snap) => {
-        const val = Number(snap.data()?.monthlyTarget ?? 0);
-        if (Number.isFinite(val) && val >= 0) setMonthlyTarget(val || 0);
-        setTargetLoading(false);
-      },
-      (err) => {
-        console.error("Failed to subscribe to monthly target:", err);
+    const fetchTarget = async () => {
+      try {
+        const ref = doc(db, "adminSettings", "dashboard");
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const val = Number(snap.data()?.monthlyTarget || 0);
+          if (val > 0) setMonthlyTarget(val);
+        }
+      } catch (e) {
+        console.error("Failed to load monthly target:", e);
+      } finally {
         setTargetLoading(false);
       }
-    );
-    return () => unsub();
+    };
+    fetchTarget();
   }, []);
 
   const saveTarget = async () => {
-    const n = Number(monthlyTarget);
-    if (!Number.isFinite(n) || n < 0) {
-      alert("Please enter a valid non-negative number.");
-      return;
-    }
     try {
       setSavingTarget(true);
       const ref = doc(db, "adminSettings", "dashboard");
       await setDoc(
         ref,
-        { monthlyTarget: n, updatedAt: serverTimestamp() },
+        {
+          monthlyTarget: Number(monthlyTarget) || 0,
+          updatedAt: serverTimestamp(),
+        },
         { merge: true }
       );
-      // onSnapshot above will reflect the saved value automatically
     } catch (e) {
       console.error("Failed to save monthly target:", e);
-      alert(
-        e?.code === "permission-denied"
-          ? "Permission denied: check your Firestore Security Rules or sign-in."
-          : "Failed to save target. Check console for details."
-      );
+      alert("Failed to save target. Check console for details.");
     } finally {
       setSavingTarget(false);
     }
   };
 
-  /* NEW: live “new users today” counter */
+  /* ✅ NEW: Live “New Users today” counter that works with either createdAtMs (number) OR createdAt (Timestamp) */
   useEffect(() => {
+    // start of local "today"
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startTs = Timestamp.fromDate(startOfToday);
+    const startMs = startOfToday.getTime();
 
     const usersRef = collection(db, "users");
-    const q = query(usersRef, where("createdAt", ">=", startTs));
+    const ids = new Set();
+    const apply = () => setSummary((prev) => ({ ...prev, newUsers: ids.size }));
 
-    const unsub = onSnapshot(
-      q,
+    const unsub1 = onSnapshot(
+      query(usersRef, where("createdAtMs", ">=", startMs)),
       (snap) => {
-        setSummary((prev) => ({ ...prev, newUsers: snap.size }));
+        // Important: reset and re-add to avoid stale IDs on live changes
+        const next = new Set(ids);
+        snap.docs.forEach((d) => next.add(d.id));
+        ids.clear();
+        next.forEach((id) => ids.add(id));
+        apply();
       },
-      (err) => {
-        console.error("New users listener failed:", err);
-        setSummary((prev) => ({ ...prev, newUsers: 0 }));
-      }
+      (err) => console.error("users(createdAtMs) failed:", err)
     );
-    return () => unsub();
+
+    const unsub2 = onSnapshot(
+      query(usersRef, where("createdAt", ">=", Timestamp.fromMillis(startMs))),
+      (snap) => {
+        const next = new Set(ids);
+        snap.docs.forEach((d) => next.add(d.id));
+        ids.clear();
+        next.forEach((id) => ids.add(id));
+        apply();
+      },
+      (err) => console.error("users(createdAt) failed:", err)
+    );
+
+    return () => {
+      unsub1();
+      unsub2();
+    };
   }, []);
 
-  // Canonicalize product category labels
-  const canonCategory = (raw) => {
-    const s = String(raw || "").trim().toLowerCase();
-    if (!s) return "Unknown";
-    if (s.startsWith("tile")) return "Tiles"; // unify Tile/Tiles
-    if (s.includes("granite")) return "Granite";
-    if (s.includes("marble")) return "Marble";
-    if (s.includes("bathtub")) return "Bathtub";
-    if (s.includes("sink")) return "Sink";
-    if (s.includes("toilet")) return "Toilet";
-    if (s === "slab" || s === "slabs") return "Slabs";
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  };
-
-  /* Fetch orders + low stock and build everything else */
+  /* Fetch orders + low stock and build everything */
   useEffect(() => {
     let mounted = true;
 
@@ -329,35 +200,35 @@ export default function AdminHome() {
           axios.get("http://localhost:5000/api/reports/all-orders"),
           axios
             .get("http://localhost:5000/api/inventory/low-stock")
-            .catch(() => ({ data: { items: [], count: 0 } })), // fallback
+            .catch(() => ({ data: { items: [], count: 0 } })), // fallback if route not ready
         ]);
 
         const orders = Array.isArray(ordersRes.data) ? ordersRes.data : [];
         const low = lowRes?.data?.items || [];
 
-        // ---- Build "recent" for notifications ----
-        const recent = [...orders].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
+        // ---- Build quick "recent" for notifications ----
+        const recent = [...orders]
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 5)
+          .map((o) => {
+            const amount =
+              o.totalAmount != null
+                ? Number(o.totalAmount)
+                : (o.items || []).reduce(
+                    (s, it) =>
+                      s + Number(it.quantity || 0) * Number(it.price || 0),
+                    0
+                  );
+            return {
+              id: "#" + String(o._id).slice(-5),
+              customer: o.customerName || o.userUid || "Unknown",
+              status: o.status || "Pending",
+              amount,
+              createdAt: o.createdAt,
+            };
+          });
 
-        const head = recent[0];
-        const latest =
-          head && {
-            id: "#" + String(head._id).slice(-5),
-            customer: head.customerName || head.userUid || "Unknown",
-            // show what was actually charged if present; else fall back to computed subtotal
-            amount: Number(head.totalAmount ?? orderSubtotal(head)),
-            createdAt: head.createdAt,
-          };
-
-        const pCount = orders.filter(
-          (o) => (o.status || "").toLowerCase() === "pending"
-        ).length;
-        const cCount = orders.filter(
-          (o) => (o.status || "").toLowerCase() === "cancelled"
-        ).length;
-
-        // ---- Summary + breakdowns (sqft-aware) ----
+        // ---- Summary + breakdowns ----
         let totalUnits = 0;
         let totalRevenue = 0;
         const revenueByCat = {};
@@ -365,18 +236,9 @@ export default function AdminHome() {
 
         orders.forEach((o) => {
           (o.items || []).forEach((it) => {
-            const catRaw =
-              it.productType ??
-              it.category ??
-              it.Category ??
-              it.collection ??
-              it.type ??
-              it.kind ??
-              "Unknown";
-            const cat = canonCategory(catRaw);
-
-            const qty = quantityOf(it);
-            const rev = lineRevenueOf(it);
+            const cat = it.productType || "Unknown";
+            const qty = Number(it.quantity || 0);
+            const rev = qty * Number(it.price || 0);
 
             totalUnits += qty;
             totalRevenue += rev;
@@ -386,36 +248,99 @@ export default function AdminHome() {
         });
 
         const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfToday = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-        const ordersToday = orders.filter((o) => new Date(o.createdAt) >= startOfToday).length;
+        const ordersToday = orders.filter(
+          (o) => new Date(o.createdAt) >= startOfToday
+        ).length;
 
-        //  Month-To-Date Revenue (sum of order subtotals)
+        //  Month-To-Date Revenue (for target progress)
         const mtd = orders.reduce((sum, o) => {
           const d = new Date(o.createdAt);
-          if (d >= startOfMonth) return sum + orderSubtotal(o);
+          if (d >= startOfMonth) {
+            const r =
+              o.totalAmount != null
+                ? Number(o.totalAmount)
+                : (o.items || []).reduce(
+                    (s, it) =>
+                      s + Number(it.quantity || 0) * Number(it.price || 0),
+                    0
+                  );
+            return sum + r;
+          }
           return sum;
         }, 0);
 
         if (!mounted) return;
 
-        setSummary((prev) => ({
-          ...prev,
+        setSummary({
           totalProductsSold: totalUnits,
           ordersToday,
+          newUsers: 0, // will be replaced live by the listener above
           revenue: totalRevenue,
-        }));
+        });
         setByCategory({ revenue: revenueByCat, units: unitsByCat });
         setMtdRevenue(mtd);
 
         // ---- Low stock ----
         setLowStock({ items: low, count: low.length });
 
-        // ---- Notif bits ----
-        setLatestOrder(latest);
-        setPendingCount(pCount);
-        setCancelledCount(cCount);
+        // ---- Notifications ----
+        const pendingCount = orders.filter(
+          (o) => (o.status || "").toLowerCase() === "pending"
+        ).length;
+        const cancelledCount = orders.filter(
+          (o) => (o.status || "").toLowerCase() === "cancelled"
+        ).length;
+        const latest = recent[0];
+
+        const notifs = [];
+        if (latest) {
+          notifs.push({
+            type: "new",
+            title: "New order placed",
+            detail: `${latest.id} by ${latest.customer} — ${INR(
+              latest.amount
+            )}`,
+          });
+        }
+        if (pendingCount > 0) {
+          notifs.push({
+            type: "warn",
+            title: "Pending orders",
+            detail: `${pendingCount} order${
+              pendingCount > 1 ? "s" : ""
+            } awaiting action`,
+          });
+        }
+        if (cancelledCount > 0) {
+          notifs.push({
+            type: "warn",
+            title: "Cancelled orders",
+            detail: `${cancelledCount} order${
+              cancelledCount > 1 ? "s" : ""
+            } cancelled today`,
+          });
+        }
+        if (low.length > 0) {
+          const preview = low
+            .slice(0, 3)
+            .map((i) => `${i.name} (${i.stock}/${i.reorderLevel})`);
+          notifs.push({
+            type: "warn",
+            title: "Low stock alert",
+            detail:
+              low.length <= 3
+                ? preview.join(", ")
+                : `${preview.join(", ")} and ${low.length - 3} more`,
+          });
+        }
+        setNotifications(notifs);
       } catch (e) {
         console.error("Dashboard fetch failed:", e);
       } finally {
@@ -434,25 +359,20 @@ export default function AdminHome() {
 
   const handleLogout = () => {
     localStorage.removeItem("isAdminLoggedIn");
+    localStorage.removeItem("adminName");
+    localStorage.removeItem("adminEmail");
+    localStorage.removeItem("adminUid");
     navigate("/login");
   };
 
   // Progress calc
   const progress =
-    monthlyTarget > 0 ? Math.min(100, Math.round((mtdRevenue / monthlyTarget) * 100)) : 0;
-
-  // Build professional dropdown content
-  const lowSummary = summarizeLowStock(lowStock.items, 3);
-
-  // 🔔 badge count (number of sections with content)
-  const notifCount =
-    (latestOrder ? 1 : 0) +
-    (pendingCount > 0 ? 1 : 0) +
-    (cancelledCount > 0 ? 1 : 0) +
-    (lowSummary.total > 0 ? 1 : 0);
+    monthlyTarget > 0
+      ? Math.min(100, Math.round((mtdRevenue / monthlyTarget) * 100))
+      : 0;
 
   return (
-    <div className="flex min-h-screen text-gray-800 bg-blue-50">
+    <div className="flex min-h-screen text-gray-800 bg-gradient-to-br from-slate-100 to-slate-200">
       {/* Sidebar */}
       <aside className="w-64 bg-white shadow-lg px-6 py-8 space-y-8">
         <div>
@@ -515,7 +435,7 @@ export default function AdminHome() {
       <main className="flex-1 px-10 py-8">
         <div className="flex justify-between items-center mb-8 relative">
           <div>
-            <h1 className="text-3xl text-blue-700 font-bold mb-1">Welcome, Admin</h1>
+            <h1 className="text-3xl font-semibold mb-1">Welcome, Admin</h1>
             <p className="text-gray-500 text-sm">Here's what's happening today.</p>
           </div>
 
@@ -526,90 +446,35 @@ export default function AdminHome() {
               aria-label="Notifications"
             >
               <FiBell size={24} className="text-blue-700 cursor-pointer" />
-              {notifCount > 0 && (
+              {notifications.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded-full">
-                  {notifCount}
+                  {notifications.length}
                 </span>
               )}
             </button>
 
             {showDropdown && (
-              <div className="absolute right-0 mt-2 w-[28rem] bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4">
-                <h3 className="text-sm font-semibold mb-3 text-blue-700">Notifications</h3>
-
-                {/* New Order */}
-                {latestOrder && (
-                  <div className="border rounded-lg p-3 mb-3">
-                    <div className="text-xs uppercase text-gray-500 mb-1">New order</div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold">{latestOrder.id}</div>
-                        <div className="text-gray-600 text-sm">
-                          {latestOrder.customer} • {INR(latestOrder.amount)}
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 p-4">
+                <h3 className="text-sm font-semibold mb-3 text-blue-700">
+                  Recent Notifications
+                </h3>
+                {notifications.length === 0 ? (
+                  <div className="text-sm text-gray-500">No notifications.</div>
+                ) : (
+                  <ul className="text-sm text-gray-800 space-y-2">
+                    {notifications.map((n, i) => (
+                      <li key={i} className="flex gap-2 items-start">
+                        <span className={n.type === "new" ? "text-blue-500" : "text-yellow-500"}>
+                          {n.type === "new" ? "🆕" : "⚠️"}
+                        </span>
+                        <div>
+                          <div className="font-medium">{n.title}</div>
+                          <div className="text-gray-600">{n.detail}</div>
                         </div>
-                      </div>
-                      <div className="text-gray-500 text-xs">
-                        {formatRelative(latestOrder.createdAt)}
-                      </div>
-                    </div>
-                  </div>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-
-                {/* Status chips */}
-                {pendingCount + cancelledCount > 0 && (
-                  <div className="mb-3 flex gap-2 flex-wrap">
-                    {pendingCount ? (
-                      <span className="px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-700 border border-amber-200">
-                        {pendingCount} pending
-                      </span>
-                    ) : null}
-                    {cancelledCount ? (
-                      <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700 border border-red-200">
-                        {cancelledCount} cancelled
-                      </span>
-                    ) : null}
-                  </div>
-                )}
-
-                {/* Low stock summary */}
-                <div className="border rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-xs uppercase text-gray-500">
-                      Low stock {lowSummary.total ? `• ${lowSummary.total} items` : ""}
-                    </div>
-                    {lowSummary.total ? (
-                      <button
-                        className="text-xs text-blue-600 hover:underline"
-                        onClick={() => {
-                          setShowDropdown(false);
-                          navigate("/admin/ceramics");
-                        }}
-                      >
-                        Open inventory
-                      </button>
-                    ) : null}
-                  </div>
-
-                  {lowSummary.total === 0 ? (
-                    <div className="text-sm text-gray-500">All good.</div>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-auto pr-1">
-                      {lowSummary.lines.map(({ cat, items, extra }) => (
-                        <div key={cat}>
-                          <div className="text-xs font-semibold text-gray-600 mb-1">{cat}</div>
-                          <ul className="text-sm text-gray-8 00 list-disc ml-5 space-y-0.5">
-                            {items.map((ln, i) => (
-                              <li key={i}>{ln}</li>
-                            ))}
-                          </ul>
-                          {extra && (
-                            <div className="text-xs text-gray-500 mt-1">{extra}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             )}
           </div>
@@ -617,6 +482,7 @@ export default function AdminHome() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          {/* Hover breakdown: units by category */}
           <HoverBreakdownCard
             title="Total Products Sold"
             value={summary.totalProductsSold}
@@ -633,6 +499,7 @@ export default function AdminHome() {
             <p className="text-2xl font-bold text-blue-700">{summary.newUsers}</p>
           </div>
 
+          {/* Hover breakdown: revenue by category */}
           <HoverBreakdownCard
             title="Revenue"
             value={summary.revenue}
@@ -646,8 +513,7 @@ export default function AdminHome() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-blue-700">Monthly Target</h2>
             <div className="text-sm text-gray-600">
-              Period: {new Date().toLocaleString("default", { month: "long" })}{" "}
-              {new Date().getFullYear()}
+              Period: {new Date().toLocaleString("default", { month: "long" })} {new Date().getFullYear()}
             </div>
           </div>
 
@@ -673,11 +539,7 @@ export default function AdminHome() {
               <div className="w-full h-4 bg-slate-200 rounded-full overflow-hidden mb-4">
                 <div
                   className={`h-full rounded-full ${
-                    progress < 50
-                      ? "bg-red-400"
-                      : progress < 80
-                      ? "bg-yellow-400"
-                      : "bg-green-500"
+                    progress < 50 ? "bg-red-400" : progress < 80 ? "bg-yellow-400" : "bg-green-500"
                   }`}
                   style={{ width: `${progress}%` }}
                 />
@@ -704,19 +566,24 @@ export default function AdminHome() {
           )}
         </div>
 
-        {/* Low Stock Panel */}
+        {/* Low Stock Panel (no "collection" column) */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-blue-700">Low Stock Products</h2>
+            <h2 className="text-xl font-bold text-blue-700">
+              Low Stock Products
+            </h2>
             <div className="text-sm text-gray-600">
-              Total low-stock items: <span className="font-semibold">{lowStock.count}</span>
+              Total low-stock items:{" "}
+              <span className="font-semibold">{lowStock.count}</span>
             </div>
           </div>
 
           {lowLoading ? (
             <div className="py-6 text-center text-gray-500">Loading…</div>
           ) : lowStock.items.length === 0 ? (
-            <div className="py-6 text-center text-gray-500">All good! No low-stock items.</div>
+            <div className="py-6 text-center text-gray-500">
+              All good! No low-stock items.
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
