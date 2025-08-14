@@ -17,14 +17,14 @@ export default function Signup() {
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState("");
-  const [email, setEmail]     = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm]   = useState("");
+  const [confirm, setConfirm] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm]   = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // optional: password strength helper (no UI changes required)
+  // optional: password strength helper (kept; behavior unchanged)
   const [showPwdUI, setShowPwdUI] = useState(false);
   const [strength, setStrength] = useState("");
   const [validations, setValidations] = useState({
@@ -39,7 +39,7 @@ export default function Signup() {
     show: false,
     message: "",
     type: "success", // 'success' | 'error'
-    size: "normal",  // 'normal' | 'large'
+    size: "normal", // 'normal' | 'large'
   });
 
   const triggerToast = (message, type = "success", size = "normal", ms = 2400) => {
@@ -64,7 +64,7 @@ export default function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
 
-    // basic checks (no UI changes)
+    // basic checks (logic unchanged)
     const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!isValidEmail) return triggerToast("Please enter a valid email.", "error");
     if (password !== confirm) return triggerToast("Passwords do not match.", "error");
@@ -73,25 +73,21 @@ export default function Signup() {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       const user = cred.user;
 
-      // keep displayName consistent
       await updateProfile(user, { displayName: fullName });
 
-      // ✅ Write user doc for dashboard metrics (NO UI changes)
       await setDoc(
         doc(db, "users", user.uid),
         {
           email: user.email || "",
           fullName: fullName || "",
           role: "customer",
-          createdAt: serverTimestamp(), // Firestore Timestamp (works with Timestamp queries)
-          createdAtMs: Date.now(),      // Number epoch (works with numeric queries)
+          createdAt: serverTimestamp(),
+          createdAtMs: Date.now(),
         },
         { merge: true }
       );
 
-      // optional email verification
       await sendEmailVerification(user);
-      // sign out to force login flow (optional – keep if you already had it)
       await auth.signOut();
 
       triggerToast("Signup successful! Please verify your email.", "success", "large", 2200);
@@ -105,14 +101,13 @@ export default function Signup() {
     }
   };
 
-  // ---- Google sign-up/login (keeps same UI, adds doc write) ----
+  // ---- Google sign-up/login ----
   const handleGoogleSignup = async () => {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // ✅ Same doc write (merge if exists)
       await setDoc(
         doc(db, "users", user.uid),
         {
@@ -125,7 +120,6 @@ export default function Signup() {
         { merge: true }
       );
 
-      // go to homepage or wherever you already navigate
       navigate("/");
     } catch (err) {
       triggerToast(err?.message || "Google signup failed.", "error");
@@ -142,53 +136,57 @@ export default function Signup() {
         <FaArrowLeft /> Back
       </button>
 
-      {/* Card */}
+      {/* Centered Card (matches Login) */}
       <div className="flex-1 flex items-center justify-center">
         <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-blue-200">
-          <h2 className="text-4xl font-extrabold text-center text-blue-600 mb-8">
-            Create <span className="text-transparent bg-clip-text bg-blue-600">Account</span>
-          </h2>
+          {/* Brand (matches Login) */}
+          <Link to="/" className="block text-center">
+            <h1 className="text-4xl font-bold text-blue-800 mb-3">Patel Ceramics</h1>
+          </Link>
 
-          <form onSubmit={handleSignup} className="space-y-5">
-            {/* Full name */}
+          {/* Title (matches Login style) */}
+          <h2 className="text-3xl font-extrabold text-center text-blue-600 mb-6">Sign Up</h2>
+
+          <form onSubmit={handleSignup} className="space-y-6">
+            {/* Full Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">Full Name</label>
               <div className="relative">
-                <MdPerson className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
+                  placeholder="Enter your full name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="John Doe"
                   required
+                  className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
+                <MdPerson className="absolute left-2 top-2.5 text-gray-600 text-lg" />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">Email Address</label>
               <div className="relative">
-                <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="email"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="you@example.com"
                   required
+                  className="w-full border-b-2 border-black py-2 pl-10 pr-2 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
+                <MdEmail className="absolute left-2 top-2.5 text-gray-600 text-lg" />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">Password</label>
               <div className="relative">
-                <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -196,20 +194,20 @@ export default function Signup() {
                     evaluatePassword(e.target.value);
                   }}
                   onBlur={() => setShowPwdUI(false)}
-                  className="w-full pl-10 pr-10 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="••••••••"
                   required
+                  className="w-full border-b-2 border-black py-2 pl-10 pr-10 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
+                <MdLock className="absolute left-2 top-2.5 text-gray-600 text-lg" />
                 <button
                   type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
                   onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-2 top-2.5 text-gray-600"
                 >
                   {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                 </button>
               </div>
 
-              {/* Optional: tiny strength hints (no design changes required) */}
+              {/* Optional tiny hints (kept; visually subtle) */}
               {showPwdUI && (
                 <div className="mt-2 text-xs text-gray-600 space-y-1">
                   <div>
@@ -227,21 +225,11 @@ export default function Signup() {
                     </span>
                   </div>
                   <ul className="list-disc list-inside">
-                    <li className={validations.length ? "text-green-600" : "text-gray-500"}>
-                      At least 8 characters
-                    </li>
-                    <li className={validations.upper ? "text-green-600" : "text-gray-500"}>
-                      One uppercase letter
-                    </li>
-                    <li className={validations.lower ? "text-green-600" : "text-gray-500"}>
-                      One lowercase letter
-                    </li>
-                    <li className={validations.number ? "text-green-600" : "text-gray-500"}>
-                      One number
-                    </li>
-                    <li className={validations.special ? "text-green-600" : "text-gray-500"}>
-                      One special character
-                    </li>
+                    <li className={validations.length ? "text-green-600" : "text-gray-500"}>At least 8 characters</li>
+                    <li className={validations.upper ? "text-green-600" : "text-gray-500"}>One uppercase letter</li>
+                    <li className={validations.lower ? "text-green-600" : "text-gray-500"}>One lowercase letter</li>
+                    <li className={validations.number ? "text-green-600" : "text-gray-500"}>One number</li>
+                    <li className={validations.special ? "text-green-600" : "text-gray-500"}>One special character</li>
                   </ul>
                 </div>
               )}
@@ -249,21 +237,21 @@ export default function Signup() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <label className="block text-lg font-semibold text-gray-800 mb-1">Confirm Password</label>
               <div className="relative">
-                <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type={showConfirm ? "text" : "password"}
+                  placeholder="Re-enter your password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="••••••••"
                   required
+                  className="w-full border-b-2 border-black py-2 pl-10 pr-10 focus:outline-none focus:border-blue-500 placeholder-gray-500"
                 />
+                <MdLock className="absolute left-2 top-2.5 text-gray-600 text-lg" />
                 <button
                   type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
                   onClick={() => setShowConfirm((s) => !s)}
+                  className="absolute right-2 top-2.5 text-gray-600"
                 >
                   {showConfirm ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                 </button>
@@ -273,46 +261,51 @@ export default function Signup() {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md w-full hover:opacity-90 transition font-semibold shadow"
             >
               Sign Up
             </button>
-
-            <div className="text-center text-sm text-gray-600">or</div>
-
-            {/* Google */}
-            <button
-              type="button"
-              onClick={handleGoogleSignup}
-              className="w-full flex items-center justify-center gap-2 border bg-white hover:bg-gray-50 px-4 py-2 rounded-md font-semibold"
-            >
-              <img
-                alt="Google"
-                className="w-5 h-5"
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              />
-              Continue with Google
-            </button>
-
-            <div className="text-sm text-center mt-4">
-              Already have an account?{" "}
-              <Link to="/login" className="text-blue-600 hover:underline">
-                Log in
-              </Link>
-            </div>
           </form>
+
+          {/* Divider (matches Login) */}
+          <div className="relative my-6">
+            <div className="border-t" />
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-2 text-xs text-gray-500">
+              OR
+            </span>
+          </div>
+
+          {/* Google (matches Login) */}
+          <button
+            type="button"
+            onClick={handleGoogleSignup}
+            className="w-full border border-gray-300 rounded-md py-2 flex items-center justify-center gap-2 hover:bg-gray-50"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt=""
+              className="w-5 h-5"
+            />
+            <span className="font-medium text-gray-700">Continue with Google</span>
+          </button>
+
+          <p className="mt-4 text-sm text-center text-gray-600">
+            Already have an account?{" "}
+            <Link to="/login" className="text-blue-700 font-semibold hover:underline">
+              Log in
+            </Link>
+          </p>
         </div>
       </div>
 
-      {/* Tiny toast (unchanged) */}
+      {/* Toast (left as-is; visually similar to Login) */}
       {toast.show && (
         <div
           onClick={() => setToast({ ...toast, show: false })}
-          className={`fixed bottom-4 right-4 z-50 shadow-xl cursor-pointer transition-all duration-500 ${
-            toast.size === "large" ? "max-w-xs sm:max-w-sm p-6 text-xl font-bold" : "p-4 text-sm"
-          } rounded-lg ${
-            toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
-          }`}
+          className={`fixed bottom-4 right-4 z-50 cursor-pointer shadow-xl transition-all duration-500 transform 
+            ${toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"} 
+            ${toast.size === "large" ? "max-w-xs sm:max-w-sm p-6 text-xl font-bold" : "p-4 text-sm"}
+            rounded-lg`}
         >
           {toast.message}
         </div>
