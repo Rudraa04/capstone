@@ -27,6 +27,20 @@ const app = express();
 app.use(cors()); // Allow requests from different origins (frontend/backend communication) 
 app.use(express.json()); // Allow Express to parse JSON bodies in requests
 
+app.get("/api/dev/ticket-models", (req, res) => {
+  res.json({
+    SupportTicket: {
+      db: SupportTicket.db?.name,
+      coll: SupportTicket.collection?.name,
+    },
+    ArchivedTicket: {
+      db: ArchivedTicket.db?.name,
+      coll: ArchivedTicket.collection?.name,
+    },
+  });
+});
+
+
 // API Routes (all product APIs will be prefixed with /api/products)
 app.use("/", productRoutes);
 app.use('/api/reports', reportRoute); //route for reports
