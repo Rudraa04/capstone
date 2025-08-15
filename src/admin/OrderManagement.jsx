@@ -207,7 +207,7 @@ export default function OrderManagement() {
       maximumFractionDigits: 2,
     });
 
-  // Load ALL orders (admin endpoint)
+  // Load all orders (admin endpoint)
   useEffect(() => {
     let unsub = () => {};
     setLoading(true);
