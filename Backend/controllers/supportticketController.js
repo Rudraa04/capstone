@@ -41,14 +41,16 @@ const extractEmailFromIssue = (text = "") => {
 };
 
 // ------------------------
-// Create Ticket (strict UID + moderation + semantic dedupe + AI priority + email)
+// Create Ticket (now supports guest fallback via contactEmail)
 // ------------------------
 export const createTicket = async (req, res) => {
   try {
-    const { customerId, issue, orderId = null } = req.body;
+    const { customerId, contactEmail, issue, orderId = null } = req.body;
 
-    if (!customerId || !issue) {
-      return res.status(400).json({ error: "customerId and issue are required." });
+    if ((!customerId && !contactEmail) || !issue) {
+      return res
+        .status(400)
+        .json({ error: "Provide a Firebase UID/email or contactEmail, and an issue." });
     }
 
     // 1) Moderate customer text (block abusive/unsafe content)
@@ -59,30 +61,47 @@ export const createTicket = async (req, res) => {
       });
     }
 
-    // 2) Resolve to a real Firebase user; always store UID (strict)
-    let name = "Unknown", email = "", phone = "", customerUid = null;
-    try {
-      const id = String(customerId).trim();
-      const userRecord = id.includes("@")
-        ? await authAdmin.getUserByEmail(id)
-        : await authAdmin.getUser(id);
-      customerUid = userRecord.uid;
-      name  = userRecord.displayName || name;
-      email = userRecord.email || email;
-      phone = userRecord.phoneNumber || phone;
-    } catch {
+    // 2) Resolve to a Firebase user if possible; else allow guest email
+    let name = "Unknown",
+      email = "",
+      phone = "",
+      customerUid = null;
+
+    if (customerId) {
+      try {
+        const id = String(customerId).trim();
+        const userRecord = id.includes("@")
+          ? await authAdmin.getUserByEmail(id)
+          : await authAdmin.getUser(id);
+        customerUid = userRecord.uid;
+        name = userRecord.displayName || name;
+        email = userRecord.email || email;
+        phone = userRecord.phoneNumber || phone;
+      } catch {
+        console.warn("[createTicket] No Firebase match for", customerId);
+      }
+    }
+
+    // Guest fallback (accept external contactEmail)
+    if (!customerUid && contactEmail && contactEmail.includes("@")) {
+      email = contactEmail.trim();
+      if (name === "Unknown") name = "";
+    }
+
+    // Still no deliverable email? Bail out.
+    if (!email) {
       return res.status(400).json({
-        error: "Unknown customer. Provide a valid Firebase email or UID.",
+        error: "Unknown customer. Provide a valid Firebase email/UID or contactEmail.",
       });
     }
 
-    // 3) Semantic DEDUPE (same user, recent window, similar meaning)
+    // 3) Semantic DEDUPE (same email, recent window, similar meaning)
     const DEDUPE_MIN = parseInt(process.env.TICKETS_DEDUPE_MINUTES || "10", 10);
     const SIM_THRESH = Number(process.env.TICKETS_DEDUPE_SIM || 0.88);
     const since = new Date(Date.now() - DEDUPE_MIN * 60 * 1000);
 
     const candidates = await SupportTicket.find({
-      customerId: customerUid,
+      "customerSnapshot.email": email,
       status: { $ne: "Resolved" },
       createdAt: { $gte: since },
     })
@@ -133,12 +152,12 @@ export const createTicket = async (req, res) => {
     }
 
     const payload = {
-      customerId: customerUid, // store UID
+      customerId: customerUid, // store UID when we have it; null for guests
       issue,
-      priority,                // AI-set (or fallback)
+      priority, // AI-set (or fallback)
       orderId,
       customerSnapshot: { name, email, phone },
-      issueEmbedding: newVec,  // stored if your schema allows; ignored otherwise
+      issueEmbedding: newVec, // stored if your schema allows; ignored otherwise
     };
 
     // 5) Duplicate safety: retry create up to 5x if ticketId collides
@@ -160,24 +179,21 @@ export const createTicket = async (req, res) => {
     // 6) Fire-and-forget emails (won't block API response)
     (async () => {
       try {
-        const toEmail = email || extractEmailFromIssue(issue);
-        if (toEmail) {
-          await sendTicketAckToCustomer({
-            ticketId: newTicket.ticketId,
-            issue,
-            toEmail,
-            customerName: name,
-            orderId,
-          });
-        } else {
-          console.warn("[mail] no customer email found; skip confirmation");
-        }
+        // Customer acknowledgement (always send to the resolved email)
+        await sendTicketAckToCustomer({
+          ticketId: newTicket.ticketId,
+          issue,
+          toEmail: email,
+          customerName: name,
+          orderId,
+        });
 
+        // Notify support inbox (use same email as context)
         await notifySupportNewTicket({
           ticketId: newTicket.ticketId,
           issue,
-          customerEmail: email || "",
-          customerName: name || "",
+          customerEmail: email,
+          customerName: name,
           orderId: orderId || "",
         });
       } catch (err) {
@@ -206,7 +222,7 @@ export const getAllTickets = async (req, res) => {
     if (from || to) {
       filter.createdAt = {};
       if (from) filter.createdAt.$gte = new Date(from);
-      if (to)   filter.createdAt.$lte = new Date(to);
+      if (to) filter.createdAt.$lte = new Date(to);
     }
 
     if (q && q.trim()) {

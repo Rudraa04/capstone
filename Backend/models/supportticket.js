@@ -35,18 +35,18 @@ const ReplySchema = new mongoose.Schema(
 const SupportTicketSchema = new mongoose.Schema(
   {
     ticketId: { type: String, unique: true, index: true }, // human-friendly ID like TKT-XXXXXX
-    customerId: { type: String, required: true },          // Firebase UID (strict)
+    customerId: { type: String, default: null },          // Firebase UID (strict)
     issue: { type: String, required: true },
     priority: { type: String, enum: ["Low", "Medium", "High"], default: "Low" },
     status: { type: String, enum: ["Open", "In Progress", "Resolved"], default: "Open" },
 
     orderId: { type: String, default: null },
 
-    customerSnapshot: {
-      name: String,
-      email: String,
-      phone: String,
-    },
+   customerSnapshot: {
+    name:  { type: String, default: "" },
+    email: { type: String, required: true },  // required so guests still have a contact
+    phone: { type: String, default: "" },
+     },
 
     issueEmbedding: { type: [Number], default: [] },
     replies: { type: [ReplySchema], default: [] },

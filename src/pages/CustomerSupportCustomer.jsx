@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import axios from "axios";
 import { auth } from "../firebase/firebase"; // uses your existing client Firebase
-import { onAuthStateChanged } from "firebase/auth"; // NEW: to grab email once if auth loads late
 import { createTicket } from "../api/customerTickets";
 
-const VITE_API_BASE =
+const API_BASE =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
   "http://localhost:5000";
 
@@ -28,31 +27,8 @@ const CustomerSupport = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [successTicket, setSuccessTicket] = useState(null); // holds API response on success
 
-  const didInitEmail = useRef(false); // NEW: prevent overwriting after user starts typing
-
   const isMongoId = (s) => /^[a-f\d]{24}$/i.test(s || "");
   const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s || "");
-  const emailValid = !formData.email || isEmail(formData.email); // NEW: cleaner validity flag
-
-  // NEW: Set email once from auth (if available), then never force it again
-  useEffect(() => {
-    if (didInitEmail.current) return;
-    didInitEmail.current = true;
-
-    const preset = auth.currentUser?.email || "";
-    if (preset && !formData.email) {
-      setFormData((prev) => ({ ...prev, email: preset }));
-    }
-
-    // If auth loads later (e.g., page refresh), set once when it arrives
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u?.email && !formData.email) {
-        setFormData((prev) => ({ ...prev, email: u.email }));
-      }
-    });
-    return () => unsub();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Compose a clear issue blob for admins to read
   const buildIssueText = () => {
@@ -109,11 +85,12 @@ const CustomerSupport = () => {
     }
 
     const payload = {
-      customerId: user.uid, // ✅ server stores UID; verified via Firebase Admin
-      issue: buildIssueText(), // ✅ one blob containing subject/topic/country/email/message
-      orderId:
-        formData.category === "order" ? formData.orderNumber.trim() : null, // ✅ shown in admin modal
-    };
+     customerId: user.uid, // can be empty in guest flow if you later allow it
+     contactEmail: (formData.email || user.email || "").trim(), // <-- send this
+     issue: buildIssueText(), // Subject/Topic/Country/Order/Contact Email/Message
+     orderId:
+     formData.category === "order" ? formData.orderNumber.trim() : null,
+     };
 
     setSubmitting(true);
     try {
@@ -124,7 +101,6 @@ const CustomerSupport = () => {
         ...prev,
         subject: "",
         country: "",
-        email: prev.email, // keep whatever they had typed/was preset
         message: "",
         orderNumber: "",
       }));
@@ -341,6 +317,8 @@ const CustomerSupport = () => {
     { value: "Zimbabwe", label: "Zimbabwe" },
   ];
 
+  const userEmail = auth.currentUser?.email || "";
+
   return (
     <>
       <Header />
@@ -442,18 +420,18 @@ const CustomerSupport = () => {
             <div className="relative">
               <input
                 type="email"
-                value={formData.email} 
+                value={formData.email || userEmail}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
                 placeholder="Enter your email address"
                 className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ${
-                  emailValid
+                  !formData.email || isEmail(formData.email || userEmail)
                     ? "border-gray-300 focus:ring-blue-500"
                     : "border-red-300 focus:ring-red-500"
                 }`}
               />
-              {emailValid && formData.email && (
+              {(formData.email ? isEmail(formData.email) : !!userEmail) && (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 text-green-500 absolute right-3 top-1/2 -translate-y-1/2"
@@ -469,6 +447,10 @@ const CustomerSupport = () => {
                   />
                 </svg>
               )}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              We’ll email updates to your account address. This field is for
+              extra contact info (optional).
             </div>
           </div>
 
